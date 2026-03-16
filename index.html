@@ -4,9 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pokédex Card Tracker</title>
-    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js"></script>
     <style>
         * {
             margin: 0;
@@ -1092,108 +1089,31 @@
   { "id": 45, "name": "Vileplume", "generation": 1, "cardLink": "https://www.tcgplayer.com/product/90380/pokemon-legends-awakened-vileplume?Printing=Reverse+Holofoil|Holofoil&Language=English&page=1", "imageUrl": "https://tcgplayer-cdn.tcgplayer.com/product/90380_in_1000x1000.jpg", "collected": false, "price": null }
         ];
 
-        // Firebase Configuration - UPDATE WITH YOUR FIREBASE PROJECT
-        const firebaseConfig = {
-          apiKey: "AIzaSyDyWGdRbTpQUnX4cQ387AkWe9x_yjhYn4g",
-          authDomain: "pokemon-card-tracker-2b5f8.firebaseapp.com",
-          databaseURL: "https://pokemon-card-tracker-2b5f8-default-rtdb.firebaseio.com",
-          projectId: "pokemon-card-tracker-2b5f8",
-          storageBucket: "pokemon-card-tracker-2b5f8.firebasestorage.app",
-          messagingSenderId: "1004685597475",
-          appId: "1:1004685597475:web:1f50f62d8657028efa8a96"
-        };
-
-        // Initialize Firebase
+        // Firebase Configuration - Optional (can set up later)
         let db = null;
-        let userId = null;
-        let firebaseReady = false;
+        let userId = 'local_only';
+        let firebaseReady = true;
 
         function initializeApp() {
             setupEventListeners();
             loadData();
         }
 
-        try {
-            const app = firebase.initializeApp(firebaseConfig);
-            db = firebase.database(app);
-            
-            // Anonymous authentication
-            firebase.auth(app).signInAnonymously().then((result) => {
-                userId = result.user.uid;
-                firebaseReady = true;
-                setupCloudSync();
-                loadData();
-            }).catch(err => {
-                console.log('Firebase auth skipped - using local storage only');
-                userId = 'local_only';
-                firebaseReady = true;
-                initializeApp();
-            });
-        } catch(err) {
-            console.log('Firebase not available - using local storage only');
-            userId = 'local_only';
-            firebaseReady = true;
-            initializeApp();
-        }
-
-        function setupCloudSync() {
-            if (userId === 'local_only') return;
-            
-            // Listen for cloud changes
-            db.ref('users/' + userId + '/collection').on('value', (snapshot) => {
-                const cloudData = snapshot.val();
-                if (cloudData && JSON.stringify(cloudData) !== JSON.stringify(allCards)) {
-                    allCards = cloudData;
-                    filteredCards = [...allCards];
-                    renderCards();
-                    updateStats();
-                }
-            });
-        }
-
         // Initialize
 
         function loadData() {
             const saved = localStorage.getItem(STORAGE_KEY);
-            
-            // Try to load from Firebase if available
-            if (userId && userId !== 'local_only' && db) {
-                db.ref('users/' + userId + '/collection').once('value', (snapshot) => {
-                    const cloudData = snapshot.val();
-                    if (cloudData) {
-                        allCards = cloudData;
-                    } else if (saved) {
-                        allCards = JSON.parse(saved);
-                    } else {
-                        allCards = JSON.parse(JSON.stringify(sampleData));
-                        saveData();
-                    }
-                    filteredCards = [...allCards];
-                    renderCards();
-                    updateStats();
-                });
+            if (saved) {
+                allCards = JSON.parse(saved);
             } else {
-                // Fallback to localStorage only
-                if (saved) {
-                    allCards = JSON.parse(saved);
-                } else {
-                    allCards = JSON.parse(JSON.stringify(sampleData));
-                    saveData();
-                }
-                filteredCards = [...allCards];
+                allCards = JSON.parse(JSON.stringify(sampleData));
+                saveData();
             }
+            filteredCards = [...allCards];
         }
 
         function saveData() {
-            // Save to localStorage
             localStorage.setItem(STORAGE_KEY, JSON.stringify(allCards));
-            
-            // Save to Firebase if available
-            if (userId && userId !== 'local_only' && db) {
-                db.ref('users/' + userId + '/collection').set(allCards).catch(err => {
-                    console.log('Firebase save failed - data saved locally');
-                });
-            }
         }
 
         function setupEventListeners() {
