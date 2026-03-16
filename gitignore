@@ -1,0 +1,6 @@
+# Local files
+*.json
+*.py
+pokemon_collection.html
+.DS_Store
+*.log
