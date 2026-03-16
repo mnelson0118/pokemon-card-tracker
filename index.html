@@ -1122,16 +1122,19 @@
             
             const url = firebaseConfig.databaseURL + '/users/' + userId + '/collection.json';
             
+            // Fire and forget - don't wait for response
             fetch(url, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(allCards)
             }).then(res => {
-                if (!res.ok) {
-                    console.log('Cloud sync: HTTP ' + res.status + ' - check database rules');
+                if (res.ok) {
+                    console.log('✅ Synced to cloud (' + allCards.filter(c => c.collected).length + ' collected)');
+                } else {
+                    console.log('⚠️ Cloud sync: HTTP ' + res.status);
                 }
             }).catch(err => {
-                console.log('Cloud sync failed (offline or rules issue)');
+                // Silently fail - data is saved locally anyway
             });
         }
 
@@ -1167,24 +1170,27 @@
             // Try to load from cloud first
             if (firebaseConfig.projectId !== "YOUR_PROJECT_ID") {
                 loadFromCloud().then(cloudData => {
-                    if (cloudData && Array.isArray(cloudData)) {
+                    // Check if we got valid data from cloud
+                    if (cloudData && Array.isArray(cloudData) && cloudData.length > 0) {
                         allCards = cloudData;
-                        console.log('✅ Loaded from cloud');
+                        console.log('✅ Loaded ' + cloudData.length + ' cards from cloud');
                     } else {
+                        // Cloud is empty or invalid - load from localStorage
                         loadLocal();
-                        console.log('Cloud empty - using localStorage');
+                        console.log('Cloud database empty - using localStorage');
                     }
                     filteredCards = [...allCards];
                     renderCards();
                     updateStats();
                 }).catch(err => {
-                    console.log('Cloud load error - using localStorage');
+                    console.log('Cloud unavailable - using localStorage');
                     loadLocal();
                     filteredCards = [...allCards];
                     renderCards();
                     updateStats();
                 });
             } else {
+                // Firebase not configured - use localStorage only
                 loadLocal();
                 filteredCards = [...allCards];
                 renderCards();
@@ -1439,15 +1445,40 @@
         });
 
         // Reset button with confirmation
+        function deleteCloudData() {
+            if (firebaseConfig.projectId === "YOUR_PROJECT_ID") return;
+            
+            const url = firebaseConfig.databaseURL + '/users/' + userId + '/collection.json';
+            
+            fetch(url, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' }
+            }).then(res => {
+                if (res.ok) {
+                    console.log('✅ Cloud data deleted');
+                } else {
+                    console.log('⚠️ Cloud delete: HTTP ' + res.status);
+                }
+            }).catch(err => {
+                // Silently fail
+            });
+        }
+
         document.getElementById('resetButton').addEventListener('click', () => {
             const userInput = prompt('Type "RESET" to clear all data and reset your collection:');
             if (userInput === 'RESET') {
+                // Clear localStorage
                 localStorage.removeItem(STORAGE_KEY);
+                
+                // Clear Firebase
+                deleteCloudData();
+                
+                // Reset the app
                 allCards = [];
                 loadData();
                 renderCards();
                 updateStats();
-                alert('✓ All data has been reset!');
+                alert('✓ All data has been reset (local and cloud)!');
             } else if (userInput !== null) {
                 alert('Incorrect. No changes made.');
             }
