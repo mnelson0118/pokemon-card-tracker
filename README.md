@@ -4,7 +4,7 @@ A beautiful, interactive web app to track your Pokémon trading card collection.
 
 ## Features
 
-- 🎴 Track all 45 Pokémon cards with product images from TCGPlayer
+- 🎴 Track all Pokémon cards with product images from TCGPlayer
 - 💰 Track how much you've spent on each card
 - 🌙 Dark mode (default) and light mode
 - 🔍 Click card images to view in full size and zoom in for details
