@@ -1126,8 +1126,12 @@
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(allCards)
+            }).then(res => {
+                if (!res.ok) {
+                    console.log('Cloud sync: HTTP ' + res.status + ' - check database rules');
+                }
             }).catch(err => {
-                console.log('Cloud sync failed (offline?), data saved locally');
+                console.log('Cloud sync failed (offline or rules issue)');
             });
         }
 
@@ -1137,9 +1141,18 @@
             const url = firebaseConfig.databaseURL + '/users/' + userId + '/collection.json';
             
             return fetch(url)
-                .then(res => res.json())
+                .then(res => {
+                    if (!res.ok) {
+                        console.log('Cloud load: HTTP ' + res.status + ' - falling back to localStorage');
+                        return null;
+                    }
+                    return res.json();
+                })
                 .then(data => data)
-                .catch(err => null);
+                .catch(err => {
+                    console.log('Cloud load failed - using localStorage');
+                    return null;
+                });
         }
 
         // Initialize
@@ -1154,12 +1167,19 @@
             // Try to load from cloud first
             if (firebaseConfig.projectId !== "YOUR_PROJECT_ID") {
                 loadFromCloud().then(cloudData => {
-                    if (cloudData) {
+                    if (cloudData && Array.isArray(cloudData)) {
                         allCards = cloudData;
                         console.log('✅ Loaded from cloud');
                     } else {
                         loadLocal();
+                        console.log('Cloud empty - using localStorage');
                     }
+                    filteredCards = [...allCards];
+                    renderCards();
+                    updateStats();
+                }).catch(err => {
+                    console.log('Cloud load error - using localStorage');
+                    loadLocal();
                     filteredCards = [...allCards];
                     renderCards();
                     updateStats();
