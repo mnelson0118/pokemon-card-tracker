@@ -28,6 +28,7 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
             background-color: var(--light-gray);
             color: var(--dark-gray);
+            background-attachment: fixed;
         }
 
         .container {
@@ -60,6 +61,24 @@
 
         .theme-toggle:hover {
             transform: scale(1.1);
+        }
+
+        .reset-button {
+            background: none;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            padding: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform var(--transition);
+            color: var(--medium-gray);
+        }
+
+        .reset-button:hover {
+            transform: scale(1.1);
+            color: var(--primary-red);
         }
 
         /* Header */
@@ -258,7 +277,7 @@
         /* Card Grid */
         .card-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            grid-template-columns: repeat(3, 1fr);
             gap: 20px;
         }
 
@@ -554,7 +573,14 @@
             }
 
             .card-grid {
-                grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+                grid-template-columns: repeat(2, 1fr);
+                gap: 12px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .card-grid {
+                grid-template-columns: 1fr;
                 gap: 12px;
             }
         }
@@ -592,8 +618,6 @@
                             <line x1="2" y1="50" x2="98" y2="50" class="pokeball-line"/>
                             <!-- Center white circle -->
                             <circle cx="50" cy="50" r="13" class="pokeball-center-circle"/>
-                            <!-- Center red dot -->
-                            <circle cx="50" cy="50" r="6" class="pokeball-center-dot"/>
                         </svg>
                     </div>
                     <div class="logo-text">
@@ -624,6 +648,7 @@
                     <div class="progress-percent" id="progressPercent">0%</div>
                 </div>
                 <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">🌙</button>
+                <button class="reset-button" id="resetButton" title="Reset all data">⟲</button>
             </div>
         </header>
 
@@ -952,6 +977,21 @@
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 closeImageModal();
+            }
+        });
+
+        // Reset button with confirmation
+        document.getElementById('resetButton').addEventListener('click', () => {
+            const userInput = prompt('Type "RESET" to clear all data and reset your collection:');
+            if (userInput === 'RESET') {
+                localStorage.removeItem(STORAGE_KEY);
+                allCards = [];
+                loadData();
+                renderCards();
+                updateStats();
+                alert('✓ All data has been reset!');
+            } else if (userInput !== null) {
+                alert('Incorrect. No changes made.');
             }
         });
     </script>
