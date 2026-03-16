@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pokédex Card Tracker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-red: #e94560;
+            --light-gray: #f5f5f5;
+            --white: #ffffff;
+            --dark-gray: #333333;
+            --medium-gray: #888888;
+            --light-border: #e0e0e0;
+            --success-green: #51cf66;
+            --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        html, body {
+            height: 100%;
+            min-height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
+            background-color: var(--light-gray);
+            color: var(--dark-gray);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 30px 20px;
+        }
+
+        /* Dark Mode */
+        body.dark-mode {
+            --light-gray: #1a1a1a;
+            --white: #2d2d2d;
+            --dark-gray: #e0e0e0;
+            --medium-gray: #a0a0a0;
+            --light-border: #3a3a3a;
+            background-color: var(--light-gray);
+        }
+
+        .theme-toggle {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform var(--transition);
+        }
+
+        .theme-toggle:hover {
+            transform: scale(1.1);
+        }
+
+        /* Header */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
+            padding: 16px 0;
+            border-bottom: 1px solid var(--light-border);
+            gap: 30px;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0;
+        }
+
+        .pokeball {
+            width: 32px;
+            height: 32px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .pokeball svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .logo-text h1 {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--dark-gray);
+            letter-spacing: -0.3px;
+            line-height: 1.2;
+        }
+
+        .logo-text p {
+            font-size: 12px;
+            color: var(--primary-red);
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            line-height: 1;
+        }
+
+        .stats-container {
+            display: flex;
+            gap: 30px;
+            align-items: center;
+            margin-left: auto;
+        }
+
+        .stat {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 70px;
+        }
+
+        .stat-value {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--dark-gray);
+            line-height: 1;
+        }
+
+        .stat-label {
+            font-size: 10px;
+            color: var(--medium-gray);
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            font-weight: 600;
+            margin-top: 2px;
+        }
+
+        .progress-section {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-left: 20px;
+            padding-left: 20px;
+            border-left: 1px solid var(--light-border);
+        }
+
+        .progress-label {
+            font-size: 10px;
+            color: var(--medium-gray);
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .progress-bar {
+            width: 80px;
+            height: 3px;
+            background-color: var(--light-border);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background-color: var(--primary-red);
+            border-radius: 2px;
+            transition: width var(--transition);
+        }
+
+        .progress-percent {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--primary-red);
+            min-width: 28px;
+            text-align: right;
+        }
+
+        /* Filter Section */
+        .filter-section {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 40px;
+            flex-wrap: wrap;
+        }
+
+        .filter-button {
+            padding: 8px 18px;
+            border: none;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition);
+            white-space: nowrap;
+            background-color: var(--white);
+            color: var(--dark-gray);
+            border: 1px solid var(--light-border);
+        }
+
+        .filter-button.active {
+            background-color: var(--primary-red);
+            color: var(--white);
+            border-color: var(--primary-red);
+        }
+
+        .filter-button:hover:not(.active) {
+            border-color: var(--dark-gray);
+        }
+
+        .filter-spacer {
+            width: 1px;
+            height: 24px;
+            background-color: var(--light-border);
+            margin: 0 8px;
+        }
+
+        .search-container {
+            display: flex;
+            align-items: center;
+            margin-left: auto;
+        }
+
+        .search-box {
+            background-color: var(--white);
+            border: 1px solid var(--light-border);
+            border-radius: 20px;
+            padding: 8px 16px;
+            font-size: 14px;
+            color: var(--dark-gray);
+            width: 200px;
+            transition: border-color var(--transition);
+        }
+
+        .search-box::placeholder {
+            color: var(--medium-gray);
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: var(--primary-red);
+        }
+
+        /* Card Grid */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background-color: var(--white);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            transition: all var(--transition);
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card:hover {
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+            transform: translateY(-4px);
+        }
+
+        .card-image-wrapper {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 63 / 88;
+            background-color: var(--light-gray);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: transform var(--transition);
+        }
+
+        .card-image-wrapper:hover {
+            transform: scale(1.02);
+        }
+
+        .card-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform var(--transition);
+            border-radius: 6px;
+        }
+
+        .card:hover .card-image {
+            transform: scale(1.03);
+        }
+
+        .card-image-placeholder {
+            color: var(--medium-gray);
+            font-size: 14px;
+            text-align: center;
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.85);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity var(--transition);
+        }
+
+        .modal.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .modal-content {
+            position: relative;
+            width: 90%;
+            max-width: 600px;
+            height: 90vh;
+            max-height: 800px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-image-container {
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 8px;
+        }
+
+        .modal-image {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            border-radius: 8px;
+            cursor: zoom-in;
+        }
+
+        .modal-image.zoomed {
+            cursor: zoom-out;
+            width: auto;
+            height: auto;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            font-size: 28px;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background var(--transition);
+            z-index: 1001;
+        }
+
+        .modal-close:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .modal-info {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            color: white;
+            font-size: 14px;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 12px 16px;
+            border-radius: 6px;
+            z-index: 1001;
+        }
+
+        .card-content {
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .card-number {
+            font-size: 12px;
+            color: var(--medium-gray);
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .card-generation {
+            font-size: 12px;
+            color: var(--medium-gray);
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--dark-gray);
+            margin: 4px 0;
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 4px;
+        }
+
+        .mark-collected-btn {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid var(--light-border);
+            background-color: var(--white);
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--dark-gray);
+            cursor: pointer;
+            transition: all var(--transition);
+        }
+
+        .mark-collected-btn:hover {
+            border-color: var(--primary-red);
+            color: var(--primary-red);
+        }
+
+        .mark-collected-btn.collected {
+            background-color: var(--success-green);
+            color: var(--white);
+            border-color: var(--success-green);
+        }
+
+        .tcg-link-btn {
+            padding: 8px 12px;
+            border: 1px solid var(--primary-red);
+            background-color: var(--white);
+            color: var(--primary-red);
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .tcg-link-btn:hover {
+            background-color: var(--primary-red);
+            color: var(--white);
+        }
+
+        /* Empty State */
+        .empty-state {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--medium-gray);
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .empty-state h2 {
+            font-size: 20px;
+            margin-bottom: 8px;
+            color: var(--dark-gray);
+            font-weight: 600;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            header {
+                flex-direction: column;
+                gap: 15px;
+                align-items: flex-start;
+            }
+
+            .stats-container {
+                width: 100%;
+                margin-left: 0;
+                justify-content: space-between;
+            }
+
+            .progress-section {
+                margin-left: 0;
+                padding-left: 0;
+                border-left: none;
+            }
+
+            .filter-section {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .search-container {
+                width: 100%;
+                margin-left: 0;
+            }
+
+            .search-box {
+                width: 100%;
+            }
+
+            .filter-spacer {
+                display: none;
+            }
+
+            .card-grid {
+                grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+                gap: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-left">
+                <div class="logo">
+                    <div class="pokeball">
+                        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                            <defs>
+                                <style>
+                                    .pokeball-outer { fill: none; stroke: #000; stroke-width: 2.5; }
+                                    .pokeball-red { fill: #dc3545; }
+                                    .pokeball-white { fill: #ffffff; }
+                                    .pokeball-line { stroke: #000; stroke-width: 2.5; }
+                                    .pokeball-center-circle { fill: #ffffff; stroke: #000; stroke-width: 2.5; }
+                                    .pokeball-center-dot { fill: #dc3545; }
+                                    
+                                    body.dark-mode .pokeball-outer,
+                                    body.dark-mode .pokeball-line,
+                                    body.dark-mode .pokeball-center-circle { stroke: #e0e0e0; }
+                                    body.dark-mode .pokeball-center-circle { fill: #2d2d2d; }
+                                </style>
+                            </defs>
+                            <!-- Outer circle -->
+                            <circle cx="50" cy="50" r="48" class="pokeball-outer"/>
+                            <!-- Red top half -->
+                            <path d="M 2 50 A 48 48 0 0 1 98 50" class="pokeball-red"/>
+                            <!-- White bottom half -->
+                            <path d="M 2 50 A 48 48 0 0 0 98 50" class="pokeball-white"/>
+                            <!-- Center dividing line -->
+                            <line x1="2" y1="50" x2="98" y2="50" class="pokeball-line"/>
+                            <!-- Center white circle -->
+                            <circle cx="50" cy="50" r="13" class="pokeball-center-circle"/>
+                            <!-- Center red dot -->
+                            <circle cx="50" cy="50" r="6" class="pokeball-center-dot"/>
+                        </svg>
+                    </div>
+                    <div class="logo-text">
+                        <h1>Pokédex</h1>
+                        <p>Card Tracker</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stats-container">
+                <div class="stat">
+                    <div class="stat-value" id="collectedCount">0</div>
+                    <div class="stat-label">Collected</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="totalCount">0</div>
+                    <div class="stat-label">Total</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="spentAmount">$0.00</div>
+                    <div class="stat-label">Spent</div>
+                </div>
+                <div class="progress-section">
+                    <div class="progress-label">Progress</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <div class="progress-percent" id="progressPercent">0%</div>
+                </div>
+                <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">🌙</button>
+            </div>
+        </header>
+
+        <div class="filter-section">
+            <button class="filter-button active" data-filter="all">All</button>
+            <button class="filter-button" data-filter="collected">Collected</button>
+            <button class="filter-button" data-filter="missing">Missing</button>
+            <div class="filter-spacer"></div>
+            <button class="filter-button active" data-filter="gen-all">All Gens</button>
+            <button class="filter-button" data-filter="gen-1">Gen 1</button>
+            <button class="filter-button" data-filter="gen-2">Gen 2</button>
+
+            <div class="search-container">
+                <input type="text" class="search-box" id="searchBox" placeholder="Search Pokémon...">
+            </div>
+        </div>
+
+        <div class="card-grid" id="cardGrid">
+            <div class="empty-state">
+                <div class="empty-state-icon">📦</div>
+                <h2>Loading your collection...</h2>
+            </div>
+        </div>
+    </div>
+
+    <!-- Image Modal -->
+    <div class="modal" id="imageModal">
+        <button class="modal-close" onclick="closeImageModal()">✕</button>
+        <div class="modal-content">
+            <div class="modal-image-container" id="modalImageContainer">
+                <img id="modalImage" class="modal-image" alt="Card image">
+            </div>
+            <div class="modal-info" id="modalInfo"></div>
+        </div>
+    </div>
+
+    <script>
+        const STORAGE_KEY = 'pokemon_collection_data';
+        let allCards = [];
+        let filteredCards = [];
+        let currentFilters = {
+            collection: 'all',
+            generation: 'gen-all',
+            search: ''
+        };
+
+        // All 45 Pokemon cards from TCGPlayer
+        const sampleData = [
+  { "id": 1, "name": "Bulbasaur", "generation": 1, "cardLink": "https://www.tcgplayer.com/product/84032/pokemon-crystal-guardians-bulbasaur-045-100?page=1&Language=English", "imageUrl": "https://tcgplayer-cdn.tcgplayer.com/product/84032_in_1000x1000.jpg", "collected": false, "price": null },
+  { "id": 2, "name": "Ivysaur", "generation": 1, "cardLink": "https://www.tcgplayer.com/product/86300/pokemon-crystal-guardians-ivysaur-034-100?Language=English&page=1", "imageUrl": "https://tcgplayer-cdn.tcgplayer.com/product/86300_in_1000x1000.jpg", "collected": false, "price": null },
+  { "id": 3, "name": "Venusaur", "generation": 1, "cardLink": "https://www.tcgplayer.com/product/124014/pokemon-xy-evolutions-venusaur-ex?page=1&Language=English", "imageUrl": "https://tcgplayer-cdn.tcgplayer.com/product/124014_in_1000x1000.jpg", "collected": false, "price": null },
+  { "id": 4, "name": "Charmander", "generation": 1, "cardLink": "https://www.tcgplayer.com/product/42389/pokemon-base-set-charmander?Language=English&page=1", "imageUrl": "https://tcgplayer-cdn.tcgplayer.com/product/42389_in_1000x1000.jpg", "collected": false, "price": null },
+  { "id": 5, "name": "Charmeleon", "generation": 1, "cardLink": "https://www.tcgplayer.com/product/42365/pokemon-base-set-charmeleon?page=1&Language=English", "imageUrl": "https://tcgplayer-cdn.tcgplayer.com/product/42365_in_1000x1000.jpg", "collected": false, "price": null },
+  { "id": 6, "name": "Charizard", "generation": 1, "cardLink": "https://www.tcgplayer.com/product/124024/pokemon-xy-evolutions-charizard-ex?page=1&Language=English", "imageUrl": "https://tcgplayer-cdn.tcgplayer.com/product/124024_in_1000x1000.jpg", "collected": false, "price": null },
+  { "id": 7, "name": "Squirtle", "generation": 1, "cardLink": "https://www.tcgplayer.com/product/89490/pokemon-firered-and-leafgreen-squirtle-083-112?page=1&Language=English", "imageUrl": "https://tcgplayer-cdn.tcgplayer.com/product/89490_in_1000x1000.jpg", "collected": false, "price": null },
+  { "id": 8, "name": "Wartortle", "generation": 1, "cardLink": "https://www.tcgplayer.com/product/90486/pokemon-firered-and-leafgreen-wartortle?page=1", "imageUrl": "https://tcgplayer-cdn.tcgplayer.com/product/90486_in_1000x1000.jpg", "collected": false, "price": null },
+  { "id": 9, "name": "Blastoise", "generation": 1, "cardLink": "https://www.tcgplayer.com/product/124034/pokemon-xy-evolutions-blastoise-ex?page=1&Language=English", "imageUrl": "https://tcgplayer-cdn.tcgplayer.com/product/124034_in_1000x1000.jpg", "collected": false, "price": null },
+  { "id": 10, "name": "Caterpie", "generation": 1, "cardLink": "https://www.tcgplayer.com/product/42388/pokemon-base-set-caterpie?page=1", "imageUrl": "https://tcgplayer-cdn.tcgplayer.com/product/42388_in_1000x1000.jpg", "collected": false, "price": null },
+  { "id": 11, "name": "Metapod", "generation": 1, "cardLink": "https://www.tcgplayer.com/product/42398/pokemon-base-set-metapod?Language=English&page=1", "imageUrl": "https://tcgplayer-cdn.tcgplayer.com/product/42398_in_1000x1000.jpg", "collected": false, "price": null },
+  { "id": 12, "name": "Butterfree", "generation": 1, "cardLink": "https://www.tcgplayer.com/product/126874/pokemon-sm-base-set-butterfree?Language=English&page=1", "imageUrl": "https://tcgplayer-cdn.tcgplayer.com/product/126874_in_1000x1000.jpg", "collected": false, "price": null },
+  { "id": 13, "name": "Weedle", "generation": 1, "cardLink": "https://www.tcgplayer.com/product/90538/pokemon-neo-discovery-weedle?Language=English&page=1", "imageUrl": "https://tcgplayer-cdn.tcgplayer.com/product/90538_in_1000x1000.jpg", "collected": false, "price": null },
+  { "id": 14, "name": "Kakuna", "generation": 1, "cardLink": "https://www.tcgplayer.com/product/86408/pokemon-neo-discovery-kakuna?page=1", "imageUrl": "https://tcgplayer-cdn.tcgplayer.com/product/86408_in_1000x1000.jpg", "collected": false, "price": null },
+  { "id": 15, "name": "Beedrill", "generation": 1, "cardLink": "https://www.tcgplayer.com/product/83767/pokemon-neo-discovery-beedrill?page=1", "imageUrl": "https://tcgplayer-cdn.tcgplayer.com/product/83767_in_1000x1000.jpg", "collected": false, "price": null },
+  { "id": 16, "name": "Pidgey", "generation": 1, "cardLink": "https://www.tcgplayer.com/product/509955/pokemon-sv03-obsidian-flames-pidgey-207-197?page=1", "imageUrl": "https://tcgplayer-cdn.tcgplayer.com/product/509955_in_1000x1000.jpg", "collected": false, "price": null },
+  { "id": 17, "name": "Pidgeotto", "generation": 1, "cardLink": "https://www.tcgplayer.com/product/509956/pokemon-sv03-obsidian-flames-pidgeotto-208-197?page=1", "imageUrl": "https://tcgplayer-cdn.tcgplayer.com/product/509956_in_1000x1000.jpg", "collected": false, "price": null },
+  { "id": 18, "name": "Pidgeot", "generation": 1, "cardLink": "https://www.tcgplayer.com/product/509983/pokemon-sv03-obsidian-flames-pidgeot-ex-225-197?page=1", "imageUrl": "https://tcgplayer-cdn.tcgplayer.com/product/509983_in_1000x1000.jpg", "collected": false, "price": null },
+  { "id": 19, "name": "Rattata", "generation": 1, "cardLink": "https://www.tcgplayer.com/product/42540/pokemon-base-set-2-rattata?Language=English&page=1", "imageUrl": "https://tcgplayer-cdn.tcgplayer.com/product/42540_in_1000x1000.jpg", "collected": false, "price": null },
+  { "id": 20, "name": "Raticate", "generation": 1, "cardLink": "https://www.tcgplayer.com/product/42521/pokemon-base-set-2-raticate?page=1&Language=English", "imageUrl": "https://tcgplayer-cdn.tcgplayer.com/product/42521_in_1000x1000.jpg", "collected": false, "price": null },
+  { "id": 21, "name": "Spearow", "generation": 1, "cardLink": "https://www.tcgplayer.com/product/89436/pokemon-sandstorm-spearow?page=1", "imageUrl": "https://tcgplayer-cdn.tcgplayer.com/product/89436_in_1000x1000.jpg", "collected": false, "price": null },
+  { "id": 22, "name": "Fearow", "generation": 1, "cardLink": "https://www.tcgplayer.com/product/85394/pokemon-sandstorm-fearow?page=1", "imageUrl": "https://tcgplayer-cdn.tcgplayer.com/product/85394_in_1000x1000.jpg", "collected": false, "price": null },
+  { "id": 23, "name": "Ekans", "generation": 1, "cardLink": "https://www.tcgplayer.com/product/85100/pokemon-sandstorm-ekans?page=1&Language=English", "imageUrl": "https://tcgplayer-cdn.tcgplayer.com/product/85100_in_1000x1000.jpg", "collected": false, "price": null },
+  { "id": 24, "name": "Arbok", "generation": 1, "cardLink": "https://www.tcgplayer.com/product/83567/pokemon-sandstorm-arbok?page=1&Language=English", "imageUrl": "https://tcgplayer-cdn.tcgplayer.com/product/83567_in_1000x1000.jpg", "collected": false, "price": null },
+  { "id": 25, "name": "Pikachu", "generation": 1, "cardLink": "https://www.tcgplayer.com/product/138522/pokemon-sm-burning-shadows-pikachu?Printing=Holofoil|Reverse+Holofoil&page=1&Language=English", "imageUrl": "https://tcgplayer-cdn.tcgplayer.com/product/138522_in_1000x1000.jpg", "collected": false, "price": null },
+  { "id": 26, "name": "Raichu", "generation": 1, "cardLink": "https://www.tcgplayer.com/product/107168/pokemon-xy-breakthrough-raichu?Printing=Reverse+Holofoil|Holofoil&page=1", "imageUrl": "https://tcgplayer-cdn.tcgplayer.com/product/107168_in_1000x1000.jpg", "collected": false, "price": null },
+  { "id": 27, "name": "Sandshrew", "generation": 1, "cardLink": "https://www.tcgplayer.com/product/88923/pokemon-delta-species-sandshrew?Printing=Reverse+Holofoil|Holofoil&page=1&Language=English", "imageUrl": "https://tcgplayer-cdn.tcgplayer.com/product/88923_in_1000x1000.jpg", "collected": false, "price": null },
+  { "id": 28, "name": "Sandslash", "generation": 1, "cardLink": "https://www.tcgplayer.com/product/88936/pokemon-delta-species-sandslash-delta-species?Printing=Reverse+Holofoil|Holofoil&page=1&Language=English", "imageUrl": "https://tcgplayer-cdn.tcgplayer.com/product/88936_in_1000x1000.jpg", "collected": false, "price": null },
+  { "id": 29, "name": "Nidoran (F)", "generation": 1, "cardLink": "https://www.tcgplayer.com/product/87721/pokemon-plasma-freeze-nidoran-f?page=1", "imageUrl": "https://tcgplayer-cdn.tcgplayer.com/product/87721_in_1000x1000.jpg", "collected": false, "price": null },
+  { "id": 30, "name": "Nidorina", "generation": 1, "cardLink": "https://www.tcgplayer.com/product/87739/pokemon-plasma-freeze-nidorina?page=1", "imageUrl": "https://tcgplayer-cdn.tcgplayer.com/product/87739_in_1000x1000.jpg", "collected": false, "price": null },
+  { "id": 31, "name": "Nidoqueen", "generation": 1, "cardLink": "https://www.tcgplayer.com/product/87711/pokemon-plasma-freeze-nidoqueen?page=1", "imageUrl": "https://tcgplayer-cdn.tcgplayer.com/product/87711_in_1000x1000.jpg", "collected": false, "price": null },
+  { "id": 32, "name": "Nidoran (M)", "generation": 1, "cardLink": "https://www.tcgplayer.com/product/87726/pokemon-firered-and-leafgreen-nidoran-m?page=1&Language=English", "imageUrl": "https://tcgplayer-cdn.tcgplayer.com/product/87726_in_1000x1000.jpg", "collected": false, "price": null },
+  { "id": 33, "name": "Nidorino", "generation": 1, "cardLink": "https://www.tcgplayer.com/product/87744/pokemon-firered-and-leafgreen-nidorino?page=1&Language=English", "imageUrl": "https://tcgplayer-cdn.tcgplayer.com/product/87744_in_1000x1000.jpg", "collected": false, "price": null },
+  { "id": 34, "name": "Nidoking", "generation": 1, "cardLink": "https://www.tcgplayer.com/product/87696/pokemon-firered-and-leafgreen-nidoking?page=1&Language=English", "imageUrl": "https://tcgplayer-cdn.tcgplayer.com/product/87696_in_1000x1000.jpg", "collected": false, "price": null },
+  { "id": 35, "name": "Clefairy", "generation": 1, "cardLink": "https://www.tcgplayer.com/product/84352/pokemon-neo-genesis-clefairy?Printing=Reverse+Holofoil|Holofoil&page=1", "imageUrl": "https://tcgplayer-cdn.tcgplayer.com/product/84352_in_1000x1000.jpg", "collected": false, "price": null },
+  { "id": 36, "name": "Clefable", "generation": 1, "cardLink": "https://www.tcgplayer.com/product/84344/pokemon-expedition-clefable-41?Printing=Reverse+Holofoil|Holofoil&page=1", "imageUrl": "https://tcgplayer-cdn.tcgplayer.com/product/84344_in_1000x1000.jpg", "collected": false, "price": null },
+  { "id": 37, "name": "Vulpix", "generation": 1, "cardLink": "https://www.tcgplayer.com/product/90441/pokemon-mysterious-treasures-vulpix?Printing=Reverse+Holofoil|Holofoil&page=1", "imageUrl": "https://tcgplayer-cdn.tcgplayer.com/product/90441_in_1000x1000.jpg", "collected": false, "price": null },
+  { "id": 38, "name": "Ninetales", "generation": 1, "cardLink": "https://www.tcgplayer.com/product/87772/pokemon-mysterious-treasures-ninetales?Printing=Reverse+Holofoil|Holofoil&page=1", "imageUrl": "https://tcgplayer-cdn.tcgplayer.com/product/87772_in_1000x1000.jpg", "collected": false, "price": null },
+  { "id": 39, "name": "Jigglypuff", "generation": 1, "cardLink": "https://www.tcgplayer.com/product/189232/pokemon-sm-unbroken-bonds-jigglypuff?Printing=Reverse+Holofoil|Holofoil&page=1&Language=English", "imageUrl": "https://tcgplayer-cdn.tcgplayer.com/product/189232_in_1000x1000.jpg", "collected": false, "price": null },
+  { "id": 40, "name": "Wigglytuff", "generation": 1, "cardLink": "https://www.tcgplayer.com/product/90596/pokemon-firered-and-leafgreen-wigglytuff?Printing=Reverse+Holofoil|Holofoil&page=1&Language=English", "imageUrl": "https://tcgplayer-cdn.tcgplayer.com/product/90596_in_1000x1000.jpg", "collected": false, "price": null },
+  { "id": 41, "name": "Zubat", "generation": 1, "cardLink": "https://www.tcgplayer.com/product/90770/pokemon-hidden-legends-zubat?Printing=Reverse+Holofoil|Holofoil&page=1&Language=English", "imageUrl": "https://tcgplayer-cdn.tcgplayer.com/product/90770_in_1000x1000.jpg", "collected": false, "price": null },
+  { "id": 42, "name": "Golbat", "generation": 1, "cardLink": "https://www.tcgplayer.com/product/85793/pokemon-hidden-legends-golbat?Printing=Reverse+Holofoil|Holofoil&page=1", "imageUrl": "https://tcgplayer-cdn.tcgplayer.com/product/85793_in_1000x1000.jpg", "collected": false, "price": null },
+  { "id": 43, "name": "Oddish", "generation": 1, "cardLink": "https://www.tcgplayer.com/product/189044/pokemon-sm-unbroken-bonds-oddish-6?Printing=Reverse+Holofoil|Holofoil&page=1&Language=English", "imageUrl": "https://tcgplayer-cdn.tcgplayer.com/product/189044_in_1000x1000.jpg", "collected": false, "price": null },
+  { "id": 44, "name": "Gloom", "generation": 1, "cardLink": "https://www.tcgplayer.com/product/283862/pokemon-swsh11-lost-origin-gloom?Printing=Reverse+Holofoil|Holofoil&page=1&Language=English", "imageUrl": "https://tcgplayer-cdn.tcgplayer.com/product/283862_in_1000x1000.jpg", "collected": false, "price": null },
+  { "id": 45, "name": "Vileplume", "generation": 1, "cardLink": "https://www.tcgplayer.com/product/90380/pokemon-legends-awakened-vileplume?Printing=Reverse+Holofoil|Holofoil&Language=English&page=1", "imageUrl": "https://tcgplayer-cdn.tcgplayer.com/product/90380_in_1000x1000.jpg", "collected": false, "price": null }
+        ];
+
+        // Initialize
+        function init() {
+            loadData();
+            setupEventListeners();
+            renderCards();
+            updateStats();
+        }
+
+        function loadData() {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) {
+                allCards = JSON.parse(saved);
+            } else {
+                allCards = JSON.parse(JSON.stringify(sampleData));
+                saveData();
+            }
+            filteredCards = [...allCards];
+        }
+
+        function saveData() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(allCards));
+        }
+
+        function setupEventListeners() {
+            // Filter buttons
+            document.querySelectorAll('.filter-button').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const filter = btn.dataset.filter;
+                    
+                    if (filter.startsWith('gen-')) {
+                        document.querySelectorAll('[data-filter^="gen-"]').forEach(b => b.classList.remove('active'));
+                        btn.classList.add('active');
+                        currentFilters.generation = filter;
+                    } else {
+                        document.querySelectorAll('[data-filter^="collected"], [data-filter^="missing"], [data-filter="all"]').forEach(b => {
+                            if (!b.dataset.filter.startsWith('gen-')) b.classList.remove('active');
+                        });
+                        btn.classList.add('active');
+                        currentFilters.collection = filter;
+                    }
+                    applyFilters();
+                });
+            });
+
+            // Search
+            document.getElementById('searchBox').addEventListener('input', (e) => {
+                currentFilters.search = e.target.value.toLowerCase();
+                applyFilters();
+            });
+        }
+
+        function applyFilters() {
+            filteredCards = allCards.filter(card => {
+                // Collection filter
+                if (currentFilters.collection === 'collected' && !card.collected) return false;
+                if (currentFilters.collection === 'missing' && card.collected) return false;
+
+                // Generation filter
+                if (currentFilters.generation !== 'gen-all') {
+                    const gen = parseInt(currentFilters.generation.split('-')[1]);
+                    if (card.generation !== gen) return false;
+                }
+
+                // Search filter
+                if (currentFilters.search) {
+                    const search = currentFilters.search;
+                    if (!card.name.toLowerCase().includes(search) && !card.id.toString().includes(search)) {
+                        return false;
+                    }
+                }
+
+                return true;
+            });
+
+            renderCards();
+        }
+
+        function renderCards() {
+            const grid = document.getElementById('cardGrid');
+
+            if (filteredCards.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🎯</div>
+                        <h2>No cards found</h2>
+                    </div>
+                `;
+                return;
+            }
+
+            grid.innerHTML = filteredCards.map(card => `
+                <div class="card">
+                    <div class="card-image-wrapper" onclick="openImageModal('${card.imageUrl}', '${card.name}', ${card.id})">
+                        ${card.imageUrl ? 
+                            `<img src="${card.imageUrl}" alt="${card.name}" class="card-image" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                             <div class="card-image-placeholder" style="display:none;">📷</div>` 
+                            : 
+                            `<div class="card-image-placeholder">📷</div>`
+                        }
+                    </div>
+                    <div class="card-content">
+                        <div class="card-header">
+                            <div>
+                                <div class="card-number">#${String(card.id).padStart(3, '0')}</div>
+                                <div class="card-title">${card.name}</div>
+                                <div class="card-generation">Gen ${card.generation}</div>
+                            </div>
+                        </div>
+                        <div class="card-actions">
+                            <button class="mark-collected-btn ${card.collected ? 'collected' : ''}" onclick="toggleCollected(${card.id})">
+                                ${card.collected ? '✓ Collected' : 'Mark collected'}
+                            </button>
+                            <a href="${card.cardLink}" target="_blank" rel="noopener noreferrer" class="tcg-link-btn">TCG</a>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function toggleCollected(cardId) {
+            const card = allCards.find(c => c.id === cardId);
+            if (card) {
+                if (!card.collected) {
+                    // Asking for price when marking as collected
+                    const priceInput = prompt(`How much did you spend on ${card.name}?`, card.price ? card.price.toString() : '');
+                    if (priceInput !== null) {
+                        const price = parseFloat(priceInput);
+                        if (!isNaN(price) && price >= 0) {
+                            card.price = price;
+                            card.collected = true;
+                        } else if (priceInput === '') {
+                            // Allow collecting without price
+                            card.price = null;
+                            card.collected = true;
+                        } else {
+                            alert('Please enter a valid price');
+                            return;
+                        }
+                    } else {
+                        // User cancelled
+                        return;
+                    }
+                } else {
+                    // Unmark as collected - clear the price
+                    card.collected = false;
+                    card.price = null;
+                }
+                saveData();
+                updateStats();
+                applyFilters();
+            }
+        }
+
+        function updateStats() {
+            const total = allCards.length;
+            const collected = allCards.filter(c => c.collected).length;
+            const spent = allCards.filter(c => c.price).reduce((sum, c) => sum + (c.price || 0), 0);
+            const progress = total > 0 ? Math.round((collected / total) * 100) : 0;
+
+            document.getElementById('collectedCount').textContent = collected;
+            document.getElementById('totalCount').textContent = total;
+            document.getElementById('spentAmount').textContent = '$' + spent.toFixed(2);
+            document.getElementById('progressFill').style.width = progress + '%';
+            document.getElementById('progressPercent').textContent = progress + '%';
+        }
+
+        // Start the app
+        init();
+
+        // Modal and zoom functions
+        function openImageModal(imageUrl, cardName, cardId) {
+            if (!imageUrl) return;
+            const modal = document.getElementById('imageModal');
+            const modalImage = document.getElementById('modalImage');
+            const modalInfo = document.getElementById('modalInfo');
+            const modalContainer = document.getElementById('modalImageContainer');
+            
+            modalImage.src = imageUrl;
+            modalImage.alt = cardName;
+            modalImage.className = 'modal-image';
+            modalInfo.textContent = `#${String(cardId).padStart(3, '0')} ${cardName} • Click to zoom`;
+            
+            modal.classList.add('active');
+            
+            // Zoom functionality
+            modalImage.onclick = (e) => {
+                e.stopPropagation();
+                modalImage.classList.toggle('zoomed');
+                if (modalImage.classList.contains('zoomed')) {
+                    modalContainer.style.overflow = 'auto';
+                } else {
+                    modalContainer.style.overflow = 'auto';
+                }
+            };
+            
+            // Close modal when clicking outside image
+            modal.onclick = (e) => {
+                if (e.target === modal) {
+                    closeImageModal();
+                }
+            };
+        }
+
+        function closeImageModal() {
+            const modal = document.getElementById('imageModal');
+            modal.classList.remove('active');
+        }
+
+        // Dark mode toggle
+        document.getElementById('themeToggle').addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+            const isDarkMode = document.body.classList.contains('dark-mode');
+            localStorage.setItem('pokemonTrackerDarkMode', isDarkMode);
+            
+            const toggle = document.getElementById('themeToggle');
+            toggle.textContent = isDarkMode ? '☀️' : '🌙';
+        });
+
+        // Load dark mode preference (default to dark mode)
+        const savedDarkMode = localStorage.getItem('pokemonTrackerDarkMode');
+        const isDarkMode = savedDarkMode === null ? true : savedDarkMode === 'true';
+        if (isDarkMode) {
+            document.body.classList.add('dark-mode');
+            document.getElementById('themeToggle').textContent = '☀️';
+        } else {
+            document.body.classList.remove('dark-mode');
+            document.getElementById('themeToggle').textContent = '🌙';
+        }
+
+        // Close modal with Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeImageModal();
+            }
+        });
+    </script>
+</body>
+</html>
