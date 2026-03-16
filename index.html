@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pokédex Card Tracker</title>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth.js"></script>
     <style>
         * {
             margin: 0;
@@ -38,9 +41,23 @@
         }
 
         .container {
-            max-width: 100%;
+            max-width: 1400px;
             margin: 0 auto;
-            padding: 16px 12px;
+            padding: 30px 20px;
+            width: 100%;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                max-width: 100%;
+                padding: 16px 12px;
+            }
+        }
+
+        @media (max-width: 430px) {
+            .container {
+                padding: 12px 10px;
+            }
         }
 
         /* Dark Mode */
@@ -104,6 +121,15 @@
             flex-wrap: wrap;
         }
 
+        @media (min-width: 769px) {
+            header {
+                flex-wrap: nowrap;
+                gap: 30px;
+                margin-bottom: 40px;
+                padding: 16px 0;
+            }
+        }
+
         .header-left {
             display: flex;
             align-items: center;
@@ -111,11 +137,23 @@
             order: 1;
         }
 
+        @media (min-width: 769px) {
+            .header-left {
+                gap: 10px;
+            }
+        }
+
         .logo {
             display: flex;
             align-items: center;
             gap: 8px;
             font-size: 0;
+        }
+
+        @media (min-width: 769px) {
+            .logo {
+                gap: 10px;
+            }
         }
 
         .pokeball {
@@ -126,6 +164,13 @@
             align-items: center;
             justify-content: center;
             flex-shrink: 0;
+        }
+
+        @media (min-width: 769px) {
+            .pokeball {
+                width: 32px;
+                height: 32px;
+            }
         }
 
         .pokeball svg {
@@ -141,12 +186,25 @@
             line-height: 1.1;
         }
 
+        @media (min-width: 769px) {
+            .logo-text h1 {
+                font-size: 18px;
+                line-height: 1.2;
+            }
+        }
+
         .logo-text p {
             font-size: 11px;
             color: var(--primary-red);
             font-weight: 700;
             letter-spacing: 0.5px;
             line-height: 1;
+        }
+
+        @media (min-width: 769px) {
+            .logo-text p {
+                font-size: 12px;
+            }
         }
 
         .stats-container {
@@ -158,6 +216,14 @@
             order: 2;
         }
 
+        @media (min-width: 769px) {
+            .stats-container {
+                display: flex;
+                gap: 30px;
+                grid-template-columns: unset;
+            }
+        }
+
         .stat {
             text-align: center;
             display: flex;
@@ -166,11 +232,23 @@
             min-width: auto;
         }
 
+        @media (min-width: 769px) {
+            .stat {
+                min-width: 70px;
+            }
+        }
+
         .stat-value {
             font-size: 16px;
             font-weight: 700;
             color: var(--dark-gray);
             line-height: 1;
+        }
+
+        @media (min-width: 769px) {
+            .stat-value {
+                font-size: 22px;
+            }
         }
 
         .stat-label {
@@ -183,6 +261,13 @@
             white-space: nowrap;
         }
 
+        @media (min-width: 769px) {
+            .stat-label {
+                font-size: 10px;
+                letter-spacing: 0.4px;
+            }
+        }
+
         .progress-section {
             display: none;
             align-items: center;
@@ -193,14 +278,36 @@
             order: 3;
         }
 
+        @media (min-width: 769px) {
+            .progress-section {
+                display: flex;
+                gap: 10px;
+                margin-left: 20px;
+                padding-left: 20px;
+                border-left: 1px solid var(--light-border);
+            }
+        }
+
         .theme-toggle {
             order: 4;
             font-size: 16px;
         }
 
+        @media (min-width: 769px) {
+            .theme-toggle {
+                font-size: 20px;
+            }
+        }
+
         .reset-button {
             order: 5;
             font-size: 14px;
+        }
+
+        @media (min-width: 769px) {
+            .reset-button {
+                font-size: 18px;
+            }
         }
 
         .progress-label {
@@ -347,6 +454,27 @@
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 10px;
+        }
+
+        @media (min-width: 769px) {
+            .card-grid {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 20px;
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .card-grid {
+                grid-template-columns: repeat(5, 1fr);
+                gap: 20px;
+            }
+        }
+
+        @media (min-width: 1400px) {
+            .card-grid {
+                grid-template-columns: repeat(6, 1fr);
+                gap: 20px;
+            }
         }
 
         .card {
@@ -964,27 +1092,108 @@
   { "id": 45, "name": "Vileplume", "generation": 1, "cardLink": "https://www.tcgplayer.com/product/90380/pokemon-legends-awakened-vileplume?Printing=Reverse+Holofoil|Holofoil&Language=English&page=1", "imageUrl": "https://tcgplayer-cdn.tcgplayer.com/product/90380_in_1000x1000.jpg", "collected": false, "price": null }
         ];
 
-        // Initialize
-        function init() {
-            loadData();
+        // Firebase Configuration - UPDATE WITH YOUR FIREBASE PROJECT
+        const firebaseConfig = {
+            apiKey: "AIzaSyBfQ5VzPhYjO2cK8nL9mN0pQ1rS2tU3vW4",
+            authDomain: "pokemon-card-tracker.firebaseapp.com",
+            databaseURL: "https://pokemon-card-tracker-default-rtdb.firebaseio.com",
+            projectId: "pokemon-card-tracker",
+            storageBucket: "pokemon-card-tracker.appspot.com",
+            messagingSenderId: "123456789012",
+            appId: "1:123456789012:web:abcdef1234567890ghij"
+        };
+
+        // Initialize Firebase
+        let db = null;
+        let userId = null;
+        let firebaseReady = false;
+
+        function initializeApp() {
             setupEventListeners();
-            renderCards();
-            updateStats();
+            loadData();
         }
+
+        try {
+            const app = firebase.initializeApp(firebaseConfig);
+            db = firebase.database(app);
+            
+            // Anonymous authentication
+            firebase.auth(app).signInAnonymously().then((result) => {
+                userId = result.user.uid;
+                firebaseReady = true;
+                setupCloudSync();
+                loadData();
+            }).catch(err => {
+                console.log('Firebase auth skipped - using local storage only');
+                userId = 'local_only';
+                firebaseReady = true;
+                initializeApp();
+            });
+        } catch(err) {
+            console.log('Firebase not available - using local storage only');
+            userId = 'local_only';
+            firebaseReady = true;
+            initializeApp();
+        }
+
+        function setupCloudSync() {
+            if (userId === 'local_only') return;
+            
+            // Listen for cloud changes
+            db.ref('users/' + userId + '/collection').on('value', (snapshot) => {
+                const cloudData = snapshot.val();
+                if (cloudData && JSON.stringify(cloudData) !== JSON.stringify(allCards)) {
+                    allCards = cloudData;
+                    filteredCards = [...allCards];
+                    renderCards();
+                    updateStats();
+                }
+            });
+        }
+
+        // Initialize
 
         function loadData() {
             const saved = localStorage.getItem(STORAGE_KEY);
-            if (saved) {
-                allCards = JSON.parse(saved);
+            
+            // Try to load from Firebase if available
+            if (userId && userId !== 'local_only' && db) {
+                db.ref('users/' + userId + '/collection').once('value', (snapshot) => {
+                    const cloudData = snapshot.val();
+                    if (cloudData) {
+                        allCards = cloudData;
+                    } else if (saved) {
+                        allCards = JSON.parse(saved);
+                    } else {
+                        allCards = JSON.parse(JSON.stringify(sampleData));
+                        saveData();
+                    }
+                    filteredCards = [...allCards];
+                    renderCards();
+                    updateStats();
+                });
             } else {
-                allCards = JSON.parse(JSON.stringify(sampleData));
-                saveData();
+                // Fallback to localStorage only
+                if (saved) {
+                    allCards = JSON.parse(saved);
+                } else {
+                    allCards = JSON.parse(JSON.stringify(sampleData));
+                    saveData();
+                }
+                filteredCards = [...allCards];
             }
-            filteredCards = [...allCards];
         }
 
         function saveData() {
+            // Save to localStorage
             localStorage.setItem(STORAGE_KEY, JSON.stringify(allCards));
+            
+            // Save to Firebase if available
+            if (userId && userId !== 'local_only' && db) {
+                db.ref('users/' + userId + '/collection').set(allCards).catch(err => {
+                    console.log('Firebase save failed - data saved locally');
+                });
+            }
         }
 
         function setupEventListeners() {
@@ -1132,6 +1341,10 @@
         }
 
         // Start the app
+        function init() {
+            initializeApp();
+        }
+
         init();
 
         // Filter toggle
