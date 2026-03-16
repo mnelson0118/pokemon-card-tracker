@@ -1089,31 +1089,104 @@
   { "id": 45, "name": "Vileplume", "generation": 1, "cardLink": "https://www.tcgplayer.com/product/90380/pokemon-legends-awakened-vileplume?Printing=Reverse+Holofoil|Holofoil&Language=English&page=1", "imageUrl": "https://tcgplayer-cdn.tcgplayer.com/product/90380_in_1000x1000.jpg", "collected": false, "price": null }
         ];
 
-        // Firebase Configuration - Optional (can set up later)
-        let db = null;
-        let userId = 'local_only';
-        let firebaseReady = true;
+        // Firebase Configuration - UPDATE WITH YOUR VALUES
+        const firebaseConfig = {
+            projectId: "YOUR_PROJECT_ID",  // Change this
+            databaseURL: "https://YOUR_PROJECT.firebaseio.com"  // Change this
+        };
 
-        function initializeApp() {
-            setupEventListeners();
-            loadData();
+        let db = null;
+        let userId = null;
+
+        // Initialize Firebase REST API (no CDN needed, no module errors)
+        function initFirebase() {
+            // Generate a unique user ID for this device
+            userId = localStorage.getItem('pokemonTrackerUserId');
+            if (!userId) {
+                userId = 'user_' + Math.random().toString(36).substr(2, 9);
+                localStorage.setItem('pokemonTrackerUserId', userId);
+            }
+            
+            // If you have a proper Firebase project, this will sync
+            if (firebaseConfig.projectId !== "YOUR_PROJECT_ID") {
+                console.log('Firebase configured for user:', userId);
+                syncToCloud();
+            } else {
+                console.log('Firebase not configured - using localStorage only');
+            }
+        }
+
+        function syncToCloud() {
+            // This function is called after each save
+            if (firebaseConfig.projectId === "YOUR_PROJECT_ID") return;
+            
+            const url = firebaseConfig.databaseURL + '/users/' + userId + '/collection.json';
+            
+            fetch(url, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(allCards)
+            }).catch(err => {
+                console.log('Cloud sync failed (offline?), data saved locally');
+            });
+        }
+
+        function loadFromCloud() {
+            if (firebaseConfig.projectId === "YOUR_PROJECT_ID") return Promise.resolve(null);
+            
+            const url = firebaseConfig.databaseURL + '/users/' + userId + '/collection.json';
+            
+            return fetch(url)
+                .then(res => res.json())
+                .then(data => data)
+                .catch(err => null);
         }
 
         // Initialize
 
+        function initializeApp() {
+            initFirebase();
+            setupEventListeners();
+            loadData();
+        }
+
         function loadData() {
+            // Try to load from cloud first
+            if (firebaseConfig.projectId !== "YOUR_PROJECT_ID") {
+                loadFromCloud().then(cloudData => {
+                    if (cloudData) {
+                        allCards = cloudData;
+                        console.log('✅ Loaded from cloud');
+                    } else {
+                        loadLocal();
+                    }
+                    filteredCards = [...allCards];
+                    renderCards();
+                    updateStats();
+                });
+            } else {
+                loadLocal();
+                filteredCards = [...allCards];
+                renderCards();
+                updateStats();
+            }
+        }
+
+        function loadLocal() {
             const saved = localStorage.getItem(STORAGE_KEY);
             if (saved) {
                 allCards = JSON.parse(saved);
             } else {
                 allCards = JSON.parse(JSON.stringify(sampleData));
-                saveData();
             }
-            filteredCards = [...allCards];
         }
 
         function saveData() {
+            // Always save to localStorage first
             localStorage.setItem(STORAGE_KEY, JSON.stringify(allCards));
+            
+            // Also sync to cloud
+            syncToCloud();
         }
 
         function setupEventListeners() {
