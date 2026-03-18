@@ -1298,57 +1298,6 @@
         // Load Pokemon data from CSV
         let sampleData = [];
         
-        // Cache for API calls to avoid duplicates
-        const apiCache = {};
-        
-        async function fetchProductImageFromTCGPlayer(productId) {
-            if (!productId) return null;
-            
-            // Check cache first
-            if (apiCache[productId] !== undefined) {
-                return apiCache[productId];
-            }
-            
-            try {
-                console.log(`🔄 Fetching image for product ID: ${productId}`);
-                
-                const response = await fetch(`https://api.tcgplayer.com/v1/products/${productId}`);
-                
-                console.log(`📡 API Response status: ${response.status} for product ${productId}`);
-                
-                if (!response.ok) {
-                    console.warn(`⚠️ TCGPlayer API returned ${response.status} for productId ${productId}`);
-                    // Cache the null result
-                    apiCache[productId] = null;
-                    return null;
-                }
-                
-                const data = await response.json();
-                console.log(`📦 API Response for ${productId}:`, data);
-                
-                // Extract image URL from response - try different possible paths
-                const imageUrl = data.data?.imageUrl 
-                    || data.imageUrl 
-                    || data.data?.image
-                    || null;
-                
-                console.log(`🖼️ Extracted imageUrl for ${productId}:`, imageUrl);
-                
-                // Cache the result
-                apiCache[productId] = imageUrl;
-                
-                if (imageUrl) {
-                    console.log(`✅ Fetched image for product ${productId}`);
-                }
-                
-                return imageUrl;
-            } catch (error) {
-                console.error(`❌ Error fetching product ${productId}:`, error);
-                // Cache the error result
-                apiCache[productId] = null;
-                return null;
-            }
-        }
         
         async function loadPokemonDataFromCSV() {
             try {
@@ -1373,9 +1322,9 @@
                 console.log('📊 CSV Headers:', headers);
                 console.log('📊 Total CSV lines:', lines.length - 1);
                 
-                const parsedData = lines.slice(1)
+                sampleData = lines.slice(1)
                     .filter(line => line.trim().length > 0)  // Skip empty lines
-                    .map(line => {
+                    .map((line, index) => {
                         // Robust CSV parsing (handles quoted fields)
                         const values = [];
                         let current = '';
@@ -1410,64 +1359,29 @@
                             }
                         });
                         
+                        // Generate imageUrl if not provided
+                        if (!obj.imageUrl || obj.imageUrl.trim() === '') {
+                            if (obj.productId) {
+                                // Use TCGPlayer CDN direct image URL pattern
+                                obj.imageUrl = `https://tcgplayer-cdn.tcgplayer.com/product/${obj.productId}_in_1000x1000.jpg`;
+                            }
+                        }
+                        
                         return obj;
                     });
                 
-                console.log(`✅ Parsed ${parsedData.length} Pokemon from CSV`);
-                
-                // Debug: Show first few records
-                console.log('📝 First 3 records:');
-                parsedData.slice(0, 3).forEach((card, i) => {
-                    console.log(`  ${i+1}. ${card.name} - productId: ${card.productId}, hasImageUrl: ${!!card.imageUrl}`);
-                });
-                
-                // Now fetch images from TCGPlayer API for cards missing images
-                console.log('🖼️ Fetching images from TCGPlayer API...');
-                
-                sampleData = await Promise.all(parsedData.map(async (card, index) => {
-                    // If no imageUrl, try to fetch from TCGPlayer API
-                    if (!card.imageUrl || card.imageUrl.trim() === '') {
-                        let productId = null;
-                        
-                        // First try using productId field from CSV
-                        if (card.productId && card.productId.trim()) {
-                            productId = card.productId;
-                        } 
-                        // If that's empty, extract from cardLink URL
-                        else if (card.cardLink) {
-                            const match = card.cardLink.match(/\/product\/(\d+)/);
-                            if (match && match[1]) {
-                                productId = match[1];
-                                console.log(`  📍 Extracted productId from cardLink: ${productId}`);
-                            }
-                        }
-                        
-                        console.log(`[${index + 1}/${parsedData.length}] ${card.name} - productId: ${productId}`);
-                        
-                        if (productId) {
-                            console.log(`  🔄 Fetching image from API...`);
-                            const imageUrl = await fetchProductImageFromTCGPlayer(productId);
-                            if (imageUrl) {
-                                card.imageUrl = imageUrl;
-                                console.log(`  ✅ Success: Image URL set`);
-                            } else {
-                                console.log(`  ⚠️ No image URL returned from API`);
-                            }
-                        } else {
-                            console.log(`  ❌ Could not extract productId from cardLink or CSV`);
-                        }
-                    } else {
-                        console.log(`[${index + 1}/${parsedData.length}] ${card.name} - Already has imageUrl`);
-                    }
-                    return card;
-                }));
-                
                 // Count how many have images
                 const cardsWithImages = sampleData.filter(c => c.imageUrl && c.imageUrl.trim()).length;
-                console.log(`\n📊 FINAL STATS:`);
+                console.log(`\n✅ CSV LOADED SUCCESSFULLY`);
                 console.log(`   Total cards: ${sampleData.length}`);
-                console.log(`   Cards with images: ${cardsWithImages}`);
-                console.log(`   Cards without images: ${sampleData.length - cardsWithImages}`);
+                console.log(`   Cards with imageUrl: ${cardsWithImages}`);
+                
+                if (sampleData.length > 0) {
+                    console.log(`\n📝 Sample images:`);
+                    sampleData.filter(c => c.imageUrl).slice(0, 3).forEach(card => {
+                        console.log(`   - ${card.name}: ${card.imageUrl}`);
+                    });
+                }
                 
                 return sampleData;
             } catch (error) {
