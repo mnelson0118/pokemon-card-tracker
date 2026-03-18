@@ -341,29 +341,32 @@
 
         /* Filter Section */
         .filter-toggle-section {
-            margin-bottom: 20px;
+            margin-bottom: 24px;
         }
 
         .filter-toggle-btn {
             padding: 12px 18px;
             border: 2px solid var(--primary-red);
-            background-color: var(--white);
+            background-color: transparent;
             border-radius: 8px;
             font-size: 14px;
-            font-weight: 600;
+            font-weight: 700;
             color: var(--primary-red);
             cursor: pointer;
             transition: all var(--transition);
             width: 100%;
             min-height: 48px;
-            display: flex;
+            display: none;
             align-items: center;
             justify-content: center;
+            letter-spacing: 0.3px;
         }
 
         .filter-toggle-btn:hover {
             background-color: var(--primary-red);
             color: var(--white);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
         }
 
         .filter-toolbar {
@@ -375,21 +378,23 @@
         }
 
         .filter-toggle {
-            display: none;
+            display: block;
             padding: 10px 16px;
-            border: 1px solid var(--light-border);
-            border-radius: 6px;
+            border: 2px solid var(--light-border);
+            border-radius: 8px;
             background-color: var(--white);
             color: var(--dark-gray);
             font-weight: 600;
             cursor: pointer;
             transition: all var(--transition);
             font-size: 14px;
+            flex: 0 0 auto;
         }
 
         .filter-toggle:hover {
-            border-color: var(--dark-gray);
-            background-color: var(--light-gray);
+            border-color: var(--primary-red);
+            color: var(--primary-red);
+            transform: translateY(-2px);
         }
 
         .filter-toggle.active {
@@ -407,59 +412,68 @@
 
         .search-box {
             width: 100%;
-            padding: 10px 16px;
-            border: 1px solid var(--light-border);
-            border-radius: 6px;
+            padding: 12px 16px;
+            border: 2px solid var(--light-border);
+            border-radius: 8px;
             font-size: 14px;
             color: var(--dark-gray);
             transition: all var(--transition);
             background-color: var(--white);
+            font-weight: 500;
         }
 
         .search-box:focus {
             outline: none;
             border-color: var(--primary-red);
-            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.15);
         }
 
         .search-box::placeholder {
             color: var(--medium-gray);
+            font-weight: 400;
         }
 
         .filter-section {
-            display: flex;
+            display: none;
             flex-direction: column;
-            gap: 16px;
-            padding: 16px;
-            background-color: var(--light-gray);
-            border-radius: 8px;
-            margin-bottom: 16px;
+            gap: 24px;
+            padding: 20px;
+            background: linear-gradient(135deg, rgba(28, 28, 28, 0.8) 0%, rgba(45, 45, 45, 0.8) 100%);
+            border: 1px solid var(--light-border);
+            border-radius: 12px;
+            margin-bottom: 20px;
+            margin-top: 12px;
+            backdrop-filter: blur(10px);
+        }
+
+        .filter-section.active {
+            display: flex;
         }
 
         .filter-group {
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 12px;
         }
 
         .filter-group-label {
             font-size: 12px;
-            font-weight: 700;
-            color: var(--medium-gray);
+            font-weight: 800;
+            color: var(--primary-red);
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 1px;
         }
 
         .filter-buttons {
             display: flex;
-            gap: 8px;
+            gap: 10px;
             flex-wrap: wrap;
         }
 
         .filter-button {
-            padding: 8px 12px;
-            border: 1px solid var(--light-border);
-            border-radius: 6px;
+            padding: 10px 16px;
+            border: 2px solid var(--light-border);
+            border-radius: 8px;
             font-size: 13px;
             font-weight: 600;
             cursor: pointer;
@@ -467,17 +481,30 @@
             white-space: nowrap;
             background-color: var(--white);
             color: var(--dark-gray);
+            min-height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .filter-button:hover {
             border-color: var(--primary-red);
             color: var(--primary-red);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.15);
         }
 
         .filter-button.active {
             background-color: var(--primary-red);
             color: var(--white);
             border-color: var(--primary-red);
+            box-shadow: 0 4px 16px rgba(220, 53, 69, 0.3);
+            font-weight: 700;
+        }
+
+        .filter-button.active:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(220, 53, 69, 0.4);
         }
 
         .search-box:focus {
@@ -1099,12 +1126,11 @@
         </header>
 
         <div class="filter-toggle-section">
-            <button class="filter-toggle-btn" id="filterToggle">🔽 Filters</button>
             <div class="filter-toolbar">
                 <div class="search-container">
                     <input type="text" class="search-box" id="searchBox" placeholder="Search Pokémon...">
                 </div>
-                <button class="filter-toggle" id="filterToggle">☰ Filters</button>
+                <button class="filter-toggle" id="filterToggleSmall">☰ Filters</button>
             </div>
 
             <div class="filter-section" id="filterSection">
@@ -11709,6 +11735,8 @@
             
             // Initialize Firebase
             initFirebase();
+            
+            // Setup all event listeners (search, filters, toggles)
             setupEventListeners();
             
             // Small delay to ensure userId is set
@@ -11802,7 +11830,12 @@
             const debouncedApplyFilters = debounce(applyFilters, 300);
 
             // Filter buttons
-            document.querySelectorAll('.filter-button').forEach(btn => {
+            const filterButtons = document.querySelectorAll('.filter-button');
+            if (filterButtons.length === 0) {
+                console.log('⚠️ No filter buttons found');
+            }
+
+            filterButtons.forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     const filter = btn.dataset.filter;
                     
@@ -11822,10 +11855,26 @@
             });
 
             // Search with debounce (300ms delay)
-            document.getElementById('searchBox').addEventListener('input', (e) => {
-                currentFilters.search = e.target.value.toLowerCase();
-                debouncedApplyFilters();  // Only filter after user stops typing
-            });
+            const searchBox = document.getElementById('searchBox');
+            if (searchBox) {
+                searchBox.addEventListener('input', (e) => {
+                    currentFilters.search = e.target.value.toLowerCase();
+                    debouncedApplyFilters();  // Only filter after user stops typing
+                });
+            }
+
+            // Filter toggle button (small button only)
+            const filterSection = document.getElementById('filterSection');
+            const filterToggleSmall = document.getElementById('filterToggleSmall');
+
+            if (filterToggleSmall && filterSection) {
+                filterToggleSmall.addEventListener('click', () => {
+                    filterSection.classList.toggle('active');
+                    filterToggleSmall.classList.toggle('active');
+                });
+            }
+            
+            console.log('✅ All event listeners initialized');
         }
 
         function applyFilters() {
@@ -11958,13 +12007,7 @@
         init();
 
         // Filter toggle
-        document.getElementById('filterToggle').addEventListener('click', () => {
-            const filterSection = document.getElementById('filterSection');
-            const btn = document.getElementById('filterToggle');
-            filterSection.classList.toggle('active');
-            btn.classList.toggle('active');
-        });
-
+        // Filter toggle - both buttons (large and small)
         // Modal and zoom functions
         function openImageModal(imageUrl, cardName, cardId) {
             if (!imageUrl) return;
