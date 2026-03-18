@@ -434,7 +434,7 @@
         }
 
         .filter-section {
-            display: none;
+            display: none !important;
             flex-direction: column;
             gap: 24px;
             padding: 20px;
@@ -447,7 +447,7 @@
         }
 
         .filter-section.active {
-            display: flex;
+            display: flex !important;
         }
 
         .filter-group {
@@ -879,11 +879,11 @@
             }
 
             .filter-section {
-                display: none;
+                display: none !important;
             }
 
             .filter-section.active {
-                display: flex;
+                display: flex !important;
                 flex-direction: column;
                 gap: 16px;
             }
@@ -11867,11 +11867,18 @@
             const filterSection = document.getElementById('filterSection');
             const filterToggleSmall = document.getElementById('filterToggleSmall');
 
+            console.log('Filter Section:', filterSection);
+            console.log('Filter Toggle Small:', filterToggleSmall);
+
             if (filterToggleSmall && filterSection) {
-                filterToggleSmall.addEventListener('click', () => {
+                filterToggleSmall.addEventListener('click', (e) => {
+                    console.log('Filter button clicked!');
                     filterSection.classList.toggle('active');
                     filterToggleSmall.classList.toggle('active');
+                    console.log('Filter section active:', filterSection.classList.contains('active'));
                 });
+            } else {
+                console.log('⚠️ Filter elements not found!');
             }
             
             console.log('✅ All event listeners initialized');
@@ -12121,11 +12128,17 @@
         // Initialize the app when DOM is loaded
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', () => {
+                console.log('📄 DOM Content Loaded');
+                console.log('Filter Toggle Button:', document.getElementById('filterToggleSmall'));
+                console.log('Filter Section:', document.getElementById('filterSection'));
                 initializeApp();
                 setTimeout(() => logPerformanceMetrics(), 1000);
             });
         } else {
             // DOM is already loaded
+            console.log('📄 DOM Already Loaded');
+            console.log('Filter Toggle Button:', document.getElementById('filterToggleSmall'));
+            console.log('Filter Section:', document.getElementById('filterSection'));
             initializeApp();
             setTimeout(() => logPerformanceMetrics(), 1000);
         }
