@@ -407,13 +407,10 @@
         .search-wrapper {
             padding: 20px;
             background-color: var(--white);
-            display: flex;
-            gap: 12px;
-            align-items: center;
         }
 
         .search-input {
-            flex: 1;
+            width: 100%;
             padding: 12px 16px;
             border: 2px solid var(--light-border);
             border-radius: 8px;
@@ -431,105 +428,6 @@
 
         .search-input::placeholder {
             color: var(--medium-gray);
-        }
-
-        /* Filter Button */
-        .filter-btn {
-            padding: 12px 20px;
-            border: 2px solid var(--light-border);
-            border-radius: 8px;
-            background-color: var(--white);
-            color: var(--dark-gray);
-            font-weight: 600;
-            cursor: pointer;
-            font-size: 14px;
-            white-space: nowrap;
-            transition: all var(--transition);
-            min-height: 44px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .filter-btn:hover {
-            border-color: var(--primary-red);
-            color: var(--primary-red);
-            transform: translateY(-2px);
-            box-shadow: 0 2px 8px rgba(220, 53, 69, 0.15);
-        }
-
-        .filter-btn.active {
-            background-color: var(--primary-red);
-            color: var(--white);
-            border-color: var(--primary-red);
-        }
-
-        /* Filter Panel */
-        .filter-panel {
-            display: none;
-            padding: 20px;
-            background-color: var(--white);
-            border-top: 1px solid var(--light-border);
-            gap: 20px;
-            flex-direction: column;
-        }
-
-        .filter-panel.active {
-            display: flex;
-        }
-
-        .filter-section {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .filter-title {
-            font-size: 12px;
-            font-weight: 800;
-            color: var(--primary-red);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .filter-button-group {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-
-        .filter-option {
-            padding: 8px 14px;
-            border: 2px solid var(--light-border);
-            border-radius: 6px;
-            background-color: var(--white);
-            color: var(--dark-gray);
-            font-weight: 600;
-            cursor: pointer;
-            font-size: 13px;
-            transition: all var(--transition);
-            min-height: 36px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .filter-option:hover {
-            border-color: var(--primary-red);
-            color: var(--primary-red);
-            transform: translateY(-2px);
-            box-shadow: 0 2px 8px rgba(220, 53, 69, 0.1);
-        }
-
-        .filter-option.active {
-            background-color: var(--primary-red);
-            color: var(--white);
-            border-color: var(--primary-red);
-            font-weight: 700;
-        }
-
-        .filter-option.active:hover {
-            box-shadow: 0 2px 12px rgba(220, 53, 69, 0.25);
         }
 
         /* Card Grid */
@@ -958,20 +856,6 @@
                 padding: 10px 12px;
             }
 
-            .filter-btn {
-                padding: 10px 14px;
-                font-size: 13px;
-            }
-
-            .filter-panel {
-                padding: 16px;
-            }
-
-            .filter-option {
-                padding: 8px 12px;
-                font-size: 12px;
-            }
-
             .search-box {
                 font-size: 13px;
                 padding: 8px 12px;
@@ -1175,35 +1059,6 @@
 
         <div class="search-wrapper">
             <input type="text" id="searchInput" class="search-input" placeholder="Search Pokemon by name...">
-            <button id="filterBtn" class="filter-btn">≡ Filters</button>
-        </div>
-
-        <!-- Filter Panel -->
-        <div id="filterPanel" class="filter-panel">
-            <div class="filter-section">
-                <div class="filter-title">Collection</div>
-                <div class="filter-button-group">
-                    <button class="filter-option active" data-collection="all">All</button>
-                    <button class="filter-option" data-collection="collected">Collected</button>
-                    <button class="filter-option" data-collection="missing">Missing</button>
-                </div>
-            </div>
-
-            <div class="filter-section">
-                <div class="filter-title">Generation</div>
-                <div class="filter-button-group">
-                    <button class="filter-option active" data-generation="all">All</button>
-                    <button class="filter-option" data-generation="1">Gen 1</button>
-                    <button class="filter-option" data-generation="2">Gen 2</button>
-                    <button class="filter-option" data-generation="3">Gen 3</button>
-                    <button class="filter-option" data-generation="4">Gen 4</button>
-                    <button class="filter-option" data-generation="5">Gen 5</button>
-                    <button class="filter-option" data-generation="6">Gen 6</button>
-                    <button class="filter-option" data-generation="7">Gen 7</button>
-                    <button class="filter-option" data-generation="8">Gen 8</button>
-                    <button class="filter-option" data-generation="9">Gen 9</button>
-                </div>
-            </div>
         </div>
 
         <div class="card-grid" id="cardGrid">
@@ -11871,93 +11726,35 @@
         }
 
         function setupEventListeners() {
-            // Filter button toggle
-            const filterBtn = document.getElementById('filterBtn');
-            const filterPanel = document.getElementById('filterPanel');
-            
-            if (filterBtn && filterPanel) {
-                filterBtn.addEventListener('click', () => {
-                    filterPanel.classList.toggle('active');
-                    filterBtn.classList.toggle('active');
-                });
-            }
-
-            // Collection filter buttons
-            document.querySelectorAll('[data-collection]').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    // Remove active from all collection buttons
-                    document.querySelectorAll('[data-collection]').forEach(b => {
-                        b.classList.remove('active');
-                    });
-                    // Add active to clicked button
-                    btn.classList.add('active');
-                    // Update filter and render
-                    currentFilters.collection = btn.dataset.collection;
-                    applyFilters();
-                });
-            });
-
-            // Generation filter buttons
-            document.querySelectorAll('[data-generation]').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    // Remove active from all generation buttons
-                    document.querySelectorAll('[data-generation]').forEach(b => {
-                        b.classList.remove('active');
-                    });
-                    // Add active to clicked button
-                    btn.classList.add('active');
-                    // Update filter and render
-                    currentFilters.generation = btn.dataset.generation;
-                    applyFilters();
-                });
-            });
-
             // Search functionality
             const searchInput = document.getElementById('searchInput');
             if (searchInput) {
                 searchInput.addEventListener('input', (e) => {
-                    currentFilters.search = e.target.value.toLowerCase().trim();
-                    applyFilters();
+                    const searchTerm = e.target.value.toLowerCase().trim();
+                    
+                    // Filter cards by name only
+                    if (searchTerm === '') {
+                        // If search is empty, show all cards
+                        filteredCards = [...allCards];
+                    } else {
+                        // Filter by name
+                        filteredCards = allCards.filter(card => {
+                            const name = card.name ? card.name.toLowerCase() : '';
+                            return name.includes(searchTerm);
+                        });
+                    }
+                    
+                    // Render the filtered results
+                    renderCards();
                 });
             }
             
-            console.log('✅ All event listeners initialized');
+            console.log('✅ Event listeners initialized');
         }
 
         function applyFilters() {
-            console.log('🔍 Applying filters:', currentFilters);
-            
-            filteredCards = allCards.filter(card => {
-                // Collection filter
-                if (currentFilters.collection !== 'all') {
-                    if (currentFilters.collection === 'collected' && !card.collected) {
-                        return false;
-                    }
-                    if (currentFilters.collection === 'missing' && card.collected) {
-                        return false;
-                    }
-                }
-
-                // Generation filter
-                if (currentFilters.generation !== 'all') {
-                    const cardGen = String(card.generation);
-                    if (cardGen !== currentFilters.generation) {
-                        return false;
-                    }
-                }
-
-                // Search filter (name only)
-                if (currentFilters.search) {
-                    const cardName = card.name ? card.name.toLowerCase() : '';
-                    if (!cardName.includes(currentFilters.search)) {
-                        return false;
-                    }
-                }
-
-                return true;
-            });
-
-            console.log('✅ Filtered cards:', filteredCards.length);
+            // Just show all cards (kept for compatibility)
+            filteredCards = [...allCards];
             renderCards();
         }
 
