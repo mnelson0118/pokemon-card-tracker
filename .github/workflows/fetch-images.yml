@@ -34,3 +34,8 @@ jobs:
           git add pokemon-data.csv
           git diff --cached --quiet || git commit -m "chore: update imageUrl column [skip ci]"
           git push
+on:
+  push:
+    paths:
+      - 'pokemon-data.csv'
+  workflow_dispatch:
