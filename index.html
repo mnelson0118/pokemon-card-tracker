@@ -1313,49 +1313,62 @@
                 
                 const csvText = await response.text();
                 
-                // Parse CSV
-                const lines = csvText.trim().split('\n');
-                const headers = lines[0].split(',');
+                // Parse CSV with proper line ending handling
+                const lines = csvText.trim().split(/\r?\n/);
+                const headerLine = lines[0];
+                const headers = headerLine.split(',').map(h => h.trim());
                 
-                sampleData = lines.slice(1).map(line => {
-                    // Simple CSV parsing (handles basic cases)
-                    const values = [];
-                    let current = '';
-                    let inQuotes = false;
-                    
-                    for (let i = 0; i < line.length; i++) {
-                        const char = line[i];
-                        if (char === '"') {
-                            inQuotes = !inQuotes;
-                        } else if (char === ',' && !inQuotes) {
-                            values.push(current);
-                            current = '';
-                        } else {
-                            current += char;
+                console.log('📊 CSV Headers:', headers);
+                
+                sampleData = lines.slice(1)
+                    .filter(line => line.trim().length > 0)  // Skip empty lines
+                    .map(line => {
+                        // Robust CSV parsing (handles quoted fields)
+                        const values = [];
+                        let current = '';
+                        let inQuotes = false;
+                        
+                        for (let i = 0; i < line.length; i++) {
+                            const char = line[i];
+                            if (char === '"') {
+                                inQuotes = !inQuotes;
+                            } else if (char === ',' && !inQuotes) {
+                                values.push(current.trim());
+                                current = '';
+                            } else {
+                                current += char;
+                            }
                         }
-                    }
-                    values.push(current);
-                    
-                    // Map to object
-                    const obj = {};
-                    headers.forEach((header, i) => {
-                        const value = values[i] || '';
-                        // Convert types
-                        if (header === 'id' || header === 'generation') {
-                            obj[header] = parseInt(value) || null;
-                        } else if (header === 'collected') {
-                            obj[header] = value === 'true' || value === 'True';
-                        } else if (header === 'price') {
-                            obj[header] = value ? parseFloat(value) : null;
-                        } else {
-                            obj[header] = value;
+                        values.push(current.trim());
+                        
+                        // Map to object
+                        const obj = {};
+                        headers.forEach((header, i) => {
+                            const value = values[i] || '';
+                            // Convert types
+                            if (header === 'id' || header === 'generation') {
+                                obj[header] = parseInt(value) || null;
+                            } else if (header === 'collected') {
+                                obj[header] = value === 'true' || value === 'True' || value === '1';
+                            } else if (header === 'price') {
+                                obj[header] = value && value !== '' ? parseFloat(value) : null;
+                            } else {
+                                obj[header] = value || '';
+                            }
+                        });
+                        
+                        // Generate imageUrl from productId if not provided
+                        if ((!obj.imageUrl || obj.imageUrl.trim() === '') && obj.productId) {
+                            obj.imageUrl = `https://tcgplayer-cdn.tcgplayer.com/product/${obj.productId}_in_1000x1000.jpg`;
                         }
+                        
+                        return obj;
                     });
-                    
-                    return obj;
-                });
                 
                 console.log(`✅ Loaded ${sampleData.length} Pokemon from CSV`);
+                if (sampleData.length > 0) {
+                    console.log('📸 First record imageUrl:', sampleData[0].imageUrl);
+                }
                 return sampleData;
             } catch (error) {
                 console.error('❌ Error loading CSV:', error);
