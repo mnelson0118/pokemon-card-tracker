@@ -1357,9 +1357,27 @@
                             }
                         });
                         
-                        // Generate imageUrl from productId if not provided
-                        if ((!obj.imageUrl || obj.imageUrl.trim() === '') && obj.productId) {
-                            obj.imageUrl = `https://tcgplayer-cdn.tcgplayer.com/product/${obj.productId}_in_1000x1000.jpg`;
+                        // Generate imageUrl if not provided
+                        if (!obj.imageUrl || obj.imageUrl.trim() === '') {
+                            let productId = null;
+                            
+                            // Try to extract productId from cardLink
+                            if (obj.cardLink) {
+                                const match = obj.cardLink.match(/\/product\/(\d+)/);
+                                if (match && match[1]) {
+                                    productId = match[1];
+                                }
+                            }
+                            
+                            // If no productId from URL, try the productId field
+                            if (!productId && obj.productId) {
+                                productId = obj.productId;
+                            }
+                            
+                            // Generate the image URL
+                            if (productId) {
+                                obj.imageUrl = `https://tcgplayer-cdn.tcgplayer.com/product/${productId}_in_1000x1000.jpg`;
+                            }
                         }
                         
                         return obj;
