@@ -11906,11 +11906,16 @@
             // Search with immediate feedback (no debounce)
             const searchBox = document.getElementById('searchBox');
             if (searchBox) {
+                console.log('✅ Search box found, attaching listener');
                 searchBox.addEventListener('input', (e) => {
-                    currentFilters.search = e.target.value.toLowerCase();
-                    console.log('Searching for:', currentFilters.search);
+                    const searchValue = e.target.value.toLowerCase();
+                    console.log('🔤 Search input event fired. Value:', searchValue);
+                    currentFilters.search = searchValue;
+                    console.log('📝 currentFilters.search updated to:', currentFilters.search);
                     applyFilters();
                 });
+            } else {
+                console.log('❌ Search box NOT found!');
             }
 
             // Filter button toggle
@@ -11966,8 +11971,8 @@
         }
 
         function applyFilters() {
-            console.log('🔍 Applying filters - current:', currentFilters);
-            console.log('📊 Total cards in allCards:', allCards.length);
+            console.log('🔍 Applying filters - search term:', currentFilters.search);
+            console.log('📊 Total cards available:', allCards.length);
             
             filteredCards = allCards.filter(card => {
                 // Collection filter
@@ -11980,10 +11985,10 @@
                     if (card.generation !== gen) return false;
                 }
 
-                // Search filter
+                // Search filter - NAME ONLY
                 if (currentFilters.search) {
-                    const search = currentFilters.search;
-                    if (!card.name.toLowerCase().includes(search) && !card.id.toString().includes(search)) {
+                    const cardName = card.name ? card.name.toLowerCase() : '';
+                    if (!cardName.includes(currentFilters.search)) {
                         return false;
                     }
                 }
@@ -11991,7 +11996,7 @@
                 return true;
             });
 
-            console.log('✅ Filtered cards:', filteredCards.length);
+            console.log('✅ Cards after filtering:', filteredCards.length);
             renderCards();
         }
 
