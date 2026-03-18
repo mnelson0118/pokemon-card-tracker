@@ -11903,15 +11903,13 @@
         }
 
         function setupEventListeners() {
-            // Debounced applyFilters (wait 300ms after user stops typing)
-            const debouncedApplyFilters = debounce(applyFilters, 300);
-
-            // Search with debounce (300ms delay)
+            // Search with immediate feedback (no debounce)
             const searchBox = document.getElementById('searchBox');
             if (searchBox) {
                 searchBox.addEventListener('input', (e) => {
                     currentFilters.search = e.target.value.toLowerCase();
-                    debouncedApplyFilters();
+                    console.log('Searching for:', currentFilters.search);
+                    applyFilters();
                 });
             }
 
@@ -11968,6 +11966,9 @@
         }
 
         function applyFilters() {
+            console.log('🔍 Applying filters - current:', currentFilters);
+            console.log('📊 Total cards in allCards:', allCards.length);
+            
             filteredCards = allCards.filter(card => {
                 // Collection filter
                 if (currentFilters.collection === 'collected' && !card.collected) return false;
@@ -11990,6 +11991,7 @@
                 return true;
             });
 
+            console.log('✅ Filtered cards:', filteredCards.length);
             renderCards();
         }
 
