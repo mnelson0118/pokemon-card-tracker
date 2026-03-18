@@ -1427,9 +1427,25 @@
                 sampleData = await Promise.all(parsedData.map(async (card, index) => {
                     // If no imageUrl, try to fetch from TCGPlayer API
                     if (!card.imageUrl || card.imageUrl.trim() === '') {
-                        const productId = card.productId;
-                        console.log(`[${index + 1}/${parsedData.length}] ${card.name} - Fetching API for productId: ${productId}`);
+                        let productId = null;
+                        
+                        // First try using productId field from CSV
+                        if (card.productId && card.productId.trim()) {
+                            productId = card.productId;
+                        } 
+                        // If that's empty, extract from cardLink URL
+                        else if (card.cardLink) {
+                            const match = card.cardLink.match(/\/product\/(\d+)/);
+                            if (match && match[1]) {
+                                productId = match[1];
+                                console.log(`  📍 Extracted productId from cardLink: ${productId}`);
+                            }
+                        }
+                        
+                        console.log(`[${index + 1}/${parsedData.length}] ${card.name} - productId: ${productId}`);
+                        
                         if (productId) {
+                            console.log(`  🔄 Fetching image from API...`);
                             const imageUrl = await fetchProductImageFromTCGPlayer(productId);
                             if (imageUrl) {
                                 card.imageUrl = imageUrl;
@@ -1438,7 +1454,7 @@
                                 console.log(`  ⚠️ No image URL returned from API`);
                             }
                         } else {
-                            console.log(`  ❌ No productId available`);
+                            console.log(`  ❌ Could not extract productId from cardLink or CSV`);
                         }
                     } else {
                         console.log(`[${index + 1}/${parsedData.length}] ${card.name} - Already has imageUrl`);
