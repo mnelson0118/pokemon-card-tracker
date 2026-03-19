@@ -63,7 +63,7 @@ def main():
 
     updated = 0
     for row in rows:
-        if not row.get("imageUrl", "").strip():
+        if True:
             image_url = fallback_image_url(row)
             if image_url:
                 row["imageUrl"] = image_url
