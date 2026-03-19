@@ -1495,22 +1495,20 @@
 
             // Try to load from cloud first
             if (firebaseConfig.projectId !== "YOUR_PROJECT_ID") {
-                loadFromCloud().then(cloudData => {
-                    // Check if we got valid data from cloud
+                loadFromCloud().then(async cloudData => {
                     if (cloudData && Array.isArray(cloudData) && cloudData.length > 0) {
                         allCards = cloudData;
                         console.log('✅ Loaded ' + cloudData.length + ' cards from cloud');
                     } else {
-                        // Cloud is empty or invalid - load from localStorage
-                        loadLocal();
+                        await loadLocal();
                         console.log('Cloud database empty - using localStorage');
                     }
                     filteredCards = [...allCards];
                     renderCards();
                     updateStats();
-                }).catch(err => {
+                }).catch(async err => {
                     console.log('Cloud unavailable - using localStorage');
-                    loadLocal();
+                    await loadLocal();
                     filteredCards = [...allCards];
                     renderCards();
                     updateStats();
@@ -1525,36 +1523,26 @@
         }
 
         function loadLocal() {
-            // Try IndexedDB first (faster)
-            loadFromIndexedDB().then(idbData => {
+            return loadFromIndexedDB().then(idbData => {
                 if (idbData && idbData.length > 0) {
                     allCards = idbData;
                     console.log('✅ Loaded from IndexedDB');
-                    return;
-                }
-                
-                // Fallback to localStorage
-                const saved = localStorage.getItem(STORAGE_KEY);
-                if (saved) {
-                    allCards = JSON.parse(saved);
-                    console.log('✅ Loaded from localStorage');
-                    // Migrate to IndexedDB for faster future loads
-                    saveToIndexedDB(allCards);
                 } else {
-                    allCards = JSON.parse(JSON.stringify(sampleData));
-                    console.log('✅ Loaded sample data');
-                    // Save to both for future use
-                    localStorage.setItem(STORAGE_KEY, JSON.stringify(allCards));
-                    saveToIndexedDB(allCards);
+                    const saved = localStorage.getItem(STORAGE_KEY);
+                    if (saved) {
+                        allCards = JSON.parse(saved);
+                        console.log('✅ Loaded from localStorage');
+                        saveToIndexedDB(allCards);
+                    } else {
+                        allCards = JSON.parse(JSON.stringify(sampleData));
+                        console.log('✅ Loaded sample data');
+                        localStorage.setItem(STORAGE_KEY, JSON.stringify(allCards));
+                        saveToIndexedDB(allCards);
+                    }
                 }
             }).catch(err => {
-                // Fallback to localStorage if IndexedDB fails
                 const saved = localStorage.getItem(STORAGE_KEY);
-                if (saved) {
-                    allCards = JSON.parse(saved);
-                } else {
-                    allCards = JSON.parse(JSON.stringify(sampleData));
-                }
+                allCards = saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(sampleData));
             });
         }
 
