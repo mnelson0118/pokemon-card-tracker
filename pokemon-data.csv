@@ -45,6 +45,7 @@ id,name,generation,cardLink,productId,imageUrl,collected,price
 44,Gloom,1,https://www.tcgplayer.com/product/283862/pokemon-swsh11-lost-origin-gloom?Printing=Reverse+Holofoil|Holofoil&page=1&Language=English,283862,https://tcgplayer-cdn.tcgplayer.com/product/283862_in_1000x1000.jpg,FALSE,
 45,Vileplume,1,https://www.tcgplayer.com/product/90380/pokemon-legends-awakened-vileplume?Printing=Reverse+Holofoil|Holofoil&Language=English&page=1,90380,https://tcgplayer-cdn.tcgplayer.com/product/90380_in_1000x1000.jpg,FALSE,
 46,Paras,1,https://www.tcgplayer.com/product/478061/pokemon-crown-zenith-galarian-gallery-paras?Printing=Holofoil|Reverse+Holofoil&Language=all&page=1,478061,https://tcgplayer-cdn.tcgplayer.com/product/478061_in_1000x1000.jpg,FALSE,
+<<<<<<< HEAD
 47,Parasect,1,https://www.tcgplayer.com/product/284253/pokemon-swsh11-lost-origin-trainer-gallery-parasect?Printing=Holofoil|Reverse+Holofoil&Language=all&page=1,,,FALSE,
 48,Venonat,1,https://www.tcgplayer.com/product/189048/pokemon-sm-unbroken-bonds-venonat-10?Printing=Holofoil|Reverse+Holofoil&Language=all&page=1,,,FALSE,
 49,Venomoth,1,https://www.tcgplayer.com/product/189049/pokemon-sm-unbroken-bonds-venomoth?Printing=Holofoil|Reverse+Holofoil&Language=all&page=1,,,FALSE,
@@ -80,6 +81,8 @@ id,name,generation,cardLink,productId,imageUrl,collected,price
 79,Slowpoke,1,https://www.tcgplayer.com/product/490064/pokemon-sv01-scarlet-and-violet-base-set-slowpoke-204-198?Printing=Unlimited+Holofoil|Holofoil|Reverse+Holofoil|Unlimited|1st+Edition+Holofoil|1st+Edition&page=1,,,FALSE,
 80,Slowbro,1,https://www.tcgplayer.com/product/515454/pokemon-prize-pack-series-cards-slowbro?Printing=Unlimited+Holofoil|Holofoil|Reverse+Holofoil|Unlimited|1st+Edition+Holofoil|1st+Edition&page=1,,,FALSE,
 =======
+=======
+>>>>>>> 5408f19f0b6afc2ed2329b5ebd965e4a3af10cf6
 47,Parasect,1,https://www.tcgplayer.com/product/284253/pokemon-swsh11-lost-origin-trainer-gallery-parasect?Printing=Holofoil|Reverse+Holofoil&Language=all&page=1,,https://tcgplayer-cdn.tcgplayer.com/product/284253_in_1000x1000.jpg,FALSE,
 48,Venonat,1,https://www.tcgplayer.com/product/189048/pokemon-sm-unbroken-bonds-venonat-10?Printing=Holofoil|Reverse+Holofoil&Language=all&page=1,,https://tcgplayer-cdn.tcgplayer.com/product/189048_in_1000x1000.jpg,FALSE,
 49,Venomoth,1,https://www.tcgplayer.com/product/189049/pokemon-sm-unbroken-bonds-venomoth?Printing=Holofoil|Reverse+Holofoil&Language=all&page=1,,https://tcgplayer-cdn.tcgplayer.com/product/189049_in_1000x1000.jpg,FALSE,
