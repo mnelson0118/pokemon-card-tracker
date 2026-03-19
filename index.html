@@ -687,7 +687,7 @@
         .card-header {
             display: flex;
             justify-content: space-between;
-            align-items: flex-start;
+            align-items: center;
             margin-bottom: 10px;
         }
 
@@ -1602,9 +1602,13 @@
 
             if (filteredCards.length === 0) {
                 grid.innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-state-icon">🎯</div>
-                        <h2>No cards found</h2>
+                    <div class="card-header">
+                        <div>
+                            <div class="card-number">#${String(card.id).padStart(3, '0')}</div>
+                            <div class="card-title">${card.name}</div>
+                            <div class="card-generation">Gen ${card.generation}</div>
+                        </div>
+                        ${card.collected && card.price ? `<div class="card-price-display">$${card.price.toFixed(2)}</div>` : ''}
                     </div>
                 `;
                 return;
