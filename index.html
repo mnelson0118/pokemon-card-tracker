@@ -1608,7 +1608,7 @@
                             <div class="card-title">${card.name}</div>
                             <div class="card-generation">Gen ${card.generation}</div>
                         </div>
-                        ${card.collected && card.price ? `<div class="card-price-display">$${card.price.toFixed(2)}</div>` : ''}
+                        ${card.collected && card.price ? `<div class="card-price-display">$${Math.round(card.price)}</div>` : ''}
                     </div>
                 `;
                 return;
