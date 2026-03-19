@@ -1684,7 +1684,14 @@
                 }
                 saveData();
                 updateStats();
-                applyFilters();
+            // Update just this card in filteredCards without reloading
+                const filteredCard = filteredCards.find(c => c.id === cardId);
+                if (filteredCard) {
+                    filteredCard.collected = card.collected;
+                    filteredCard.price = card.price;
+}
+updateStats();
+renderCards();
             }
         }
 
