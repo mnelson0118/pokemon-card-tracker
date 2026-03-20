@@ -1311,9 +1311,10 @@
                 
                 console.log('📁 Loading CSV from:', csvPath);
                 
-                const response = await fetch(csvPath);
+                const response = await fetch(csvPath + '?v=' + Date.now());         
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
                 }
                 
                 const csvText = await response.text();
