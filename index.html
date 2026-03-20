@@ -1489,42 +1489,55 @@
         }
 
         async function loadData() {
-            // First, load Pokemon data from CSV if not already loaded
             if (sampleData.length === 0) {
                 await loadPokemonDataFromCSV();
             }
 
-            // Try to load from cloud first
+            // Always start with CSV data as base
+            allCards = JSON.parse(JSON.stringify(sampleData));
+
+            // Apply localStorage state first as immediate fallback
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) {
+                const localData = JSON.parse(saved);
+                allCards.forEach(card => {
+                    const localCard = localData.find(c => c.id === card.id);
+                    if (localCard && localCard.collected) {
+                        card.collected = true;
+                        card.price = localCard.price || null;
+                    }
+                });
+            }
+
+            // Render immediately so the app feels fast
+            filteredCards = [...allCards];
+            renderCards();
+            updateStats();
+
+            // Then fetch Firebase and merge on top
             if (firebaseConfig.projectId !== "YOUR_PROJECT_ID") {
-                loadFromCloud().then(async cloudData => {
-                    await loadLocal();
-                    if (cloudData && typeof cloudData === 'object') {
-                        // Merge cloud collected state into cards loaded from CSV
+                loadFromCloud().then(cloudData => {
+                    if (cloudData && typeof cloudData === 'object' && Object.keys(cloudData).length > 0) {
                         allCards.forEach(card => {
                             if (cloudData[card.id]) {
                                 card.collected = true;
                                 card.price = cloudData[card.id].price || null;
+                            } else {
+                                card.collected = false;
+                                card.price = null;
                             }
                         });
-                        console.log('✅ Merged cloud collection into cards');
+                        console.log('✅ Merged cloud collection: ' + Object.keys(cloudData).length + ' collected');
+                        filteredCards = [...allCards];
+                        renderCards();
+                        updateStats();
+                        // Save merged state locally
+                        localStorage.setItem(STORAGE_KEY, JSON.stringify(allCards));
+                        saveToIndexedDB(allCards);
                     }
-                    filteredCards = [...allCards];
-                    renderCards();
-                    updateStats();
-                }).catch(async err => {
-                    console.log('Cloud unavailable - using localStorage');
-                    await loadLocal();
-                    filteredCards = [...allCards];
-                    renderCards();
-                    updateStats();
+                }).catch(err => {
+                    console.log('Cloud unavailable - using local data');
                 });
-
-            } else {
-                // Firebase not configured - use localStorage only
-                loadLocal();
-                filteredCards = [...allCards];
-                renderCards();
-                updateStats();
             }
         }
 
