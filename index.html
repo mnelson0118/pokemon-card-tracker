@@ -1445,7 +1445,7 @@
             }
 
         function loadFromCloud() {
-            if (firebaseConfig.projectId === "pokemon-card-tracker-2b5f8") return Promise.resolve(null);
+            if (firebaseConfig.projectId === "YOUR_PROJECT_ID") return Promise.resolve(null);
             
             const url = firebaseConfig.databaseURL + '/users/' + userId + '/collection.json';
 
