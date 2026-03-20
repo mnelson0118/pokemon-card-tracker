@@ -30,9 +30,9 @@ def extract_product_id_from_url(url: str):
 
 def fallback_image_url(row: dict):
     """Build CDN URL from productId column, or from cardLink if column is empty."""
-    product_id = row.get("productId", "").strip()
+    product_id = (row.get("productId") or "").strip()
     if not product_id:
-        product_id = extract_product_id_from_url(row.get("cardLink", ""))
+        product_id = extract_product_id_from_url(row.get("cardLink") or "")
     if product_id:
         return CDN_PATTERN.format(product_id=product_id)
     return ""
@@ -58,12 +58,12 @@ def main():
     if "imageUrl" not in fieldnames:
         fieldnames.append("imageUrl")
 
-    needs_update = [r for r in rows if not r.get("imageUrl", "").strip()]
+    needs_update = [r for r in rows if not (r.get("imageUrl") or "").strip()]
     print(f"Rows needing imageUrl: {len(needs_update)} / {len(rows)}")
 
     updated = 0
     for row in rows:
-        if True:
+        if not (row.get("imageUrl") or "").strip():
             image_url = fallback_image_url(row)
             if image_url:
                 row["imageUrl"] = image_url
