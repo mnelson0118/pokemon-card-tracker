@@ -1420,55 +1420,53 @@
 
         function syncToCloud() {
             // This function is called after each save
-            if (firebaseConfig.projectId === "YOUR_PROJECT_ID") return;
+            if (firebaseConfig.projectId === "pokemon-card-tracker-2b5f8") return;
             
             const url = firebaseConfig.databaseURL + '/users/' + userId + '/collection.json';
-            
-            // Fire and forget - don't wait for response
-            fetch(url, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(allCards)
-            }).then(res => {
-                if (res.ok) {
-                    console.log('✅ Synced to cloud (' + allCards.filter(c => c.collected).length + ' collected)');
-                } else {
-                    console.log('⚠️ Cloud sync: HTTP ' + res.status);
-                }
-            }).catch(err => {
-                // Silently fail - data is saved locally anyway
-            });
-        }
+
+                // Only save collected state and price — not the full 1025 card dataset
+                const collectionState = {};
+                allCards.filter(c => c.collected).forEach(card => {
+                    collectionState[card.id] = { collected: true, price: card.price || null };
+                });
+
+                fetch(url, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(collectionState)
+                }).then(res => {
+                    if (res.ok) {
+                        console.log('✅ Synced to cloud (' + Object.keys(collectionState).length + ' collected)');
+                    } else {
+                        console.log('⚠️ Cloud sync: HTTP ' + res.status);
+                    }
+                }).catch(err => {
+                    console.log('⚠️ Cloud sync failed - saved locally');
+                });
+            }
 
         function loadFromCloud() {
-            if (firebaseConfig.projectId === "YOUR_PROJECT_ID") return Promise.resolve(null);
+            if (firebaseConfig.projectId === "pokemon-card-tracker-2b5f8") return Promise.resolve(null);
             
             const url = firebaseConfig.databaseURL + '/users/' + userId + '/collection.json';
-            
-            return fetch(url)
-                .then(res => {
-                    console.log('Cloud fetch status: ' + res.status);
-                    if (!res.ok) {
-                        console.log('Cloud load: HTTP ' + res.status);
+
+                return fetch(url)
+                    .then(res => {
+                        if (!res.ok) return null;
+                        return res.json();
+                    })
+                    .then(data => {
+                        if (data && typeof data === 'object' && Object.keys(data).length > 0) {
+                            console.log('✅ Valid cloud data: ' + Object.keys(data).length + ' collected');
+                            return data;
+                        }
                         return null;
-                    }
-                    return res.json();
-                })
-                .then(data => {
-                    console.log('Cloud data received:', data);
-                    if (data && Array.isArray(data) && data.length > 0) {
-                        console.log('✅ Valid cloud data: ' + data.length + ' cards');
-                        return data;
-                    } else {
-                        console.log('Cloud data is empty or invalid');
+                    })
+                    .catch(err => {
+                        console.log('Cloud load error: ' + err.message);
                         return null;
-                    }
-                })
-                .catch(err => {
-                    console.log('Cloud load error: ' + err.message);
-                    return null;
-                });
-        }
+                    });
+            }
 
         // Initialize
 
@@ -1500,12 +1498,16 @@
             // Try to load from cloud first
             if (firebaseConfig.projectId !== "YOUR_PROJECT_ID") {
                 loadFromCloud().then(async cloudData => {
-                    if (cloudData && Array.isArray(cloudData) && cloudData.length > 0) {
-                        allCards = cloudData;
-                        console.log('✅ Loaded ' + cloudData.length + ' cards from cloud');
-                    } else {
-                        await loadLocal();
-                        console.log('Cloud database empty - using localStorage');
+                    await loadLocal();
+                    if (cloudData && typeof cloudData === 'object') {
+                        // Merge cloud collected state into cards loaded from CSV
+                        allCards.forEach(card => {
+                            if (cloudData[card.id]) {
+                                card.collected = true;
+                                card.price = cloudData[card.id].price || null;
+                            }
+                        });
+                        console.log('✅ Merged cloud collection into cards');
                     }
                     filteredCards = [...allCards];
                     renderCards();
@@ -1517,6 +1519,7 @@
                     renderCards();
                     updateStats();
                 });
+                
             } else {
                 // Firebase not configured - use localStorage only
                 loadLocal();
