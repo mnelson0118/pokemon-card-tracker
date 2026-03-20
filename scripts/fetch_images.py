@@ -58,12 +58,12 @@ def main():
     if "imageUrl" not in fieldnames:
         fieldnames.append("imageUrl")
 
-    needs_update = [r for r in rows if not r.get("imageUrl", "").strip()]
+    needs_update = [r for r in rows if not (r.get("imageUrl") or "").strip()]
     print(f"Rows needing imageUrl: {len(needs_update)} / {len(rows)}")
 
     updated = 0
     for row in rows:
-        if True:
+        if not (row.get("imageUrl") or "").strip():
             image_url = fallback_image_url(row)
             if image_url:
                 row["imageUrl"] = image_url
