@@ -1412,7 +1412,6 @@
             // If you have a proper Firebase project, this will sync
             if (firebaseConfig.projectId !== "YOUR_PROJECT_ID") {
                 console.log('Firebase configured - syncing collection: ' + userId);
-                syncToCloud();
             } else {
                 console.log('Firebase not configured - using localStorage only');
             }
@@ -1519,7 +1518,7 @@
                     renderCards();
                     updateStats();
                 });
-                
+
             } else {
                 // Firebase not configured - use localStorage only
                 loadLocal();
@@ -1688,7 +1687,7 @@
                 if (filteredCard) {
                     filteredCard.collected = card.collected;
                     filteredCard.price = card.price;
-}
+        }
 updateStats();
 renderCards();
             }
