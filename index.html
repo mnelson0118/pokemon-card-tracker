@@ -1740,6 +1740,7 @@ renderCards();
 
         // Filter toggle
         // Filter toggle - both buttons (large and small)
+        
         // Modal and zoom functions
         function openImageModal(imageUrl, cardName, cardId, marketPrice) {
             if (!imageUrl) return;
@@ -1760,6 +1761,17 @@ renderCards();
             } else {
                 modalMarketPrice.style.display = 'none';
             }
+
+            modal.classList.add('active');
+
+            modalImage.onclick = (e) => {
+                e.stopPropagation();
+                modalImage.classList.toggle('zoomed');
+            };
+
+            modal.onclick = (e) => {
+                if (e.target === modal) closeImageModal();
+            };
         }
 
         function closeImageModal() {
