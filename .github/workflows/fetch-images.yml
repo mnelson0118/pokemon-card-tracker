@@ -5,6 +5,8 @@ on:
     paths:
       - 'pokemon-data.csv'
   workflow_dispatch:
+  schedule:
+    - cron: '0 3 * * *'  # Runs every night at 3am UTC
 
 jobs:
   fetch-images:
@@ -36,5 +38,5 @@ jobs:
           git pull --rebase
           git stash pop
           git add pokemon-data.csv
-          git diff --cached --quiet || git commit -m "chore: update imageUrl column [skip ci]"
+          git diff --cached --quiet || git commit -m "chore: update imageUrl and marketPrice [skip ci]"
           git push
