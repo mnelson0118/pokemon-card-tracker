@@ -744,18 +744,6 @@
             border-radius: 6px;
             z-index: 1001;
         }
-        .modal-market-price {
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
-            color: white;
-            font-size: 14px;
-            font-weight: 700;
-            background: rgba(81, 207, 102, 0.85);
-            padding: 8px 14px;
-            border-radius: 6px;
-            z-index: 1001;
-        }
         .card-content {
             padding: 12px;
             display: flex;
@@ -1203,7 +1191,6 @@
               <img id="modalImage" class="modal-image" alt="Card image">
           </div>
           <div class="modal-info" id="modalInfo"></div>
-          <div class="modal-market-price" id="modalMarketPrice" style="display:none;"></div>
       </div>
   </div>
 
@@ -1789,7 +1776,7 @@
 
             grid.innerHTML = filteredCards.map(card => `
                 <div class="card">
-                    <div class="card-image-wrapper" onclick="openImageModal('${card.imageUrl}', '${card.name}', ${card.id}, ${card.marketPrice || 'null'})">
+                    <div class="card-image-wrapper" onclick="openImageModal('${card.imageUrl}', '${card.name}', ${card.id})">
                         ${card.imageUrl && card.imageUrl.trim() ? 
                             `<img data-src="${card.imageUrl}" alt="${card.name}" class="card-image" 
                                    src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 140'%3E%3Crect fill='%23f0f0f0' width='100' height='140'/%3E%3C/svg%3E"
@@ -1888,25 +1875,17 @@ renderCards();
         // Filter toggle - both buttons (large and small)
         
         // Modal and zoom functions
-        function openImageModal(imageUrl, cardName, cardId, marketPrice) {
+        function openImageModal(imageUrl, cardName, cardId) {
             if (!imageUrl) return;
             const modal = document.getElementById('imageModal');
             const modalImage = document.getElementById('modalImage');
             const modalInfo = document.getElementById('modalInfo');
-            const modalMarketPrice = document.getElementById('modalMarketPrice');
             const modalContainer = document.getElementById('modalImageContainer');
             
             modalImage.src = imageUrl;
             modalImage.alt = cardName;
             modalImage.className = 'modal-image';
             modalInfo.textContent = `#${String(cardId).padStart(3, '0')} ${cardName} • Click to zoom`;
-
-            if (marketPrice) {
-                modalMarketPrice.textContent = `Market: $${parseFloat(marketPrice).toFixed(2)}`;
-                modalMarketPrice.style.display = 'block';
-            } else {
-                modalMarketPrice.style.display = 'none';
-            }
 
             modal.classList.add('active');
 
