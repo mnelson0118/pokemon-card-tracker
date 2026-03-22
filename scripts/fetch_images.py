@@ -146,9 +146,14 @@ def main():
             price_failed += 1
             continue
 
-        print(f"  [{i+1}/{len(rows)}] {name} ...", end=" ", flush=True)
+        card_link = (row.get("cardLink") or "").strip()
+            if not card_link:
+                print(f"  [{i+1}/{len(rows)}] {name} ... skipped (no cardLink)")
+                continue
 
-        price = fetch_market_price(name)
+            print(f"  [{i+1}/{len(rows)}] {name} ...", end=" ", flush=True)
+
+            price = fetch_market_price(name)
 
         if price is not None:
             row["marketPrice"] = round(price, 2)
