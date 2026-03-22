@@ -850,9 +850,12 @@
 
         .mark-collected-btn.collected {
             background-color: var(--success-green);
-            color: var(--white);
-            border-color: var(--success-green);
-        }
+                color: var(--white);
+                border-color: var(--success-green);
+                flex: 0 0 44px;
+                font-size: 18px;
+                padding: 8px;
+            }
 
         .tcg-link-btn {
             flex: 0 0 56px;
@@ -1771,7 +1774,7 @@
                         </div>
                         <div class="card-actions">
                             <button class="mark-collected-btn ${card.collected ? 'collected' : ''}" onclick="toggleCollected(${card.id})">
-                                ${card.collected ? '✓ Collected' : 'Mark collected'}
+                                ${card.collected ? '✓' : 'Mark collected'}
                             </button>
                             <a href="${card.cardLink}" target="_blank" rel="noopener noreferrer" class="tcg-link-btn">TCG</a>
                         </div>
