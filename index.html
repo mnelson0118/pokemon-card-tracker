@@ -1719,12 +1719,12 @@
                     });
                     applyFilters();
                     setTimeout(() => {
-                    const panel = document.getElementById('filterPanel');
-                    const btn = document.getElementById('filterToggleBtn');
-                    if (panel) panel.style.display = 'none';
-                    if (btn) btn.classList.remove('active');
-                }, 2000);
-            }
+                        const panel = document.getElementById('filterPanel');
+                        const btn = document.getElementById('filterToggleBtn');
+                        if (panel) panel.style.display = 'none';
+                        if (btn) btn.classList.remove('active');
+                    }, 2000);
+                }
 
                 function applyFilters() {
                     const searchTerm = (document.getElementById('searchInput')?.value || '').toLowerCase().trim();
