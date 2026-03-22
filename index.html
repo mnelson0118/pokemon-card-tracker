@@ -426,6 +426,75 @@
             box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.1);
         }
 
+        .search-filter-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .search-filter-row .search-input {
+            flex: 1;
+        }
+
+        .filter-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 12px 16px;
+            border: 2px solid var(--light-border);
+            border-radius: 8px;
+            background-color: var(--white);
+            color: var(--dark-gray);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all var(--transition);
+        }
+
+        .filter-btn.active {
+            border-color: var(--primary-red);
+            color: var(--primary-red);
+        }
+
+        .filter-panel {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid var(--light-border);
+        }
+
+        .filter-panel-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--primary-red);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .filter-gen-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .filter-gen-btn {
+            padding: 6px 12px;
+            border: 2px solid var(--light-border);
+            border-radius: 20px;
+            background-color: var(--white);
+            color: var(--dark-gray);
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition);
+        }
+
+        .filter-gen-btn.active {
+            background-color: var(--primary-red);
+            color: white;
+            border-color: var(--primary-red);
+        }
         .search-input::placeholder {
             color: var(--medium-gray);
         }
@@ -1075,7 +1144,32 @@
         </header>
 
         <div class="search-wrapper">
-            <input type="text" id="searchInput" class="search-input" placeholder="Search Pokemon by name...">
+            <div class="search-filter-row">
+                <input type="text" id="searchInput" class="search-input" placeholder="Search Pokemon by name...">
+                <button class="filter-btn" id="filterToggleBtn" onclick="toggleFilterPanel()">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                        <rect y="2" width="16" height="2" rx="1"/>
+                        <rect y="7" width="16" height="2" rx="1"/>
+                        <rect y="12" width="16" height="2" rx="1"/>
+                    </svg>
+                    Filter
+                </button>
+            </div>
+            <div class="filter-panel" id="filterPanel" style="display:none;">
+                <div class="filter-panel-label">Generation</div>
+                <div class="filter-gen-buttons">
+                    <button class="filter-gen-btn active" onclick="setGenFilter('all')">All</button>
+                    <button class="filter-gen-btn" onclick="setGenFilter(1)">Gen 1</button>
+                    <button class="filter-gen-btn" onclick="setGenFilter(2)">Gen 2</button>
+                    <button class="filter-gen-btn" onclick="setGenFilter(3)">Gen 3</button>
+                    <button class="filter-gen-btn" onclick="setGenFilter(4)">Gen 4</button>
+                    <button class="filter-gen-btn" onclick="setGenFilter(5)">Gen 5</button>
+                    <button class="filter-gen-btn" onclick="setGenFilter(6)">Gen 6</button>
+                    <button class="filter-gen-btn" onclick="setGenFilter(7)">Gen 7</button>
+                    <button class="filter-gen-btn" onclick="setGenFilter(8)">Gen 8</button>
+                    <button class="filter-gen-btn" onclick="setGenFilter(9)">Gen 9</button>
+                </div>
+            </div>
         </div>
 
         <div class="card-grid" id="cardGrid">
@@ -1597,34 +1691,50 @@
             // Search functionality
             const searchInput = document.getElementById('searchInput');
             if (searchInput) {
-                searchInput.addEventListener('input', (e) => {
-                    const searchTerm = e.target.value.toLowerCase().trim();
-                    
-                    // Filter cards by name only
-                    if (searchTerm === '') {
-                        // If search is empty, show all cards
-                        filteredCards = [...allCards];
-                    } else {
-                        // Filter by name
-                        filteredCards = allCards.filter(card => {
-                            const name = card.name ? card.name.toLowerCase() : '';
-                            return name.includes(searchTerm);
-                        });
-                    }
-                    
-                    // Render the filtered results
-                    renderCards();
-                });
+                searchInput.addEventListener('input', () => applyFilters());
             }
             
             console.log('✅ Event listeners initialized');
         }
 
         function applyFilters() {
-            // Just show all cards (kept for compatibility)
-            filteredCards = [...allCards];
-            renderCards();
-        }
+        let activeGenFilter = 'all';
+
+                function toggleFilterPanel() {
+                    const panel = document.getElementById('filterPanel');
+                    const btn = document.getElementById('filterToggleBtn');
+                    const isVisible = panel.style.display !== 'none';
+                    panel.style.display = isVisible ? 'none' : 'block';
+                    btn.classList.toggle('active', !isVisible);
+                }
+
+                function setGenFilter(gen) {
+                    activeGenFilter = gen;
+                    document.querySelectorAll('.filter-gen-btn').forEach(btn => {
+                        btn.classList.remove('active');
+                        if ((gen === 'all' && btn.textContent === 'All') ||
+                            (gen !== 'all' && btn.textContent === `Gen ${gen}`)) {
+                            btn.classList.add('active');
+                        }
+                    });
+                    applyFilters();
+                    setTimeout(() => {
+                    const panel = document.getElementById('filterPanel');
+                    const btn = document.getElementById('filterToggleBtn');
+                    if (panel) panel.style.display = 'none';
+                    if (btn) btn.classList.remove('active');
+                }, 2000);
+            }
+
+                function applyFilters() {
+                    const searchTerm = (document.getElementById('searchInput')?.value || '').toLowerCase().trim();
+                    filteredCards = allCards.filter(card => {
+                        const matchesGen = activeGenFilter === 'all' || card.generation === activeGenFilter;
+                        const matchesSearch = !searchTerm || (card.name || '').toLowerCase().includes(searchTerm);
+                        return matchesGen && matchesSearch;
+                    });
+                    renderCards();
+                }
 
         function renderCards() {
             const grid = document.getElementById('cardGrid');
