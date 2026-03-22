@@ -4,9 +4,6 @@ fetch_images.py
 Reads pokemon-data.csv and:
 1. Fills in any missing imageUrl values using the TCGPlayer CDN pattern
 2. Fetches market prices from JustTCG API by card name
-   - Writes results to the marketPrice column nightly
-
-The [skip ci] tag on the commit message prevents an infinite trigger loop.
 """
 
 import csv
@@ -28,8 +25,7 @@ REQUEST_DELAY = 0.5
 REQUEST_TIMEOUT = 10
 
 HEADERS = {
-    "Authorization": f"Bearer {JUSTTCG_API_KEY}",
-    "Content-Type": "application/json"
+    "x-api-key": JUSTTCG_API_KEY
 }
 
 
@@ -54,10 +50,6 @@ def fetch_market_price(card_name: str):
     Search JustTCG for the card by name and return the market price.
     Returns None if not found or on error.
     """
-    if not JUSTTCG_API_KEY:
-        print("  ⚠️  JUSTTCG_API_KEY not set", file=sys.stderr)
-        return None
-
     try:
         response = requests.get(
             JUSTTCG_BASE_URL,
@@ -73,39 +65,38 @@ def fetch_market_price(card_name: str):
             return None
 
         # Find best match — prefer exact name match
+        best_card = None
         for card in cards:
             if card.get("name", "").lower() == card_name.lower():
-                price = extract_price(card)
-                if price:
-                    return price
+                best_card = card
+                break
 
-        # Fall back to first result
-        return extract_price(cards[0])
+        if not best_card:
+            best_card = cards[0]
+
+        # Price is in variants list
+        variants = best_card.get("variants", [])
+        if not variants:
+            return None
+
+        # Find the best Near Mint price
+        for variant in variants:
+            condition = (variant.get("condition") or "").lower()
+            if "near mint" in condition or "nm" in condition:
+                price = variant.get("price")
+                if price:
+                    return float(price)
+
+        # Fall back to first variant price
+        price = variants[0].get("price")
+        return float(price) if price else None
 
     except requests.RequestException as exc:
-        print(f"  ⚠️  API error ({exc.__class__.__name__})", file=sys.stderr)
+        print(f"  ⚠️  API error ({exc.__class__.__name__}): {exc}", file=sys.stderr)
         return None
-
-
-def extract_price(card: dict):
-    """Pull market price from a JustTCG card object."""
-    prices = card.get("prices", {})
-
-    # Try near mint market price first
-    for condition in ["near_mint", "lightly_played"]:
-        condition_data = prices.get(condition, {})
-        market = condition_data.get("market_price") or condition_data.get("mid_price")
-        if market:
-            return float(market)
-
-    # Fallback: any price we can find
-    for condition_data in prices.values():
-        if isinstance(condition_data, dict):
-            for key in ["market_price", "mid_price", "low_price"]:
-                if condition_data.get(key):
-                    return float(condition_data[key])
-
-    return None
+    except (ValueError, KeyError, TypeError) as exc:
+        print(f"  ⚠️  Parse error: {exc}", file=sys.stderr)
+        return None
 
 
 # ── Main ──────────────────────────────────────────────────────────────────────
