@@ -1165,6 +1165,12 @@
                 </button>
             </div>
             <div class="filter-panel" id="filterPanel" style="display:none;">
+                <div class="filter-panel-label">Collection</div>
+                <div class="filter-gen-buttons" style="margin-bottom: 12px;">
+                    <button class="filter-gen-btn active" onclick="setCollectedFilter('all')">All</button>
+                    <button class="filter-gen-btn" onclick="setCollectedFilter('collected')">Collected</button>
+                    <button class="filter-gen-btn" onclick="setCollectedFilter('uncollected')">Not collected</button>
+                </div>
                 <div class="filter-panel-label">Generation</div>
                 <div class="filter-gen-buttons">
                     <button class="filter-gen-btn active" onclick="setGenFilter('all')">All</button>
@@ -1177,28 +1183,6 @@
                     <button class="filter-gen-btn" onclick="setGenFilter(7)">Gen 7</button>
                     <button class="filter-gen-btn" onclick="setGenFilter(8)">Gen 8</button>
                     <button class="filter-gen-btn" onclick="setGenFilter(9)">Gen 9</button>
-                    let activeCollectedFilter = 'all';
-
-                            function setCollectedFilter(filter) {
-                                activeCollectedFilter = filter;
-                                document.querySelectorAll('.filter-gen-btn').forEach(btn => {
-                                    if (['All', 'Collected', 'Not collected'].includes(btn.textContent)) {
-                                        btn.classList.remove('active');
-                                        if ((filter === 'all' && btn.textContent === 'All') ||
-                                            (filter === 'collected' && btn.textContent === 'Collected') ||
-                                            (filter === 'uncollected' && btn.textContent === 'Not collected')) {
-                                            btn.classList.add('active');
-                                        }
-                                    }
-                                });
-                                applyFilters();
-                                setTimeout(() => {
-                                    const panel = document.getElementById('filterPanel');
-                                    const btn = document.getElementById('filterToggleBtn');
-                                    if (panel) panel.style.display = 'none';
-                                    if (btn) btn.classList.remove('active');
-                                }, 2000);
-                            }
                 </div>
             </div>
         </div>
@@ -1729,6 +1713,28 @@
         }
 
         let activeGenFilter = 'all';
+        let activeCollectedFilter = 'all';
+
+        function setCollectedFilter(filter) {
+            activeCollectedFilter = filter;
+            document.querySelectorAll('.filter-gen-btn').forEach(btn => {
+                if (['All', 'Collected', 'Not collected'].includes(btn.textContent.trim())) {
+                    btn.classList.remove('active');
+                    if ((filter === 'all' && btn.textContent.trim() === 'All') ||
+                        (filter === 'collected' && btn.textContent.trim() === 'Collected') ||
+                        (filter === 'uncollected' && btn.textContent.trim() === 'Not collected')) {
+                        btn.classList.add('active');
+                    }
+                }
+            });
+            applyFilters();
+            setTimeout(() => {
+                const panel = document.getElementById('filterPanel');
+                const btn = document.getElementById('filterToggleBtn');
+                if (panel) panel.style.display = 'none';
+                if (btn) btn.classList.remove('active');
+            }, 2000);
+        }
 
         function toggleFilterPanel() {
             const panel = document.getElementById('filterPanel');
