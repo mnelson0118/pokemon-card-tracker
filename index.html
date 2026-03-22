@@ -1177,6 +1177,28 @@
                     <button class="filter-gen-btn" onclick="setGenFilter(7)">Gen 7</button>
                     <button class="filter-gen-btn" onclick="setGenFilter(8)">Gen 8</button>
                     <button class="filter-gen-btn" onclick="setGenFilter(9)">Gen 9</button>
+                    let activeCollectedFilter = 'all';
+
+                            function setCollectedFilter(filter) {
+                                activeCollectedFilter = filter;
+                                document.querySelectorAll('.filter-gen-btn').forEach(btn => {
+                                    if (['All', 'Collected', 'Not collected'].includes(btn.textContent)) {
+                                        btn.classList.remove('active');
+                                        if ((filter === 'all' && btn.textContent === 'All') ||
+                                            (filter === 'collected' && btn.textContent === 'Collected') ||
+                                            (filter === 'uncollected' && btn.textContent === 'Not collected')) {
+                                            btn.classList.add('active');
+                                        }
+                                    }
+                                });
+                                applyFilters();
+                                setTimeout(() => {
+                                    const panel = document.getElementById('filterPanel');
+                                    const btn = document.getElementById('filterToggleBtn');
+                                    if (panel) panel.style.display = 'none';
+                                    if (btn) btn.classList.remove('active');
+                                }, 2000);
+                            }
                 </div>
             </div>
         </div>
@@ -1739,7 +1761,10 @@
             filteredCards = allCards.filter(card => {
                 const matchesGen = activeGenFilter === 'all' || card.generation === activeGenFilter;
                 const matchesSearch = !searchTerm || (card.name || '').toLowerCase().includes(searchTerm);
-                return matchesGen && matchesSearch;
+                const matchesCollected = activeCollectedFilter === 'all' ||
+                    (activeCollectedFilter === 'collected' && card.collected) ||
+                    (activeCollectedFilter === 'uncollected' && !card.collected);
+                return matchesGen && matchesSearch && matchesCollected;
             });
             renderCards();
         }
