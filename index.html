@@ -1697,44 +1697,43 @@
             console.log('✅ Event listeners initialized');
         }
 
-        function applyFilters() {
         let activeGenFilter = 'all';
 
-                function toggleFilterPanel() {
-                    const panel = document.getElementById('filterPanel');
-                    const btn = document.getElementById('filterToggleBtn');
-                    const isVisible = panel.style.display !== 'none';
-                    panel.style.display = isVisible ? 'none' : 'block';
-                    btn.classList.toggle('active', !isVisible);
-                }
+        function toggleFilterPanel() {
+            const panel = document.getElementById('filterPanel');
+            const btn = document.getElementById('filterToggleBtn');
+            const isVisible = panel.style.display !== 'none';
+            panel.style.display = isVisible ? 'none' : 'block';
+            btn.classList.toggle('active', !isVisible);
+        }
 
-                function setGenFilter(gen) {
-                    activeGenFilter = gen;
-                    document.querySelectorAll('.filter-gen-btn').forEach(btn => {
-                        btn.classList.remove('active');
-                        if ((gen === 'all' && btn.textContent === 'All') ||
-                            (gen !== 'all' && btn.textContent === `Gen ${gen}`)) {
-                            btn.classList.add('active');
-                        }
-                    });
-                    applyFilters();
-                    setTimeout(() => {
-                        const panel = document.getElementById('filterPanel');
-                        const btn = document.getElementById('filterToggleBtn');
-                        if (panel) panel.style.display = 'none';
-                        if (btn) btn.classList.remove('active');
-                    }, 2000);
+        function setGenFilter(gen) {
+            activeGenFilter = gen;
+            document.querySelectorAll('.filter-gen-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if ((gen === 'all' && btn.textContent === 'All') ||
+                    (gen !== 'all' && btn.textContent === `Gen ${gen}`)) {
+                    btn.classList.add('active');
                 }
+            });
+            applyFilters();
+            setTimeout(() => {
+                const panel = document.getElementById('filterPanel');
+                const btn = document.getElementById('filterToggleBtn');
+                if (panel) panel.style.display = 'none';
+                if (btn) btn.classList.remove('active');
+            }, 2000);
+        }
 
-                function applyFilters() {
-                    const searchTerm = (document.getElementById('searchInput')?.value || '').toLowerCase().trim();
-                    filteredCards = allCards.filter(card => {
-                        const matchesGen = activeGenFilter === 'all' || card.generation === activeGenFilter;
-                        const matchesSearch = !searchTerm || (card.name || '').toLowerCase().includes(searchTerm);
-                        return matchesGen && matchesSearch;
-                    });
-                    renderCards();
-                }
+        function applyFilters() {
+            const searchTerm = (document.getElementById('searchInput')?.value || '').toLowerCase().trim();
+            filteredCards = allCards.filter(card => {
+                const matchesGen = activeGenFilter === 'all' || card.generation === activeGenFilter;
+                const matchesSearch = !searchTerm || (card.name || '').toLowerCase().includes(searchTerm);
+                return matchesGen && matchesSearch;
+            });
+            renderCards();
+        }
 
         function renderCards() {
             const grid = document.getElementById('cardGrid');
