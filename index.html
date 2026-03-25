@@ -2333,7 +2333,6 @@ renderCards();
 
             const meta = [`Gen ${card.generation || '?'}`];
             if (card.collected) meta.push('✅ Collected');
-            if (card.marketPrice) meta.push(`Market: $${card.marketPrice}`);
             document.getElementById('ingDetailMeta').textContent = meta.join('  •  ');
 
             const linkEl = document.getElementById('ingCurrentLink');
