@@ -341,6 +341,36 @@
             box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
         }
 
+        .search-input-wrap {
+            position: relative;
+            flex: 1;
+        }
+        .search-input-wrap .search-input { width: 100%; padding-right: 38px; }
+        .search-clear {
+            display: none;
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 22px; height: 22px;
+            border: none;
+            background: var(--border);
+            color: var(--text-dim);
+            border-radius: 50%;
+            font-size: 13px;
+            line-height: 1;
+            cursor: pointer;
+            align-items: center;
+            justify-content: center;
+            transition: all var(--transition);
+            padding: 0;
+        }
+        .search-clear:hover {
+            background: var(--blue);
+            color: white;
+        }
+        .search-clear.visible { display: flex; }
+
         .search-filter-row {
             display: flex;
             gap: 10px;
@@ -1033,7 +1063,10 @@
     <div class="container">
         <div class="search-wrapper">
             <div class="search-filter-row">
-                <input type="text" id="searchInput" class="search-input" placeholder="Search Pokemon by name...">
+                <div class="search-input-wrap">
+                    <input type="text" id="searchInput" class="search-input" placeholder="Search Pokemon by name...">
+                    <button class="search-clear" id="searchClear" onclick="clearSearch()" title="Clear search">✕</button>
+                </div>
                 <button class="filter-btn" id="filterToggleBtn" onclick="toggleFilterPanel()">
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
                         <rect y="2" width="16" height="2" rx="1"/>
@@ -1637,7 +1670,11 @@
             // Search functionality
             const searchInput = document.getElementById('searchInput');
             if (searchInput) {
-                searchInput.addEventListener('input', () => applyFilters());
+                searchInput.addEventListener('input', () => {
+                    const clearBtn = document.getElementById('searchClear');
+                    if (clearBtn) clearBtn.classList.toggle('visible', searchInput.value.length > 0);
+                    applyFilters();
+                });
             }
             
             console.log('✅ Event listeners initialized');
@@ -1691,6 +1728,14 @@
                 if (panel) panel.style.display = 'none';
                 if (btn) btn.classList.remove('active');
             }, 2000);
+        }
+
+        function clearSearch() {
+            const input = document.getElementById('searchInput');
+            input.value = '';
+            document.getElementById('searchClear').classList.remove('visible');
+            input.focus();
+            applyFilters();
         }
 
         function applyFilters() {
