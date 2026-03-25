@@ -418,6 +418,54 @@
         .filter-button.active:hover { display: none; }
         .search-box:focus { outline: none; border-color: var(--blue); }
 
+        /* Active Filter Banner */
+        .active-filter-banner {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 10px 20px;
+            background: rgba(59, 130, 246, 0.1);
+            border-bottom: 1px solid rgba(59, 130, 246, 0.2);
+            font-size: 13px;
+            color: var(--blue-glow);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition);
+        }
+        .active-filter-banner:hover {
+            background: rgba(59, 130, 246, 0.18);
+        }
+        .active-filter-banner.visible { display: flex; }
+        .active-filter-banner .filter-tags {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+        }
+        .active-filter-banner .filter-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 12px;
+            background: rgba(59, 130, 246, 0.15);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 20px;
+            font-size: 12px;
+            color: var(--blue-glow);
+            font-weight: 600;
+        }
+        .active-filter-banner .clear-filters {
+            font-size: 12px;
+            color: var(--text-dim);
+            text-decoration: underline;
+            text-underline-offset: 2px;
+        }
+        .active-filter-banner:hover .clear-filters {
+            color: var(--text);
+        }
+
         /* Card Grid */
         .card-grid {
             display: grid;
@@ -482,7 +530,6 @@
         }
         .card:hover .card-image { transform: scale(1.05); }
 
-        /* PokeAPI sprite placeholder for cards without custom images */
         .card-image-sprite {
             width: 100%; height: 100%;
             object-fit: contain;
@@ -1017,6 +1064,11 @@
                     <button class="filter-gen-btn" onclick="setGenFilter(9)">Gen 9</button>
                 </div>
             </div>
+        </div>
+
+        <div class="active-filter-banner" id="activeFilterBanner" onclick="clearAllFilters()">
+            <div class="filter-tags" id="activeFilterTags"></div>
+            <span class="clear-filters">Clear</span>
         </div>
 
         <div class="card-grid" id="cardGrid">
@@ -1651,7 +1703,37 @@
                     (activeCollectedFilter === 'uncollected' && !card.collected);
                 return matchesGen && matchesSearch && matchesCollected;
             });
+            updateFilterBanner();
             renderCards();
+        }
+
+        function updateFilterBanner() {
+            const banner = document.getElementById('activeFilterBanner');
+            const tagsEl = document.getElementById('activeFilterTags');
+            const hasFilter = activeCollectedFilter !== 'all' || activeGenFilter !== 'all';
+
+            if (!hasFilter) {
+                banner.classList.remove('visible');
+                return;
+            }
+
+            let tags = '';
+            if (activeCollectedFilter === 'collected') tags += '<span class="filter-tag">Collected</span>';
+            if (activeCollectedFilter === 'uncollected') tags += '<span class="filter-tag">Not Collected</span>';
+            if (activeGenFilter !== 'all') tags += `<span class="filter-tag">Gen ${activeGenFilter}</span>`;
+
+            tagsEl.innerHTML = tags;
+            banner.classList.add('visible');
+        }
+
+        function clearAllFilters() {
+            activeCollectedFilter = 'all';
+            activeGenFilter = 'all';
+            document.querySelectorAll('.filter-gen-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.textContent.trim() === 'All') btn.classList.add('active');
+            });
+            applyFilters();
         }
 
         function renderCards() {
@@ -1866,7 +1948,6 @@ renderCards();
             setTimeout(() => document.getElementById('ingSearchInput').focus(), 100);
         }
 
-        // Open ingestor pre-populated with a specific card (for blank card clicks)
         function openIngestorForCard(cardId) {
             if (!allCards || allCards.length === 0) return;
             const idx = allCards.findIndex(c => c.id === cardId);
@@ -1973,7 +2054,6 @@ renderCards();
             document.getElementById('ingUrlInput').value = '';
             ingClearPreviewSilent();
 
-            // Show existing image or PokeAPI sprite as preview
             if (card.imageUrl && card.imageUrl.trim()) {
                 document.getElementById('ingPreview').innerHTML = `<img src="${card.imageUrl}" alt="${card.name}" />`;
             } else {
