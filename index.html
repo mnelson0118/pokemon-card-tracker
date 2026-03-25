@@ -2025,10 +2025,10 @@ renderCards();
                 <span class="nm">${card.name}</span>
             `;
             modal.appendChild(overlay);
-            setTimeout(() => overlay.remove(), 2000);
-
-            // Refresh the detail view
-            ingPick(ingSelectedIndex);
+            setTimeout(() => {
+                overlay.remove();
+                closeIngestor();
+            }, 2000);
         }
 
         // Clear
