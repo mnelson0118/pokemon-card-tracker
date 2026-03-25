@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pokédex Card Tracker</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -1069,6 +1070,196 @@
                 min-height: 44px;
             }
         }
+
+        /* ======= CARD URL INGESTOR MODAL ======= */
+        .ingestor-btn {
+            background: none;
+            border: 2px solid var(--primary-red);
+            border-radius: 8px;
+            color: var(--primary-red);
+            font-size: 12px;
+            font-weight: 700;
+            padding: 6px 12px;
+            cursor: pointer;
+            transition: all var(--transition);
+            white-space: nowrap;
+            order: 3;
+        }
+        .ingestor-btn:hover {
+            background: var(--primary-red);
+            color: white;
+            transform: translateY(-1px);
+        }
+        @media (min-width: 769px) {
+            .ingestor-btn { font-size: 13px; padding: 8px 16px; }
+        }
+
+        .ingestor-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.75);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(4px);
+        }
+        .ingestor-overlay.active { display: flex; }
+
+        .ingestor-modal {
+            background: #16213E;
+            border: 1px solid #2A3A5C;
+            border-radius: 16px;
+            width: 480px;
+            max-width: 92vw;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 28px;
+            box-shadow: 0 24px 64px rgba(0,0,0,0.5);
+            animation: ingestor-in 0.25s ease;
+            font-family: 'Outfit', -apple-system, sans-serif;
+            color: #E8E8F0;
+            position: relative;
+        }
+        @keyframes ingestor-in {
+            from { opacity: 0; transform: scale(0.95) translateY(10px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .ingestor-modal .ing-close {
+            position: absolute; top: 14px; right: 16px;
+            background: none; border: none; color: #8890A4;
+            font-size: 22px; cursor: pointer; padding: 4px;
+            transition: color 0.15s;
+        }
+        .ingestor-modal .ing-close:hover { color: #E8E8F0; }
+
+        .ingestor-modal h2 {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 12px; letter-spacing: 2px;
+            color: #FACC15; margin-bottom: 20px;
+        }
+
+        .ing-search-wrap { position: relative; margin-bottom: 6px; }
+        .ing-search-wrap input {
+            width: 100%; padding: 12px 16px 12px 42px;
+            background: #0F1729; border: 2px solid #2A3A5C;
+            border-radius: 10px; color: #E8E8F0;
+            font-family: 'Outfit', sans-serif; font-size: 15px; outline: none;
+        }
+        .ing-search-wrap input:focus { border-color: #3B82F6; }
+        .ing-search-wrap::before {
+            content: '🔍'; position: absolute; left: 14px; top: 50%;
+            transform: translateY(-50%); font-size: 15px; pointer-events: none;
+        }
+
+        .ing-dropdown {
+            position: absolute; top: 100%; left: 0; right: 0;
+            margin-top: 4px; background: #16213E; border: 1px solid #2A3A5C;
+            border-radius: 10px; max-height: 240px; overflow-y: auto;
+            box-shadow: 0 12px 32px rgba(0,0,0,0.4); z-index: 50; display: none;
+        }
+        .ing-dropdown.open { display: block; }
+        .ing-dropdown::-webkit-scrollbar { width: 6px; }
+        .ing-dropdown::-webkit-scrollbar-thumb { background: #2A3A5C; border-radius: 3px; }
+
+        .ing-dd-item {
+            display: flex; align-items: center; gap: 10px;
+            padding: 10px 16px; cursor: pointer; transition: background 0.1s;
+            font-family: 'Outfit', sans-serif; color: #E8E8F0;
+        }
+        .ing-dd-item:hover, .ing-dd-item.highlighted { background: #1E2D4D; }
+        .ing-dd-item + .ing-dd-item { border-top: 1px solid #2A3A5C; }
+        .ing-dd-item.has-link { border-left: 3px solid #22C55E; }
+        .ing-dd-id { font-family: 'Press Start 2P', monospace; font-size: 8px; color: #8890A4; min-width: 38px; }
+        .ing-dd-name { font-weight: 600; font-size: 14px; flex: 1; }
+        .ing-dd-status { font-size: 13px; }
+
+        .ing-card-detail { display: none; margin-top: 18px; }
+        .ing-card-detail.visible { display: block; }
+
+        .ing-card-header { display: flex; align-items: baseline; gap: 10px; margin-bottom: 4px; }
+        .ing-card-header .ing-id { font-family: 'Press Start 2P', monospace; font-size: 10px; color: #FACC15; }
+        .ing-card-header .ing-name { font-size: 20px; font-weight: 700; }
+        .ing-card-meta { font-size: 13px; color: #8890A4; margin-bottom: 14px; }
+
+        .ing-section-label {
+            font-size: 11px; font-weight: 600; text-transform: uppercase;
+            letter-spacing: 1px; color: #8890A4; margin-bottom: 6px;
+        }
+
+        .ing-current-link {
+            background: #0F1729; border: 1px solid #2A3A5C;
+            border-radius: 8px; padding: 10px 14px;
+            font-size: 12px; word-break: break-all; margin-bottom: 14px;
+            min-height: 36px; color: #8890A4;
+        }
+        .ing-current-link.has-value { color: #22C55E; }
+        .ing-current-link a { color: #60A5FA; text-decoration: none; }
+        .ing-current-link a:hover { text-decoration: underline; }
+
+        .ing-url-input {
+            width: 100%; padding: 10px 14px;
+            background: #0F1729; border: 2px solid #2A3A5C;
+            border-radius: 8px; color: #E8E8F0;
+            font-family: 'Outfit', sans-serif; font-size: 14px;
+            outline: none; margin-bottom: 8px;
+        }
+        .ing-url-input:focus { border-color: #3B82F6; }
+
+        .ing-extracted {
+            font-size: 12px; margin-bottom: 10px; padding: 6px 10px;
+            border-radius: 8px; display: none;
+        }
+        .ing-extracted.visible { display: block; }
+        .ing-extracted.success { background: rgba(34,197,94,0.1); color: #22C55E; border: 1px solid rgba(34,197,94,0.2); }
+        .ing-extracted.error { background: rgba(248,113,113,0.1); color: #F87171; border: 1px solid rgba(248,113,113,0.2); }
+        .ing-extracted code { font-family: monospace; font-weight: 700; }
+
+        .ing-preview {
+            background: #0F1729; border: 1px solid #2A3A5C;
+            border-radius: 10px; min-height: 240px;
+            display: flex; align-items: center; justify-content: center;
+            margin-bottom: 14px; overflow: hidden;
+        }
+        .ing-preview img { max-width: 100%; max-height: 320px; object-fit: contain; display: block; }
+        .ing-preview-ph { color: #8890A4; font-size: 13px; text-align: center; padding: 24px; }
+        .ing-preview-ph .pb { font-size: 36px; display: block; margin-bottom: 8px; opacity: 0.3; }
+
+        .ing-actions { display: flex; gap: 10px; justify-content: flex-end; }
+        .ing-btn {
+            font-family: 'Outfit', sans-serif; font-weight: 600; font-size: 13px;
+            padding: 8px 18px; border: none; border-radius: 8px;
+            cursor: pointer; transition: all 0.15s; text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .ing-btn:disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
+        .ing-btn-approve { background: #22C55E; color: #0A2E14; }
+        .ing-btn-approve:hover { background: #16A34A; }
+        .ing-btn-clear { background: transparent; color: #F87171; border: 1px solid #7F1D1D; }
+        .ing-btn-clear:hover { background: rgba(127,29,29,0.2); }
+
+        /* "Added to Pokédex" overlay */
+        .ing-confirm-overlay {
+            position: absolute; inset: 0;
+            background: rgba(34,197,94,0.12);
+            border-radius: 16px;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            z-index: 5; pointer-events: none;
+            animation: ing-confirm-in 0.3s ease, ing-confirm-out 0.4s ease 1.4s forwards;
+        }
+        .ing-confirm-overlay .ico { font-size: 48px; margin-bottom: 10px; }
+        .ing-confirm-overlay .txt {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 11px; color: #22C55E;
+            text-shadow: 0 0 16px rgba(34,197,94,0.5);
+        }
+        .ing-confirm-overlay .nm {
+            font-family: 'Outfit', sans-serif;
+            font-size: 16px; font-weight: 600; color: #E8E8F0; margin-top: 6px;
+        }
+        @keyframes ing-confirm-in { from { opacity:0; transform:scale(0.9); } to { opacity:1; transform:scale(1); } }
+        @keyframes ing-confirm-out { from { opacity:1; } to { opacity:0; } }
     </style>
 </head>
 <body>
@@ -1136,6 +1327,7 @@
                     <div class="progress-percent" id="progressPercent">0%</div>
                 </div>
                 <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">🌙</button>
+                <button class="ingestor-btn" onclick="openIngestor()" title="Add card URLs">+ Add Cards</button>
                 <button class="reset-button" id="resetButton" title="Reset all data">⟲</button>
             </div>
         </header>
@@ -1193,6 +1385,37 @@
           <div class="modal-info" id="modalInfo"></div>
       </div>
   </div>
+
+    <!-- Card URL Ingestor Modal -->
+    <div class="ingestor-overlay" id="ingestorOverlay">
+        <div class="ingestor-modal" id="ingestorModal">
+            <button class="ing-close" onclick="closeIngestor()">✕</button>
+            <h2>ADD CARD URL</h2>
+            <div class="ing-search-wrap">
+                <input type="text" id="ingSearchInput" placeholder="Type a Pokémon name..." />
+                <div class="ing-dropdown" id="ingDropdown"></div>
+            </div>
+            <div class="ing-card-detail" id="ingCardDetail">
+                <div class="ing-card-header">
+                    <span class="ing-id" id="ingDetailId"></span>
+                    <span class="ing-name" id="ingDetailName"></span>
+                </div>
+                <div class="ing-card-meta" id="ingDetailMeta"></div>
+                <div class="ing-section-label">Current Card Link</div>
+                <div class="ing-current-link" id="ingCurrentLink">None</div>
+                <div class="ing-section-label">Paste TCGPlayer Card URL</div>
+                <input type="text" class="ing-url-input" id="ingUrlInput" placeholder="Paste a TCGPlayer URL here..." />
+                <div class="ing-extracted" id="ingExtracted"></div>
+                <div class="ing-preview" id="ingPreview">
+                    <div class="ing-preview-ph"><span class="pb">🔴</span>Paste a URL above — image loads automatically</div>
+                </div>
+                <div class="ing-actions">
+                    <button class="ing-btn ing-btn-clear" onclick="ingClear()" id="ingClearBtn" disabled>✗ Clear</button>
+                    <button class="ing-btn ing-btn-approve" onclick="ingApprove()" id="ingApproveBtn" disabled>✓ Approve</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script>
         const STORAGE_KEY = 'pokemon_collection_data';
@@ -1533,10 +1756,20 @@
             
             const url = firebaseConfig.databaseURL + '/users/' + userId + '/collection.json';
 
-                // Only save collected state and price — not the full 1025 card dataset
+                // Only save collected state, price, and card URLs — not the full 1025 card dataset
                 const collectionState = {};
-                allCards.filter(c => c.collected).forEach(card => {
-                    collectionState[card.id] = { collected: true, price: card.price || null };
+                allCards.filter(c => c.collected || (c.cardLink && c.cardLink.trim())).forEach(card => {
+                    const entry = {};
+                    if (card.collected) {
+                        entry.collected = true;
+                        entry.price = card.price || null;
+                    }
+                    if (card.cardLink && card.cardLink.trim()) {
+                        entry.cardLink = card.cardLink;
+                        entry.productId = card.productId || '';
+                        entry.imageUrl = card.imageUrl || '';
+                    }
+                    collectionState[card.id] = entry;
                 });
 
                 fetch(url, {
@@ -1630,8 +1863,15 @@
                     if (cloudData && typeof cloudData === 'object' && Object.keys(cloudData).length > 0) {
                         allCards.forEach(card => {
                             if (cloudData[card.id]) {
-                                card.collected = true;
-                                card.price = cloudData[card.id].price || null;
+                                const cd = cloudData[card.id];
+                                if (cd.collected) {
+                                    card.collected = true;
+                                    card.price = cd.price || null;
+                                }
+                                // Merge card URL data from cloud
+                                if (cd.cardLink) card.cardLink = cd.cardLink;
+                                if (cd.productId) card.productId = cd.productId;
+                                if (cd.imageUrl) card.imageUrl = cd.imageUrl;
                             } else {
                                 card.collected = false;
                                 card.price = null;
@@ -1988,6 +2228,253 @@ renderCards();
             initializeApp();
             setTimeout(() => logPerformanceMetrics(), 1000);
         }
+
+        // ======= CARD URL INGESTOR =======
+        let ingSelectedIndex = null;
+        let ingHighlightIdx = -1;
+        let ingPreviewedProductId = null;
+        let ingPreviewedUrl = null;
+        let ingPreviewedImageUrl = null;
+
+        const ING_IMAGE_BASE = 'https://tcgplayer-cdn.tcgplayer.com/product/';
+        const ING_IMAGE_SUFFIX = '_in_1000x1000.jpg';
+
+        function openIngestor() {
+            if (!allCards || allCards.length === 0) {
+                alert('⚠️ Card data hasn\'t loaded yet. Make sure pokemon-data.csv is available (deploy to GitHub Pages or run a local server).');
+                return;
+            }
+            document.getElementById('ingestorOverlay').classList.add('active');
+            ingSelectedIndex = null;
+            document.getElementById('ingCardDetail').classList.remove('visible');
+            document.getElementById('ingSearchInput').value = '';
+            document.getElementById('ingDropdown').classList.remove('open');
+            setTimeout(() => document.getElementById('ingSearchInput').focus(), 100);
+        }
+
+        function closeIngestor() {
+            document.getElementById('ingestorOverlay').classList.remove('active');
+            // Refresh main view in case cards were updated
+            filteredCards = [...allCards];
+            applyFilters();
+            renderCards();
+            updateStats();
+        }
+
+        // Close on overlay click
+        document.getElementById('ingestorOverlay').addEventListener('click', function(e) {
+            if (e.target === this) closeIngestor();
+        });
+
+        // Search dropdown
+        const ingSearchInput = document.getElementById('ingSearchInput');
+        const ingDropdown = document.getElementById('ingDropdown');
+
+        ingSearchInput.addEventListener('input', function() {
+            const q = this.value.toLowerCase().trim();
+            if (q.length < 1) { ingDropdown.classList.remove('open'); return; }
+
+            const matches = allCards
+                .map((card, idx) => ({ card, idx }))
+                .filter(({ card }) => (card.name || '').toLowerCase().includes(q))
+                .slice(0, 10);
+
+            if (!matches.length) {
+                ingDropdown.innerHTML = '<div style="padding:14px 16px;color:#8890A4;font-size:13px;">No results</div>';
+                ingDropdown.classList.add('open');
+                return;
+            }
+
+            ingHighlightIdx = -1;
+            ingDropdown.innerHTML = matches.map(({ card, idx }, i) => {
+                const hasLink = card.cardLink && card.cardLink.trim();
+                return `<div class="ing-dd-item${hasLink ? ' has-link' : ''}" data-i="${i}" data-idx="${idx}" onclick="ingPick(${idx})">
+                    <span class="ing-dd-id">#${String(card.id).padStart(4,'0')}</span>
+                    <span class="ing-dd-name">${card.name}</span>
+                    <span class="ing-dd-status">${hasLink ? '✅' : '⬜'}</span>
+                </div>`;
+            }).join('');
+            ingDropdown.classList.add('open');
+        });
+
+        ingSearchInput.addEventListener('keydown', function(e) {
+            const items = ingDropdown.querySelectorAll('.ing-dd-item');
+            if (!items.length || !ingDropdown.classList.contains('open')) return;
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                ingHighlightIdx = Math.min(ingHighlightIdx + 1, items.length - 1);
+                items.forEach((el, i) => el.classList.toggle('highlighted', i === ingHighlightIdx));
+                if (items[ingHighlightIdx]) items[ingHighlightIdx].scrollIntoView({ block: 'nearest' });
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                ingHighlightIdx = Math.max(ingHighlightIdx - 1, 0);
+                items.forEach((el, i) => el.classList.toggle('highlighted', i === ingHighlightIdx));
+            } else if (e.key === 'Enter' && ingHighlightIdx >= 0) {
+                e.preventDefault();
+                ingPick(parseInt(items[ingHighlightIdx].dataset.idx));
+            } else if (e.key === 'Escape') {
+                ingDropdown.classList.remove('open');
+            }
+        });
+
+        // Close dropdown on outside click
+        document.getElementById('ingestorModal').addEventListener('click', function(e) {
+            if (!e.target.closest('.ing-search-wrap')) ingDropdown.classList.remove('open');
+        });
+
+        function ingPick(idx) {
+            ingDropdown.classList.remove('open');
+            ingSelectedIndex = idx;
+            const card = allCards[idx];
+            ingSearchInput.value = card.name;
+
+            document.getElementById('ingCardDetail').classList.add('visible');
+            document.getElementById('ingDetailId').textContent = `#${String(card.id).padStart(4,'0')}`;
+            document.getElementById('ingDetailName').textContent = card.name || 'Unknown';
+
+            const meta = [`Gen ${card.generation || '?'}`];
+            if (card.collected) meta.push('✅ Collected');
+            if (card.marketPrice) meta.push(`Market: $${card.marketPrice}`);
+            document.getElementById('ingDetailMeta').textContent = meta.join('  •  ');
+
+            const linkEl = document.getElementById('ingCurrentLink');
+            if (card.cardLink && card.cardLink.trim()) {
+                linkEl.className = 'ing-current-link has-value';
+                linkEl.innerHTML = `<a href="${card.cardLink}" target="_blank" rel="noopener">${card.cardLink}</a>`;
+            } else {
+                linkEl.className = 'ing-current-link';
+                linkEl.textContent = 'None — paste a URL below';
+            }
+
+            document.getElementById('ingUrlInput').value = '';
+            ingClearPreviewSilent();
+
+            if (card.imageUrl && card.imageUrl.trim()) {
+                document.getElementById('ingPreview').innerHTML = `<img src="${card.imageUrl}" alt="${card.name}" />`;
+            }
+
+            document.getElementById('ingUrlInput').focus();
+        }
+
+        // Auto-extract product ID on paste/input
+        function ingExtractProductId(url) {
+            const m = url.match(/\/product\/(\d+)/);
+            if (m) return m[1];
+            const n = url.match(/^(\d{4,})$/);
+            return n ? n[1] : null;
+        }
+
+        function ingHandleUrlInput() {
+            const url = document.getElementById('ingUrlInput').value.trim();
+            const infoEl = document.getElementById('ingExtracted');
+            if (!url) { infoEl.classList.remove('visible'); ingClearPreviewSilent(); return; }
+
+            const pid = ingExtractProductId(url);
+            if (pid) {
+                const imgUrl = ING_IMAGE_BASE + pid + ING_IMAGE_SUFFIX;
+                ingPreviewedProductId = pid;
+                ingPreviewedUrl = url;
+                ingPreviewedImageUrl = imgUrl;
+                infoEl.className = 'ing-extracted visible success';
+                infoEl.innerHTML = `Product ID: <code>${pid}</code> → loading image...`;
+                ingLoadPreview(imgUrl, pid);
+            } else {
+                ingPreviewedProductId = null;
+                ingPreviewedUrl = url;
+                ingPreviewedImageUrl = null;
+                infoEl.className = 'ing-extracted visible error';
+                infoEl.innerHTML = '⚠️ Could not find a product number in this URL';
+                ingClearPreviewSilent();
+            }
+        }
+
+        function ingLoadPreview(imgUrl, pid) {
+            const area = document.getElementById('ingPreview');
+            const infoEl = document.getElementById('ingExtracted');
+            area.innerHTML = '<div style="color:#60A5FA;font-size:14px;">Loading preview...</div>';
+            const img = new Image();
+            img.onload = () => {
+                area.innerHTML = ''; area.appendChild(img);
+                infoEl.innerHTML = `Product ID: <code>${pid}</code> → ✅ Image loaded`;
+                document.getElementById('ingApproveBtn').disabled = false;
+                document.getElementById('ingClearBtn').disabled = false;
+            };
+            img.onerror = () => {
+                area.innerHTML = '<div style="color:#F87171;font-size:13px;text-align:center;padding:24px;">❌ No image found for this product</div>';
+                infoEl.innerHTML = `Product ID: <code>${pid}</code> → ❌ Image not found`;
+                infoEl.className = 'ing-extracted visible error';
+                document.getElementById('ingApproveBtn').disabled = true;
+                document.getElementById('ingClearBtn').disabled = false;
+            };
+            img.src = imgUrl;
+        }
+
+        document.getElementById('ingUrlInput').addEventListener('paste', function() {
+            setTimeout(() => ingHandleUrlInput(), 50);
+        });
+        document.getElementById('ingUrlInput').addEventListener('input', function() {
+            clearTimeout(this._debounce);
+            this._debounce = setTimeout(() => ingHandleUrlInput(), 400);
+        });
+        document.getElementById('ingUrlInput').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') ingHandleUrlInput();
+        });
+
+        // Approve — save to allCards + Firebase
+        function ingApprove() {
+            if (ingSelectedIndex === null || !ingPreviewedUrl) return;
+            const card = allCards[ingSelectedIndex];
+            card.cardLink = ingPreviewedUrl;
+            if (ingPreviewedProductId) {
+                card.productId = ingPreviewedProductId;
+                card.imageUrl = ingPreviewedImageUrl;
+            }
+
+            // Save to localStorage + Firebase
+            saveData();
+
+            // Show "Added to Pokédex" overlay
+            const modal = document.getElementById('ingestorModal');
+            const existing = modal.querySelector('.ing-confirm-overlay');
+            if (existing) existing.remove();
+            const overlay = document.createElement('div');
+            overlay.className = 'ing-confirm-overlay';
+            overlay.innerHTML = `
+                <span class="ico">✨</span>
+                <span class="txt">ADDED TO YOUR POKÉDEX!</span>
+                <span class="nm">${card.name}</span>
+            `;
+            modal.appendChild(overlay);
+            setTimeout(() => overlay.remove(), 2000);
+
+            // Refresh the detail view
+            ingPick(ingSelectedIndex);
+        }
+
+        // Clear
+        function ingClear() {
+            document.getElementById('ingUrlInput').value = '';
+            ingClearPreviewSilent();
+            document.getElementById('ingUrlInput').focus();
+        }
+
+        function ingClearPreviewSilent() {
+            document.getElementById('ingPreview').innerHTML =
+                '<div class="ing-preview-ph"><span class="pb">🔴</span>Paste a URL above — image loads automatically</div>';
+            document.getElementById('ingExtracted').classList.remove('visible');
+            document.getElementById('ingApproveBtn').disabled = true;
+            document.getElementById('ingClearBtn').disabled = true;
+            ingPreviewedProductId = null;
+            ingPreviewedUrl = null;
+            ingPreviewedImageUrl = null;
+        }
+
+        // Close ingestor with Escape
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && document.getElementById('ingestorOverlay').classList.contains('active')) {
+                closeIngestor();
+            }
+        });
     </script>
 </body>
 </html>
