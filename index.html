@@ -1733,7 +1733,7 @@
             grid.innerHTML = filteredCards.map(card => {
                 const spriteUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${card.id}.png`;
                 const hasCustomImage = card.imageUrl && card.imageUrl.trim();
-                const tcgUrl = card.cardLink && card.cardLink.trim() ? card.cardLink : `https://www.tcgplayer.com/search/all/product?q=${encodeURIComponent(card.name)}&view=grid&ProductTypeName=Cards&page=1`;
+                const tcgUrl = card.cardLink && card.cardLink.trim() ? card.cardLink : `https://www.tcgplayer.com/search/pokemon/product?productLineName=pokemon&q=${encodeURIComponent(card.name)}&view=grid&ProductTypeName=Cards&page=1`;
                 return `
                 <div class="card">
                     <div class="card-image-wrapper" onclick="${hasCustomImage ? `openImageModal('${card.imageUrl}', '${card.name}', ${card.id})` : `openIngestorForCard(${card.id})`}">
