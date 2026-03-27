@@ -1527,6 +1527,24 @@
             }, 100);
         }
 
+        // Backfill setName for cards that have a cardLink but no setName yet
+        function backfillSetNames() {
+            let filled = 0;
+            allCards.forEach(card => {
+                if (card.cardLink && card.cardLink.trim() && !card.setName) {
+                    const parsed = parseSetName(card.cardLink);
+                    if (parsed) {
+                        card.setName = parsed;
+                        filled++;
+                    }
+                }
+            });
+            if (filled > 0) {
+                console.log(`✅ Backfilled set names for ${filled} cards`);
+                saveData();
+            }
+        }
+
         async function loadData() {
             if (sampleData.length === 0) {
                 await loadPokemonDataFromCSV();
@@ -1550,6 +1568,7 @@
 
             // Render immediately so the app feels fast
             filteredCards = [...allCards];
+            backfillSetNames();
             renderCards();
             updateStats();
 
@@ -1575,6 +1594,7 @@
                             }
                         });
                         console.log('✅ Merged cloud collection: ' + Object.keys(cloudData).length + ' collected');
+                        backfillSetNames();
                         filteredCards = [...allCards];
                         renderCards();
                         updateStats();
