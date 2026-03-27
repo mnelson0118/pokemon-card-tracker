@@ -980,6 +980,64 @@
         }
         @keyframes ing-confirm-in { from { opacity:0; transform:scale(0.9); } to { opacity:1; transform:scale(1); } }
         @keyframes ing-confirm-out { from { opacity:1; } to { opacity:0; } }
+
+        /* TCG Browse Toast */
+        .tcg-toast {
+            position: fixed;
+            bottom: -100px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 500;
+            background: var(--surface);
+            border: 1px solid var(--blue);
+            border-radius: 12px;
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4), 0 0 12px rgba(59,130,246,0.15);
+            transition: bottom 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            max-width: 92vw;
+            width: max-content;
+        }
+        .tcg-toast.visible { bottom: 24px; }
+        .tcg-toast-icon { font-size: 20px; flex-shrink: 0; }
+        .tcg-toast-text {
+            font-family: 'Outfit', sans-serif;
+            font-size: 13px;
+            color: var(--text);
+            line-height: 1.3;
+        }
+        .tcg-toast-text strong {
+            color: var(--blue-glow);
+            font-weight: 700;
+        }
+        .tcg-toast-btn {
+            flex-shrink: 0;
+            padding: 8px 14px;
+            background: var(--blue);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-family: 'Outfit', sans-serif;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background var(--transition);
+            white-space: nowrap;
+        }
+        .tcg-toast-btn:hover { background: var(--blue-glow); }
+        .tcg-toast-close {
+            flex-shrink: 0;
+            background: none;
+            border: none;
+            color: var(--text-dim);
+            font-size: 18px;
+            cursor: pointer;
+            padding: 0 0 0 4px;
+            line-height: 1;
+        }
+        .tcg-toast-close:hover { color: var(--text); }
     </style>
 </head>
 <body>
@@ -1812,7 +1870,7 @@
                             <button class="mark-collected-btn ${card.collected ? 'collected' : ''}" onclick="toggleCollected(${card.id})">
                                 ${card.collected ? '✓' : 'Mark collected'}
                             </button>
-                            <a href="${tcgUrl}" target="_blank" rel="noopener noreferrer" class="tcg-link-btn">TCG</a>
+                            <a href="${tcgUrl}" onclick="event.preventDefault(); openTcgLink(${card.id}, '${tcgUrl}', '${card.name.replace(/'/g, "\\'")}');" class="tcg-link-btn">TCG</a>
                         </div>
                     </div>
                 </div>
@@ -2460,7 +2518,59 @@ renderCards();
             if (e.key === 'Escape' && document.getElementById('ingestorOverlay').classList.contains('active')) {
                 closeIngestor();
             }
+            if (e.key === 'Escape' && document.getElementById('tcgToast').classList.contains('visible')) {
+                tcgToastDismiss();
+            }
+        });
+
+        // TCG Browse Toast
+        let tcgToastCardId = null;
+        let tcgToastTimer = null;
+
+        function openTcgLink(cardId, url, cardName) {
+            window.open(url, '_blank', 'noopener,noreferrer');
+            tcgToastCardId = cardId;
+
+            const toast = document.getElementById('tcgToast');
+            document.getElementById('tcgToastName').textContent = cardName;
+            toast.classList.add('visible');
+
+            clearTimeout(tcgToastTimer);
+        }
+
+        function tcgToastPaste() {
+            const toast = document.getElementById('tcgToast');
+            toast.classList.remove('visible');
+            if (tcgToastCardId !== null) {
+                openIngestorForCard(tcgToastCardId);
+            }
+            tcgToastCardId = null;
+        }
+
+        function tcgToastDismiss() {
+            document.getElementById('tcgToast').classList.remove('visible');
+            tcgToastCardId = null;
+            clearTimeout(tcgToastTimer);
+        }
+
+        // Auto-show toast when user returns to the tab
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden && tcgToastCardId !== null) {
+                const toast = document.getElementById('tcgToast');
+                if (toast.classList.contains('visible')) {
+                    // Pulse the toast to draw attention
+                    toast.style.transform = 'translateX(-50%) scale(1.03)';
+                    setTimeout(() => { toast.style.transform = 'translateX(-50%)'; }, 200);
+                }
+            }
         });
     </script>
+
+    <div class="tcg-toast" id="tcgToast">
+        <span class="tcg-toast-icon">🔍</span>
+        <div class="tcg-toast-text">Browsing TCGPlayer for <strong id="tcgToastName"></strong></div>
+        <button class="tcg-toast-btn" onclick="tcgToastPaste()">Paste URL</button>
+        <button class="tcg-toast-close" onclick="tcgToastDismiss()" title="Dismiss">✕</button>
+    </div>
 </body>
 </html>
