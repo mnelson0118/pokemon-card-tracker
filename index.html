@@ -2558,44 +2558,24 @@ renderCards();
 
         function tcgToastProcessUrl(url) {
             if (!url || tcgToastCardId === null) return;
-            const card = allCards.find(c => c.id === tcgToastCardId);
-            if (!card) return;
 
-            // Save card link
-            card.cardLink = url;
-
-            // Extract product ID and image
-            const pidMatch = url.match(/\/product\/(\d+)/);
-            if (pidMatch) {
-                card.productId = pidMatch[1];
-                card.imageUrl = `https://tcgplayer-cdn.tcgplayer.com/product/${pidMatch[1]}_in_1000x1000.jpg`;
-            }
-
-            // Extract set name
-            const setName = parseSetName(url);
-            if (setName) card.setName = setName;
-
-            saveData();
-
-            // Show success state
+            // Dismiss toast
             const toast = document.getElementById('tcgToast');
-            const input = document.getElementById('tcgToastInput');
-            input.style.display = 'none';
-            const successMsg = document.createElement('div');
-            successMsg.className = 'tcg-toast-success';
-            successMsg.textContent = '✓ ADDED TO POKÉDEX!';
-            toast.appendChild(successMsg);
+            toast.classList.remove('visible');
+            const cardId = tcgToastCardId;
+            tcgToastCardId = null;
 
-            // Dismiss after delay and refresh
+            // Open ingestor for this card
+            openIngestorForCard(cardId);
+
+            // Pre-fill the URL and trigger the preview
             setTimeout(() => {
-                toast.classList.remove('visible');
-                setTimeout(() => {
-                    input.style.display = '';
-                    if (successMsg.parentNode) successMsg.remove();
-                    tcgToastCardId = null;
-                    applyFilters();
-                }, 400);
-            }, 1500);
+                const ingInput = document.getElementById('ingUrlInput');
+                if (ingInput) {
+                    ingInput.value = url;
+                    ingHandleUrlInput();
+                }
+            }, 100);
         }
 
         function tcgToastDismiss() {
