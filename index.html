@@ -1196,6 +1196,15 @@
         </div>
     </div>
 
+    <div class="tcg-toast" id="tcgToast" onclick="document.getElementById('tcgToastInput').focus();">
+        <div class="tcg-toast-header">
+            <span class="tcg-toast-icon">🔍</span>
+            <div class="tcg-toast-text">Paste URL for <strong id="tcgToastName"></strong></div>
+            <button class="tcg-toast-close" onclick="event.stopPropagation(); tcgToastDismiss()" title="Dismiss">✕</button>
+        </div>
+        <input type="text" class="tcg-toast-input" id="tcgToastInput" placeholder="Paste TCGPlayer URL here..." autocomplete="off">
+    </div>
+
     <script>
         const STORAGE_KEY = 'pokemon_collection_data';
         let allCards = [];
@@ -2634,14 +2643,5 @@ renderCards();
             }
         });
     </script>
-
-    <div class="tcg-toast" id="tcgToast" onclick="document.getElementById('tcgToastInput').focus();">
-        <div class="tcg-toast-header">
-            <span class="tcg-toast-icon">🔍</span>
-            <div class="tcg-toast-text">Paste URL for <strong id="tcgToastName"></strong></div>
-            <button class="tcg-toast-close" onclick="event.stopPropagation(); tcgToastDismiss()" title="Dismiss">✕</button>
-        </div>
-        <input type="text" class="tcg-toast-input" id="tcgToastInput" placeholder="Paste TCGPlayer URL here..." autocomplete="off">
-    </div>
 </body>
 </html>
