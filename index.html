@@ -2613,9 +2613,9 @@ renderCards();
             }
         });
 
-        // Auto-focus input when user returns to the tab
-        document.addEventListener('visibilitychange', () => {
-            if (!document.hidden && tcgToastCardId !== null) {
+        // Aggressively focus the toast input whenever the user returns
+        function focusToastInput() {
+            if (tcgToastCardId !== null) {
                 const toast = document.getElementById('tcgToast');
                 const input = document.getElementById('tcgToastInput');
                 if (toast.classList.contains('visible')) {
@@ -2624,14 +2624,22 @@ renderCards();
                     input.focus();
                 }
             }
+        }
+        document.addEventListener('visibilitychange', () => { if (!document.hidden) focusToastInput(); });
+        window.addEventListener('focus', focusToastInput);
+        // Also focus when clicking anywhere on the page while toast is up
+        document.addEventListener('click', function(e) {
+            if (tcgToastCardId !== null && !e.target.closest('.tcg-toast')) {
+                focusToastInput();
+            }
         });
     </script>
 
-    <div class="tcg-toast" id="tcgToast">
+    <div class="tcg-toast" id="tcgToast" onclick="document.getElementById('tcgToastInput').focus();">
         <div class="tcg-toast-header">
             <span class="tcg-toast-icon">🔍</span>
             <div class="tcg-toast-text">Paste URL for <strong id="tcgToastName"></strong></div>
-            <button class="tcg-toast-close" onclick="tcgToastDismiss()" title="Dismiss">✕</button>
+            <button class="tcg-toast-close" onclick="event.stopPropagation(); tcgToastDismiss()" title="Dismiss">✕</button>
         </div>
         <input type="text" class="tcg-toast-input" id="tcgToastInput" placeholder="Paste TCGPlayer URL here..." autocomplete="off">
     </div>
