@@ -984,49 +984,40 @@
         /* TCG Browse Toast */
         .tcg-toast {
             position: fixed;
-            bottom: -100px;
+            bottom: -200px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 500;
             background: var(--surface);
             border: 1px solid var(--blue);
             border-radius: 12px;
-            padding: 12px 20px;
+            padding: 14px 16px;
             display: flex;
-            align-items: center;
-            gap: 12px;
+            flex-direction: column;
+            gap: 10px;
             box-shadow: 0 8px 32px rgba(0,0,0,0.4), 0 0 12px rgba(59,130,246,0.15);
             transition: bottom 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            width: 360px;
             max-width: 92vw;
-            width: max-content;
         }
         .tcg-toast.visible { bottom: 24px; }
-        .tcg-toast-icon { font-size: 20px; flex-shrink: 0; }
+        .tcg-toast-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .tcg-toast-icon { font-size: 18px; flex-shrink: 0; }
         .tcg-toast-text {
             font-family: 'Outfit', sans-serif;
             font-size: 13px;
             color: var(--text);
             line-height: 1.3;
+            flex: 1;
         }
         .tcg-toast-text strong {
             color: var(--blue-glow);
             font-weight: 700;
         }
-        .tcg-toast-btn {
-            flex-shrink: 0;
-            padding: 8px 14px;
-            background: var(--blue);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-family: 'Outfit', sans-serif;
-            font-size: 12px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: background var(--transition);
-            white-space: nowrap;
-        }
-        .tcg-toast-btn:hover { background: var(--blue-glow); }
         .tcg-toast-close {
             flex-shrink: 0;
             background: none;
@@ -1034,10 +1025,34 @@
             color: var(--text-dim);
             font-size: 18px;
             cursor: pointer;
-            padding: 0 0 0 4px;
+            padding: 0;
             line-height: 1;
         }
         .tcg-toast-close:hover { color: var(--text); }
+        .tcg-toast-input {
+            width: 100%;
+            padding: 10px 12px;
+            background: var(--input-bg);
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-family: 'Outfit', sans-serif;
+            font-size: 13px;
+            outline: none;
+            transition: border-color var(--transition);
+        }
+        .tcg-toast-input::placeholder { color: var(--text-dim); }
+        .tcg-toast-input:focus {
+            border-color: var(--blue);
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+        }
+        .tcg-toast-success {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 9px;
+            color: var(--green);
+            text-align: center;
+            padding: 4px 0;
+        }
     </style>
 </head>
 <body>
@@ -2532,19 +2547,53 @@ renderCards();
             tcgToastCardId = cardId;
 
             const toast = document.getElementById('tcgToast');
+            const input = document.getElementById('tcgToastInput');
             document.getElementById('tcgToastName').textContent = cardName;
+            input.value = '';
             toast.classList.add('visible');
-
             clearTimeout(tcgToastTimer);
         }
 
-        function tcgToastPaste() {
-            const toast = document.getElementById('tcgToast');
-            toast.classList.remove('visible');
-            if (tcgToastCardId !== null) {
-                openIngestorForCard(tcgToastCardId);
+        function tcgToastProcessUrl(url) {
+            if (!url || tcgToastCardId === null) return;
+            const card = allCards.find(c => c.id === tcgToastCardId);
+            if (!card) return;
+
+            // Save card link
+            card.cardLink = url;
+
+            // Extract product ID and image
+            const pidMatch = url.match(/\/product\/(\d+)/);
+            if (pidMatch) {
+                card.productId = pidMatch[1];
+                card.imageUrl = `https://tcgplayer-cdn.tcgplayer.com/product/${pidMatch[1]}_in_1000x1000.jpg`;
             }
-            tcgToastCardId = null;
+
+            // Extract set name
+            const setName = parseSetName(url);
+            if (setName) card.setName = setName;
+
+            saveData();
+
+            // Show success state
+            const toast = document.getElementById('tcgToast');
+            const input = document.getElementById('tcgToastInput');
+            input.style.display = 'none';
+            const successMsg = document.createElement('div');
+            successMsg.className = 'tcg-toast-success';
+            successMsg.textContent = '✓ ADDED TO POKÉDEX!';
+            toast.appendChild(successMsg);
+
+            // Dismiss after delay and refresh
+            setTimeout(() => {
+                toast.classList.remove('visible');
+                setTimeout(() => {
+                    input.style.display = '';
+                    if (successMsg.parentNode) successMsg.remove();
+                    tcgToastCardId = null;
+                    applyFilters();
+                }, 400);
+            }, 1500);
         }
 
         function tcgToastDismiss() {
@@ -2553,24 +2602,41 @@ renderCards();
             clearTimeout(tcgToastTimer);
         }
 
-        // Auto-show toast when user returns to the tab
+        // Listen for paste on the toast input
+        document.getElementById('tcgToastInput').addEventListener('paste', function() {
+            setTimeout(() => {
+                const url = this.value.trim();
+                if (url) tcgToastProcessUrl(url);
+            }, 50);
+        });
+
+        document.getElementById('tcgToastInput').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                const url = this.value.trim();
+                if (url) tcgToastProcessUrl(url);
+            }
+        });
+
+        // Auto-focus input when user returns to the tab
         document.addEventListener('visibilitychange', () => {
             if (!document.hidden && tcgToastCardId !== null) {
                 const toast = document.getElementById('tcgToast');
                 if (toast.classList.contains('visible')) {
-                    // Pulse the toast to draw attention
                     toast.style.transform = 'translateX(-50%) scale(1.03)';
                     setTimeout(() => { toast.style.transform = 'translateX(-50%)'; }, 200);
+                    document.getElementById('tcgToastInput').focus();
                 }
             }
         });
     </script>
 
     <div class="tcg-toast" id="tcgToast">
-        <span class="tcg-toast-icon">🔍</span>
-        <div class="tcg-toast-text">Browsing TCGPlayer for <strong id="tcgToastName"></strong></div>
-        <button class="tcg-toast-btn" onclick="tcgToastPaste()">Paste URL</button>
-        <button class="tcg-toast-close" onclick="tcgToastDismiss()" title="Dismiss">✕</button>
+        <div class="tcg-toast-header">
+            <span class="tcg-toast-icon">🔍</span>
+            <div class="tcg-toast-text">Paste URL for <strong id="tcgToastName"></strong></div>
+            <button class="tcg-toast-close" onclick="tcgToastDismiss()" title="Dismiss">✕</button>
+        </div>
+        <input type="text" class="tcg-toast-input" id="tcgToastInput" placeholder="Paste TCGPlayer URL here..." autocomplete="off">
     </div>
 </body>
 </html>
