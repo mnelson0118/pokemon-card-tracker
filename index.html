@@ -616,7 +616,7 @@
         .card-header {
             display: flex;
             justify-content: space-between;
-            align-items: center;
+            align-items: flex-start;
             margin-bottom: 4px;
         }
         .card-number {
@@ -633,6 +633,21 @@
             letter-spacing: 0.3px;
             text-transform: uppercase;
         }
+        .card-set-name {
+            display: inline-block;
+            margin-top: 4px;
+            padding: 2px 8px;
+            background: rgba(250, 204, 21, 0.12);
+            border: 1px solid rgba(250, 204, 21, 0.25);
+            border-radius: 10px;
+            font-size: 9px;
+            color: var(--yellow);
+            font-weight: 600;
+            max-width: 100%;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
         .card-price { font-size: 11px; color: var(--green); font-weight: 700; margin-top: 4px; }
         .card-price-display {
             background-color: var(--green);
@@ -640,7 +655,7 @@
             border: none; border-radius: 8px;
             padding: 6px 10px; font-size: 13px; font-weight: 700;
             display: flex; align-items: center; justify-content: center;
-            margin-left: auto; align-self: center;
+            margin-left: 6px; flex-shrink: 0;
         }
         .card-title {
             font-size: 13px; font-weight: 700;
@@ -1448,6 +1463,7 @@
                         entry.cardLink = card.cardLink;
                         entry.productId = card.productId || '';
                         entry.imageUrl = card.imageUrl || '';
+                        if (card.setName) entry.setName = card.setName;
                     }
                     collectionState[card.id] = entry;
                 });
@@ -1552,6 +1568,7 @@
                                 if (cd.cardLink) card.cardLink = cd.cardLink;
                                 if (cd.productId) card.productId = cd.productId;
                                 if (cd.imageUrl) card.imageUrl = cd.imageUrl;
+                                if (cd.setName) card.setName = cd.setName;
                             } else {
                                 card.collected = false;
                                 card.price = null;
@@ -1752,12 +1769,13 @@
                     </div>
                     <div class="card-content">
                         <div class="card-header">
-                            <div>
+                            <div style="flex:1;min-width:0;">
                                 <div class="card-number">#${String(card.id).padStart(3, '0')}</div>
                                 <div class="card-title">${card.name}</div>
                                 <div class="card-generation">Gen ${card.generation}</div>
+                                ${card.setName ? `<div class="card-set-name">${card.setName}</div>` : ''}
                             </div>
-                            ${card.collected && card.price ? `<div class="card-price-display">$${Math.round(card.price)}</div>` : '<div></div>'}
+                            ${card.collected && card.price ? `<div class="card-price-display">$${Math.round(card.price)}</div>` : ''}
                         </div>
                         <div class="card-actions">
                             <button class="mark-collected-btn ${card.collected ? 'collected' : ''}" onclick="toggleCollected(${card.id})">
@@ -2022,6 +2040,7 @@ renderCards();
             document.getElementById('ingDetailName').textContent = card.name || 'Unknown';
 
             const meta = [`Gen ${card.generation || '?'}`];
+            if (card.setName) meta.push(card.setName);
             if (card.collected) meta.push('✅ Collected');
             document.getElementById('ingDetailMeta').textContent = meta.join('  •  ');
 
@@ -2111,6 +2130,248 @@ renderCards();
             if (e.key === 'Enter') ingHandleUrlInput();
         });
 
+        // TCGPlayer set slug → proper display name lookup
+        const SET_NAME_LOOKUP = {
+            // Original / Base Series
+            'base-set': 'Base Set',
+            'jungle': 'Jungle',
+            'fossil': 'Fossil',
+            'base-set-2': 'Base Set 2',
+            'team-rocket': 'Team Rocket',
+            'gym-heroes': 'Gym Heroes',
+            'gym-challenge': 'Gym Challenge',
+            // Neo Series
+            'neo-genesis': 'Neo Genesis',
+            'neo-discovery': 'Neo Discovery',
+            'neo-revelation': 'Neo Revelation',
+            'neo-destiny': 'Neo Destiny',
+            // Legendary / e-Card Series
+            'legendary-collection': 'Legendary Collection',
+            'expedition-base-set': 'Expedition Base Set',
+            'aquapolis': 'Aquapolis',
+            'skyridge': 'Skyridge',
+            // EX Series
+            'ex-ruby-and-sapphire': 'EX Ruby & Sapphire',
+            'ex-sandstorm': 'EX Sandstorm',
+            'ex-dragon': 'EX Dragon',
+            'ex-team-magma-vs-team-aqua': 'EX Team Magma vs Team Aqua',
+            'ex-hidden-legends': 'EX Hidden Legends',
+            'ex-firered-and-leafgreen': 'EX FireRed & LeafGreen',
+            'firered-and-leafgreen': 'FireRed & LeafGreen',
+            'ex-team-rocket-returns': 'EX Team Rocket Returns',
+            'ex-deoxys': 'EX Deoxys',
+            'ex-emerald': 'EX Emerald',
+            'ex-unseen-forces': 'EX Unseen Forces',
+            'ex-delta-species': 'EX Delta Species',
+            'ex-legend-maker': 'EX Legend Maker',
+            'ex-holon-phantoms': 'EX Holon Phantoms',
+            'ex-crystal-guardians': 'EX Crystal Guardians',
+            'ex-dragon-frontiers': 'EX Dragon Frontiers',
+            'ex-power-keepers': 'EX Power Keepers',
+            // Diamond & Pearl Series
+            'diamond-and-pearl': 'Diamond & Pearl',
+            'dp-mysterious-treasures': 'DP Mysterious Treasures',
+            'dp-secret-wonders': 'DP Secret Wonders',
+            'dp-great-encounters': 'DP Great Encounters',
+            'dp-majestic-dawn': 'DP Majestic Dawn',
+            'dp-legends-awakened': 'DP Legends Awakened',
+            'dp-stormfront': 'DP Stormfront',
+            'mysterious-treasures': 'Mysterious Treasures',
+            'secret-wonders': 'Secret Wonders',
+            'great-encounters': 'Great Encounters',
+            'majestic-dawn': 'Majestic Dawn',
+            'legends-awakened': 'Legends Awakened',
+            'stormfront': 'Stormfront',
+            // Platinum Series
+            'platinum': 'Platinum',
+            'platinum-rising-rivals': 'Platinum Rising Rivals',
+            'platinum-supreme-victors': 'Platinum Supreme Victors',
+            'platinum-arceus': 'Platinum Arceus',
+            'rising-rivals': 'Rising Rivals',
+            'supreme-victors': 'Supreme Victors',
+            'arceus': 'Arceus',
+            // HeartGold & SoulSilver Series
+            'heartgold-and-soulsilver': 'HeartGold & SoulSilver',
+            'heartgold-soulsilver': 'HeartGold & SoulSilver',
+            'hs-unleashed': 'HS Unleashed',
+            'hs-undaunted': 'HS Undaunted',
+            'hs-triumphant': 'HS Triumphant',
+            'call-of-legends': 'Call of Legends',
+            'unleashed': 'Unleashed',
+            'undaunted': 'Undaunted',
+            'triumphant': 'Triumphant',
+            // Black & White Series
+            'black-and-white': 'Black & White',
+            'bw-emerging-powers': 'BW Emerging Powers',
+            'bw-noble-victories': 'BW Noble Victories',
+            'bw-next-destinies': 'BW Next Destinies',
+            'bw-dark-explorers': 'BW Dark Explorers',
+            'bw-dragons-exalted': 'BW Dragons Exalted',
+            'bw-dragon-vault': 'BW Dragon Vault',
+            'bw-boundaries-crossed': 'BW Boundaries Crossed',
+            'bw-plasma-storm': 'BW Plasma Storm',
+            'bw-plasma-freeze': 'BW Plasma Freeze',
+            'bw-plasma-blast': 'BW Plasma Blast',
+            'bw-legendary-treasures': 'BW Legendary Treasures',
+            'emerging-powers': 'Emerging Powers',
+            'noble-victories': 'Noble Victories',
+            'next-destinies': 'Next Destinies',
+            'dark-explorers': 'Dark Explorers',
+            'dragons-exalted': 'Dragons Exalted',
+            'dragon-vault': 'Dragon Vault',
+            'boundaries-crossed': 'Boundaries Crossed',
+            'plasma-storm': 'Plasma Storm',
+            'plasma-freeze': 'Plasma Freeze',
+            'plasma-blast': 'Plasma Blast',
+            'legendary-treasures': 'Legendary Treasures',
+            // XY Series
+            'xy': 'XY',
+            'xy-base-set': 'XY Base Set',
+            'xy-flashfire': 'XY Flashfire',
+            'xy-furious-fists': 'XY Furious Fists',
+            'xy-phantom-forces': 'XY Phantom Forces',
+            'xy-primal-clash': 'XY Primal Clash',
+            'double-crisis': 'Double Crisis',
+            'xy-roaring-skies': 'XY Roaring Skies',
+            'xy-ancient-origins': 'XY Ancient Origins',
+            'xy-breakthrough': 'XY BREAKthrough',
+            'xy-breakpoint': 'XY BREAKpoint',
+            'generations': 'Generations',
+            'xy-fates-collide': 'XY Fates Collide',
+            'xy-steam-siege': 'XY Steam Siege',
+            'xy-evolutions': 'XY Evolutions',
+            'flashfire': 'Flashfire',
+            'furious-fists': 'Furious Fists',
+            'phantom-forces': 'Phantom Forces',
+            'primal-clash': 'Primal Clash',
+            'roaring-skies': 'Roaring Skies',
+            'ancient-origins': 'Ancient Origins',
+            'breakthrough': 'BREAKthrough',
+            'breakpoint': 'BREAKpoint',
+            'fates-collide': 'Fates Collide',
+            'steam-siege': 'Steam Siege',
+            'evolutions': 'Evolutions',
+            // Sun & Moon Series
+            'sun-and-moon': 'Sun & Moon',
+            'sm-base-set': 'SM Base Set',
+            'sm-guardians-rising': 'SM Guardians Rising',
+            'sm-burning-shadows': 'SM Burning Shadows',
+            'shining-legends': 'Shining Legends',
+            'sm-crimson-invasion': 'SM Crimson Invasion',
+            'sm-ultra-prism': 'SM Ultra Prism',
+            'sm-forbidden-light': 'SM Forbidden Light',
+            'sm-celestial-storm': 'SM Celestial Storm',
+            'dragon-majesty': 'Dragon Majesty',
+            'sm-lost-thunder': 'SM Lost Thunder',
+            'sm-team-up': 'SM Team Up',
+            'detective-pikachu': 'Detective Pikachu',
+            'sm-unbroken-bonds': 'SM Unbroken Bonds',
+            'sm-unified-minds': 'SM Unified Minds',
+            'hidden-fates': 'Hidden Fates',
+            'hidden-fates-shiny-vault': 'Hidden Fates Shiny Vault',
+            'sm-cosmic-eclipse': 'SM Cosmic Eclipse',
+            'guardians-rising': 'Guardians Rising',
+            'burning-shadows': 'Burning Shadows',
+            'crimson-invasion': 'Crimson Invasion',
+            'ultra-prism': 'Ultra Prism',
+            'forbidden-light': 'Forbidden Light',
+            'celestial-storm': 'Celestial Storm',
+            'lost-thunder': 'Lost Thunder',
+            'team-up': 'Team Up',
+            'unbroken-bonds': 'Unbroken Bonds',
+            'unified-minds': 'Unified Minds',
+            'cosmic-eclipse': 'Cosmic Eclipse',
+            // Sword & Shield Series
+            'sword-and-shield': 'Sword & Shield',
+            'swsh-base-set': 'SWSH Base Set',
+            'rebel-clash': 'Rebel Clash',
+            'darkness-ablaze': 'Darkness Ablaze',
+            'champions-path': 'Champion\'s Path',
+            'vivid-voltage': 'Vivid Voltage',
+            'shining-fates': 'Shining Fates',
+            'shining-fates-shiny-vault': 'Shining Fates Shiny Vault',
+            'battle-styles': 'Battle Styles',
+            'chilling-reign': 'Chilling Reign',
+            'evolving-skies': 'Evolving Skies',
+            'celebrations': 'Celebrations',
+            'fusion-strike': 'Fusion Strike',
+            'brilliant-stars': 'Brilliant Stars',
+            'brilliant-stars-trainer-gallery': 'Brilliant Stars TG',
+            'astral-radiance': 'Astral Radiance',
+            'astral-radiance-trainer-gallery': 'Astral Radiance TG',
+            'pokemon-go': 'Pokémon GO',
+            'lost-origin': 'Lost Origin',
+            'lost-origin-trainer-gallery': 'Lost Origin TG',
+            'silver-tempest': 'Silver Tempest',
+            'silver-tempest-trainer-gallery': 'Silver Tempest TG',
+            'crown-zenith': 'Crown Zenith',
+            'crown-zenith-galarian-gallery': 'Crown Zenith GG',
+            // Scarlet & Violet Series
+            'scarlet-and-violet': 'Scarlet & Violet',
+            'sv-base-set': 'SV Base Set',
+            'paldea-evolved': 'Paldea Evolved',
+            'obsidian-flames': 'Obsidian Flames',
+            'sv-151': '151',
+            '151': '151',
+            'paldean-fates': 'Paldean Fates',
+            'temporal-forces': 'Temporal Forces',
+            'twilight-masquerade': 'Twilight Masquerade',
+            'shrouded-fable': 'Shrouded Fable',
+            'stellar-crown': 'Stellar Crown',
+            'surging-sparks': 'Surging Sparks',
+            'prismatic-evolutions': 'Prismatic Evolutions',
+            'journey-together': 'Journey Together',
+            'destined-rivals': 'Destined Rivals',
+            'mega-evolution': 'Mega Evolution',
+            'phantasmal-flames': 'Phantasmal Flames',
+            'perfect-order': 'Perfect Order',
+            // Promos & Special
+            'swsh-promos': 'SWSH Promos',
+            'sv-promos': 'SV Promos',
+            'sm-promos': 'SM Promos',
+            'xy-promos': 'XY Promos',
+            'bw-promos': 'BW Promos',
+            'dp-promos': 'DP Promos',
+            'pop-series': 'POP Series',
+            'best-of-game': 'Best of Game',
+            'wizards-black-star-promos': 'Wizards Black Star Promos',
+            'nintendo-black-star-promos': 'Nintendo Black Star Promos',
+            'mcdonalds-collection': 'McDonald\'s Collection',
+        };
+
+        // Parse set name from TCGPlayer URL slug
+        function parseSetName(url) {
+            if (!url) return null;
+            const clean = url.split('?')[0];
+            const m = clean.match(/\/product\/\d+\/pokemon-(.+)/i);
+            if (!m) return null;
+            const parts = m[1].split('-');
+            // Walk backwards to find where the card number starts
+            let cutIdx = parts.length;
+            for (let i = parts.length - 1; i >= 0; i--) {
+                if (/^\d+$/.test(parts[i])) {
+                    cutIdx = i;
+                } else {
+                    break;
+                }
+            }
+            if (cutIdx < 2) return null;
+            // Try progressively shorter slug prefixes against the lookup
+            for (let nameEnd = cutIdx - 1; nameEnd >= 1; nameEnd--) {
+                const slug = parts.slice(0, nameEnd).join('-');
+                if (SET_NAME_LOOKUP[slug]) return SET_NAME_LOOKUP[slug];
+            }
+            // Fallback: title-case the slug minus the last word (card name)
+            const setParts = parts.slice(0, cutIdx - 1);
+            if (setParts.length > 0) {
+                return setParts
+                    .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+                    .join(' ')
+                    .replace(/ And /g, ' & ');
+            }
+            return null;
+        }
+
         // Approve — save to allCards + Firebase
         function ingApprove() {
             if (ingSelectedIndex === null || !ingPreviewedUrl) return;
@@ -2120,6 +2381,9 @@ renderCards();
                 card.productId = ingPreviewedProductId;
                 card.imageUrl = ingPreviewedImageUrl;
             }
+            // Extract set name from URL
+            const setName = parseSetName(ingPreviewedUrl);
+            if (setName) card.setName = setName;
 
             // Save to localStorage + Firebase
             saveData();
