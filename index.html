@@ -2552,6 +2552,8 @@ renderCards();
             input.value = '';
             toast.classList.add('visible');
             clearTimeout(tcgToastTimer);
+            // Auto-focus so paste works immediately
+            setTimeout(() => input.focus(), 400);
         }
 
         function tcgToastProcessUrl(url) {
@@ -2617,14 +2619,29 @@ renderCards();
             }
         });
 
+        // Global paste — if toast is visible, intercept paste anywhere on the page
+        document.addEventListener('paste', function(e) {
+            const toast = document.getElementById('tcgToast');
+            const input = document.getElementById('tcgToastInput');
+            if (tcgToastCardId !== null && toast.classList.contains('visible') && document.activeElement !== input) {
+                e.preventDefault();
+                const url = (e.clipboardData || window.clipboardData).getData('text').trim();
+                if (url) {
+                    input.value = url;
+                    tcgToastProcessUrl(url);
+                }
+            }
+        });
+
         // Auto-focus input when user returns to the tab
         document.addEventListener('visibilitychange', () => {
             if (!document.hidden && tcgToastCardId !== null) {
                 const toast = document.getElementById('tcgToast');
+                const input = document.getElementById('tcgToastInput');
                 if (toast.classList.contains('visible')) {
                     toast.style.transform = 'translateX(-50%) scale(1.03)';
                     setTimeout(() => { toast.style.transform = 'translateX(-50%)'; }, 200);
-                    document.getElementById('tcgToastInput').focus();
+                    input.focus();
                 }
             }
         });
