@@ -1650,11 +1650,20 @@
             const saved = localStorage.getItem(STORAGE_KEY);
             if (saved) {
                 const localData = JSON.parse(saved);
+                // Build a lookup for fast merging
+                const localLookup = {};
+                localData.forEach(c => { localLookup[c.id] = c; });
                 allCards.forEach(card => {
-                    const localCard = localData.find(c => c.id === card.id);
-                    if (localCard && localCard.collected) {
-                        card.collected = true;
-                        card.price = localCard.price || null;
+                    const lc = localLookup[card.id];
+                    if (lc) {
+                        if (lc.collected) {
+                            card.collected = true;
+                            card.price = lc.price || null;
+                        }
+                        if (lc.cardLink) card.cardLink = lc.cardLink;
+                        if (lc.productId) card.productId = lc.productId;
+                        if (lc.imageUrl) card.imageUrl = lc.imageUrl;
+                        if (lc.setName) card.setName = lc.setName;
                     }
                 });
             }
@@ -1681,10 +1690,8 @@
                                 if (cd.productId) card.productId = cd.productId;
                                 if (cd.imageUrl) card.imageUrl = cd.imageUrl;
                                 if (cd.setName) card.setName = cd.setName;
-                            } else {
-                                card.collected = false;
-                                card.price = null;
                             }
+                            // Don't reset cards missing from cloud — they may not have synced yet
                         });
                         console.log('✅ Merged cloud collection: ' + Object.keys(cloudData).length + ' collected');
                         backfillSetNames();
