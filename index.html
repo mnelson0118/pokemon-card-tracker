@@ -1901,7 +1901,7 @@
                             <button class="mark-collected-btn ${card.collected ? 'collected' : ''}" onclick="toggleCollected(${card.id})">
                                 ${card.collected ? '✓' : 'Mark collected'}
                             </button>
-                            <a href="${tcgUrl}" onclick="event.preventDefault(); openTcgLink(${card.id}, '${tcgUrl}', '${card.name.replace(/'/g, "\\'")}');" class="tcg-link-btn">TCG</a>
+                            <a href="${tcgUrl}" target="_blank" rel="noopener noreferrer" onclick="showTcgToast(${card.id}, '${card.name.replace(/'/g, "\\'")}')" class="tcg-link-btn">TCG</a>
                         </div>
                     </div>
                 </div>
@@ -2558,8 +2558,7 @@ renderCards();
         let tcgToastCardId = null;
         let tcgToastTimer = null;
 
-        function openTcgLink(cardId, url, cardName) {
-            window.open(url, '_blank', 'noopener,noreferrer');
+        function showTcgToast(cardId, cardName) {
             tcgToastCardId = cardId;
 
             const toast = document.getElementById('tcgToast');
@@ -2568,7 +2567,7 @@ renderCards();
             input.value = '';
             toast.classList.add('visible');
             clearTimeout(tcgToastTimer);
-            // Auto-focus so paste works immediately
+            // Auto-focus so paste works immediately when user returns
             setTimeout(() => input.focus(), 400);
         }
 
