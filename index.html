@@ -2568,23 +2568,33 @@ renderCards();
         function tcgToastProcessUrl(url) {
             if (!url || tcgToastCardId === null) return;
 
-            // Dismiss toast
             const toast = document.getElementById('tcgToast');
-            toast.classList.remove('visible');
             const cardId = tcgToastCardId;
             tcgToastCardId = null;
 
-            // Open ingestor for this card
-            openIngestorForCard(cardId);
+            // Smooth fade-out: slide down + fade
+            toast.style.transition = 'bottom 0.35s ease-in, opacity 0.35s ease-in';
+            toast.style.opacity = '0';
+            toast.style.bottom = '-200px';
 
-            // Pre-fill the URL and trigger the preview
+            // After toast animates out, open ingestor
             setTimeout(() => {
-                const ingInput = document.getElementById('ingUrlInput');
-                if (ingInput) {
-                    ingInput.value = url;
-                    ingHandleUrlInput();
-                }
-            }, 100);
+                toast.classList.remove('visible');
+                toast.style.transition = '';
+                toast.style.opacity = '';
+                toast.style.bottom = '';
+
+                openIngestorForCard(cardId);
+
+                // Pre-fill the URL and trigger the preview
+                setTimeout(() => {
+                    const ingInput = document.getElementById('ingUrlInput');
+                    if (ingInput) {
+                        ingInput.value = url;
+                        ingHandleUrlInput();
+                    }
+                }, 150);
+            }, 350);
         }
 
         function tcgToastDismiss() {
