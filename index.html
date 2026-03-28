@@ -1271,35 +1271,42 @@
         // Register Service Worker for offline support & caching
         function registerServiceWorker() {
             if ('serviceWorker' in navigator) {
+                // Clear old caches on startup
+                caches.keys().then(names => {
+                    names.forEach(name => {
+                        if (name.startsWith('pokedex-tracker')) caches.delete(name);
+                    });
+                });
+
                 navigator.serviceWorker.register('data:application/javascript;base64,' + btoa(`
-                    const CACHE_NAME = 'pokedex-tracker-v1';
+                    const CACHE_NAME = 'pokedex-tracker-v2';
                     
                     self.addEventListener('install', (e) => {
                         self.skipWaiting();
                     });
                     
                     self.addEventListener('activate', (e) => {
-                        e.waitUntil(clients.claim());
+                        e.waitUntil(
+                            caches.keys().then(names =>
+                                Promise.all(names.filter(n => n !== CACHE_NAME).map(n => caches.delete(n)))
+                            ).then(() => clients.claim())
+                        );
                     });
                     
                     self.addEventListener('fetch', (e) => {
                         if (e.request.method !== 'GET') return;
                         
                         e.respondWith(
-                            caches.match(e.request)
-                                .then(response => response || fetch(e.request))
+                            fetch(e.request)
                                 .then(response => {
                                     if (!response || response.status !== 200) return response;
-                                    
                                     const responseClone = response.clone();
                                     caches.open(CACHE_NAME).then(cache => {
                                         cache.put(e.request, responseClone);
                                     });
-                                    
                                     return response;
                                 })
                                 .catch(() => {
-                                    // Offline fallback
                                     return caches.match(e.request);
                                 })
                         );
