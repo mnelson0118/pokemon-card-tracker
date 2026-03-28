@@ -1663,7 +1663,7 @@
                         if (lc.cardLink) card.cardLink = lc.cardLink;
                         if (lc.productId) card.productId = lc.productId;
                         if (lc.imageUrl) card.imageUrl = lc.imageUrl;
-                        if (lc.setName) card.setName = lc.setName;
+                        // setName is always re-parsed from URL by backfillSetNames()
                     }
                 });
             }
@@ -1689,7 +1689,7 @@
                                 if (cd.cardLink) card.cardLink = cd.cardLink;
                                 if (cd.productId) card.productId = cd.productId;
                                 if (cd.imageUrl) card.imageUrl = cd.imageUrl;
-                                if (cd.setName) card.setName = cd.setName;
+                                // setName is always re-parsed from URL by backfillSetNames()
                             }
                             // Don't reset cards missing from cloud — they may not have synced yet
                         });
