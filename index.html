@@ -2499,8 +2499,11 @@ renderCards();
             if (!m) return null;
             let parts = m[1].split('-');
 
-            // Strip ANY alphanumeric series prefix (sv03, swsh11, sm12, xy12, bw11, dp06, ex14, etc.)
+            // Strip series prefixes: numbered (sv03, swsh11) or plain abbreviations (me, sv, sm, etc.)
             while (parts.length > 1 && /^[a-z]{1,5}\d+[a-z]?$/i.test(parts[0])) {
+                parts = parts.slice(1);
+            }
+            if (parts.length > 1 && /^(me|sv|sm|xy|bw|dp|ex|hs|swsh|pop)$/i.test(parts[0])) {
                 parts = parts.slice(1);
             }
 
