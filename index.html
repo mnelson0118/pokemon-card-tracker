@@ -618,6 +618,42 @@
             text-align: center;
         }
 
+        .modal-pricing {
+            width: 100%;
+            margin-top: 8px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+            z-index: 1001;
+        }
+        .modal-pricing-header {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 8px;
+            color: var(--yellow);
+            padding: 10px 14px 6px;
+            letter-spacing: 1px;
+        }
+        .modal-pricing-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 14px;
+            font-family: 'Outfit', sans-serif;
+            font-size: 13px;
+        }
+        .modal-pricing-row:last-child { padding-bottom: 10px; }
+        .modal-pricing-label { color: var(--text-dim); font-weight: 500; }
+        .modal-pricing-value { color: var(--green); font-weight: 700; }
+        .modal-pricing-value.na { color: var(--text-dim); font-weight: 400; font-style: italic; }
+        .modal-pricing-empty {
+            padding: 12px 14px;
+            font-family: 'Outfit', sans-serif;
+            font-size: 12px;
+            color: var(--text-dim);
+            text-align: center;
+        }
+
         .card-content {
             padding: 12px;
             display: flex; flex-direction: column;
@@ -1162,6 +1198,7 @@
               <img id="modalImage" class="modal-image" alt="Card image">
           </div>
           <div class="modal-info" id="modalInfo"></div>
+          <div class="modal-pricing" id="modalPricing" style="display:none;"></div>
       </div>
   </div>
 
@@ -1564,6 +1601,7 @@
                         entry.productId = card.productId || '';
                         entry.imageUrl = card.imageUrl || '';
                         if (card.setName) entry.setName = card.setName;
+                        if (card.nmPrices) entry.nmPrices = card.nmPrices;
                     }
                     collectionState[card.id] = entry;
                 });
@@ -1670,6 +1708,7 @@
                         if (lc.cardLink) card.cardLink = lc.cardLink;
                         if (lc.productId) card.productId = lc.productId;
                         if (lc.imageUrl) card.imageUrl = lc.imageUrl;
+                        if (lc.nmPrices) card.nmPrices = lc.nmPrices;
                         // setName is always re-parsed from URL by backfillSetNames()
                     }
                 });
@@ -1696,6 +1735,7 @@
                                 if (cd.cardLink) card.cardLink = cd.cardLink;
                                 if (cd.productId) card.productId = cd.productId;
                                 if (cd.imageUrl) card.imageUrl = cd.imageUrl;
+                                if (cd.nmPrices) card.nmPrices = cd.nmPrices;
                                 // setName is always re-parsed from URL by backfillSetNames()
                             }
                             // Don't reset cards missing from cloud — they may not have synced yet
@@ -1988,12 +2028,28 @@ renderCards();
             const modal = document.getElementById('imageModal');
             const modalImage = document.getElementById('modalImage');
             const modalInfo = document.getElementById('modalInfo');
+            const modalPricing = document.getElementById('modalPricing');
             const modalContainer = document.getElementById('modalImageContainer');
             
             modalImage.src = imageUrl;
             modalImage.alt = cardName;
             modalImage.className = 'modal-image';
             modalInfo.textContent = `#${String(cardId).padStart(3, '0')} ${cardName} • Click to zoom`;
+
+            // Show pricing if available
+            const card = allCards.find(c => c.id === cardId);
+            if (card && card.nmPrices) {
+                const p = card.nmPrices;
+                let rows = '<div class="modal-pricing-header">NEAR MINT PRICES</div>';
+                if (p.firstEd) rows += `<div class="modal-pricing-row"><span class="modal-pricing-label">1st Edition</span><span class="modal-pricing-value">$${p.firstEd}</span></div>`;
+                if (p.unlimited) rows += `<div class="modal-pricing-row"><span class="modal-pricing-label">Unlimited</span><span class="modal-pricing-value">$${p.unlimited}</span></div>`;
+                if (p.market) rows += `<div class="modal-pricing-row"><span class="modal-pricing-label">Market Price</span><span class="modal-pricing-value">$${p.market}</span></div>`;
+                if (p.lastSale) rows += `<div class="modal-pricing-row"><span class="modal-pricing-label">Last Sale</span><span class="modal-pricing-value">$${p.lastSale}</span></div>`;
+                modalPricing.innerHTML = rows;
+                modalPricing.style.display = 'block';
+            } else {
+                modalPricing.style.display = 'none';
+            }
 
             modal.classList.add('active');
 
@@ -2207,13 +2263,16 @@ renderCards();
             if (!url) { infoEl.classList.remove('visible'); ingClearPreviewSilent(); return; }
 
             const pid = ingExtractProductId(url);
+            const prices = parsePricesFromHash(url);
+            const priceInfo = prices ? ` • 💰 Prices included` : '';
+
             if (pid) {
                 const imgUrl = ING_IMAGE_BASE + pid + ING_IMAGE_SUFFIX;
                 ingPreviewedProductId = pid;
                 ingPreviewedUrl = url;
                 ingPreviewedImageUrl = imgUrl;
                 infoEl.className = 'ing-extracted visible success';
-                infoEl.innerHTML = `Product ID: <code>${pid}</code> → loading image...`;
+                infoEl.innerHTML = `Product ID: <code>${pid}</code> → loading image...${priceInfo}`;
                 ingLoadPreview(imgUrl, pid);
             } else {
                 ingPreviewedProductId = null;
@@ -2528,17 +2587,51 @@ renderCards();
             return null;
         }
 
+        // Extract near-mint price data from URL hash fragment
+        // Format: #prices=1stEd:7.91,Unlimited:1.33,Market:0.78,LastSale:0.99
+        function parsePricesFromHash(url) {
+            if (!url) return null;
+            const hashIdx = url.indexOf('#prices=');
+            if (hashIdx === -1) return null;
+            const fragment = url.substring(hashIdx + 8);
+            const prices = {};
+            fragment.split(',').forEach(pair => {
+                const [key, val] = pair.split(':');
+                if (key && val) {
+                    const num = parseFloat(val);
+                    if (!isNaN(num)) {
+                        if (key === '1stEd') prices.firstEd = num.toFixed(2);
+                        if (key === 'Unlimited') prices.unlimited = num.toFixed(2);
+                        if (key === 'Market') prices.market = num.toFixed(2);
+                        if (key === 'LastSale') prices.lastSale = num.toFixed(2);
+                    }
+                }
+            });
+            return Object.keys(prices).length > 0 ? prices : null;
+        }
+
+        // Strip price hash from URL for clean storage
+        function stripPriceHash(url) {
+            if (!url) return url;
+            return url.split('#prices=')[0];
+        }
+
         // Approve — save to allCards + Firebase
         function ingApprove() {
             if (ingSelectedIndex === null || !ingPreviewedUrl) return;
             const card = allCards[ingSelectedIndex];
-            card.cardLink = ingPreviewedUrl;
+            
+            // Extract prices from hash before stripping it
+            const prices = parsePricesFromHash(ingPreviewedUrl);
+            if (prices) card.nmPrices = prices;
+            
+            card.cardLink = stripPriceHash(ingPreviewedUrl);
             if (ingPreviewedProductId) {
                 card.productId = ingPreviewedProductId;
                 card.imageUrl = ingPreviewedImageUrl;
             }
             // Extract set name from URL
-            const setName = parseSetName(ingPreviewedUrl);
+            const setName = parseSetName(card.cardLink);
             if (setName) card.setName = setName;
 
             // Save to localStorage + Firebase
