@@ -695,6 +695,21 @@
             overflow: hidden;
             text-overflow: ellipsis;
         }
+        .card-nm-prices {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            margin-top: 4px;
+            font-family: 'Outfit', sans-serif;
+            font-size: 10px;
+        }
+        .card-nm-price {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .card-nm-label { color: var(--text-dim); font-weight: 500; }
+        .card-nm-value { color: var(--green); font-weight: 700; }
         .card-price { font-size: 11px; color: var(--green); font-weight: 700; margin-top: 4px; }
         .card-price-display {
             background-color: var(--green);
@@ -824,6 +839,7 @@
             .card-title { font-size: 11px; }
             .card-number { font-size: 7px; }
             .card-price-display { padding: 5px; font-size: 12px; }
+            .card-nm-prices { font-size: 9px; }
             .mark-collected-btn { font-size: 10px; padding: 6px 8px; min-height: 36px; }
             .tcg-link-btn { flex: 0 0 40px; font-size: 10px; min-height: 36px; }
         }
@@ -1941,6 +1957,10 @@
                                 <div class="card-title">${card.name}</div>
                                 <div class="card-generation">Gen ${card.generation}</div>
                                 ${card.setName ? `<div class="card-set-name">${card.setName}</div>` : ''}
+                                ${!card.collected && card.nmPrices ? `<div class="card-nm-prices">
+                                    ${card.nmPrices.firstEd ? `<div class="card-nm-price"><span class="card-nm-label">1st Ed</span><span class="card-nm-value">$${card.nmPrices.firstEd}</span></div>` : ''}
+                                    ${card.nmPrices.unlimited ? `<div class="card-nm-price"><span class="card-nm-label">Unl.</span><span class="card-nm-value">$${card.nmPrices.unlimited}</span></div>` : ''}
+                                </div>` : ''}
                             </div>
                             ${card.collected && card.price ? `<div class="card-price-display">$${Math.round(card.price)}</div>` : ''}
                         </div>
