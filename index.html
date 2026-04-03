@@ -495,21 +495,20 @@
             display: flex;
             align-items: center; justify-content: center;
             overflow: hidden;
-            border-radius: 8px;
+            border-radius: 8px 8px 0 0;
             cursor: pointer;
             transition: transform var(--transition);
-            flex: 1;
+            flex-shrink: 0;
         }
         .card-image-wrapper:hover { transform: scale(1.03); }
 
         .card-image {
             width: 100%; height: 100%;
-            object-fit: cover;
+            object-fit: contain;
+            padding: 4px;
             transition: transform var(--transition);
             border-radius: 8px;
-            image-rendering: pixelated;
-            image-rendering: -moz-crisp-edges;
-            image-rendering: crisp-edges;
+            image-rendering: auto;
             display: block !important;
         }
         .card:hover .card-image { transform: scale(1.05); }
@@ -520,7 +519,7 @@
             transition: transform var(--transition), opacity var(--transition), filter var(--transition);
             border-radius: 8px;
             image-rendering: pixelated; image-rendering: -moz-crisp-edges; image-rendering: crisp-edges;
-            display: block !important; padding: 12%;
+            display: block !important; padding: 16%;
             opacity: 0.55; filter: saturate(0.6) brightness(1.1); cursor: pointer;
         }
         .card:hover .card-image-sprite {
