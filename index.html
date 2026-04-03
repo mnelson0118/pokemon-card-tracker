@@ -1956,9 +1956,8 @@
                                 <div class="card-title">${card.name}</div>
                                 <div class="card-generation">Gen ${card.generation}</div>
                                 ${card.setName ? `<div class="card-set-name">${card.setName}</div>` : ''}
-                                ${!card.collected && card.nmPrices ? `<div class="card-nm-prices">
-                                    ${card.nmPrices.firstEd ? `<div class="card-nm-price"><span class="card-nm-label">1st Ed</span><span class="card-nm-value">$${card.nmPrices.firstEd}</span></div>` : ''}
-                                    ${card.nmPrices.unlimited ? `<div class="card-nm-price"><span class="card-nm-label">Unl.</span><span class="card-nm-value">$${card.nmPrices.unlimited}</span></div>` : ''}
+                                ${!card.collected && card.nmPrices && card.nmPrices.market ? `<div class="card-nm-prices">
+                                    <div class="card-nm-price"><span class="card-nm-label">Market</span><span class="card-nm-value">$${card.nmPrices.market}</span></div>
                                 </div>` : ''}
                             </div>
                             ${card.collected && card.price ? `<div class="card-price-display">$${Math.round(card.price)}</div>` : ''}
