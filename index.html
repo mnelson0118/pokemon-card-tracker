@@ -1141,6 +1141,10 @@
                     <div class="stat-value" id="spentAmount">$0.00</div>
                     <div class="stat-label">Spent</div>
                 </div>
+                <div class="stat">
+                    <div class="stat-value" id="marketValue">$0</div>
+                    <div class="stat-label">Mkt Value</div>
+                </div>
                 <div class="progress-section">
                     <div class="progress-label">Progress</div>
                     <div class="progress-bar">
@@ -2021,11 +2025,16 @@ renderCards();
             const total = allCards.length;
             const collected = allCards.filter(c => c.collected).length;
             const spent = allCards.filter(c => c.price).reduce((sum, c) => sum + (c.price || 0), 0);
+            const marketTotal = allCards.reduce((sum, c) => {
+                if (c.nmPrices && c.nmPrices.market) return sum + parseFloat(c.nmPrices.market);
+                return sum;
+            }, 0);
             const progress = total > 0 ? Math.round((collected / total) * 100) : 0;
 
             document.getElementById('collectedCount').textContent = collected;
             document.getElementById('totalCount').textContent = total;
             document.getElementById('spentAmount').textContent = '$' + spent.toFixed(2);
+            document.getElementById('marketValue').textContent = '$' + Math.round(marketTotal).toLocaleString();
             document.getElementById('progressFill').style.width = progress + '%';
             document.getElementById('progressPercent').textContent = progress + '%';
         }
