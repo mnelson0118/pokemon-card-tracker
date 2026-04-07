@@ -1827,7 +1827,13 @@
         }
 
         // Throttled cloud sync (max once per 5 seconds)
-        const syncToCloudThrottled = throttle(syncToCloud, 5000);
+        const syncToCloudThrottled = (() => {
+            let timer = null;
+            return function() {
+                clearTimeout(timer);
+                timer = setTimeout(() => syncToCloud(), 2000);
+            };
+        })();
 
         function saveData() {
             // Save to localStorage (synchronous, fast)
