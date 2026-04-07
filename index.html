@@ -1262,6 +1262,34 @@
     </div>
 
     <script>
+        // One-time cache buster — clears old service workers and caches
+        (function() {
+            const CACHE_BUSTER_VERSION = 3;
+            const lastBust = parseInt(localStorage.getItem('cache_bust_v') || '0');
+            if (lastBust < CACHE_BUSTER_VERSION) {
+                console.log('🧹 Busting old caches (v' + CACHE_BUSTER_VERSION + ')...');
+                // Unregister all service workers
+                if ('serviceWorker' in navigator) {
+                    navigator.serviceWorker.getRegistrations().then(regs => {
+                        regs.forEach(r => r.unregister());
+                    });
+                }
+                // Delete all caches
+                if ('caches' in window) {
+                    caches.keys().then(names => {
+                        Promise.all(names.map(n => caches.delete(n))).then(() => {
+                            localStorage.setItem('cache_bust_v', String(CACHE_BUSTER_VERSION));
+                            console.log('✅ Caches cleared — reloading');
+                            location.reload();
+                        });
+                    });
+                } else {
+                    localStorage.setItem('cache_bust_v', String(CACHE_BUSTER_VERSION));
+                }
+            }
+        })();
+    </script>
+    <script>
         const STORAGE_KEY = 'pokemon_collection_data';
         let allCards = [];
         let filteredCards = [];
