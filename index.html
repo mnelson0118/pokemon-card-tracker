@@ -8,8 +8,8 @@
     <meta name="apple-mobile-web-app-title" content="Pokédex">
     <meta name="theme-color" content="#1A1A2E">
     <meta name="mobile-web-app-capable" content="yes">
+    <link rel="manifest" href="manifest.json">
     <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' fill='%23DC143C' rx='22'/%3E%3Crect x='10' y='10' width='160' height='70' fill='%23A0102C' rx='10'/%3E%3Crect x='0' y='82' width='180' height='12' fill='%236B0A1D'/%3E%3Ccircle cx='55' cy='48' r='28' fill='%233B82F6'/%3E%3Ccircle cx='55' cy='48' r='17' fill='%2360A5FA'/%3E%3Ccircle cx='52' cy='42' r='6' fill='white' opacity='0.7'/%3E%3Ccircle cx='115' cy='22' r='8' fill='%2322C55E'/%3E%3Ccircle cx='140' cy='22' r='8' fill='%23FACC15'/%3E%3Ccircle cx='165' cy='22' r='8' fill='%2322C55E'/%3E%3Crect x='30' y='105' width='120' height='55' fill='%230F1729' rx='10'/%3E%3Crect x='40' y='115' width='100' height='35' fill='%231A1A2E' rx='5'/%3E%3C/svg%3E">
-    <link rel="manifest" href="data:application/json,%7B%22name%22%3A%22Pok%C3%A9dex%20Card%20Tracker%22%2C%22short_name%22%3A%22Pok%C3%A9dex%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%221A1A2E%22%2C%22theme_color%22%3A%221A1A2E%22%7D">
     <title>Pokédex Card Tracker</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' shape-rendering='crispEdges'%3E%3Crect width='16' height='16' fill='%23DC143C' rx='2'/%3E%3Crect x='1' y='1' width='14' height='6' fill='%23A0102C' rx='1'/%3E%3Crect x='0' y='7' width='16' height='1' fill='%236B0A1D'/%3E%3Ccircle cx='5' cy='4' r='2.5' fill='%233B82F6'/%3E%3Ccircle cx='5' cy='4' r='1.5' fill='%2360A5FA'/%3E%3Ccircle cx='5' cy='3.5' r='0.5' fill='%23fff' opacity='0.7'/%3E%3Ccircle cx='10' cy='2' r='0.7' fill='%2322C55E'/%3E%3Ccircle cx='12' cy='2' r='0.7' fill='%23FACC15'/%3E%3Ccircle cx='14' cy='2' r='0.7' fill='%2322C55E'/%3E%3Crect x='3' y='9' width='10' height='5' fill='%230F1729' rx='1'/%3E%3Crect x='4' y='10' width='8' height='3' fill='%231A1A2E' rx='0.5'/%3E%3C/svg%3E">
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -1272,28 +1272,29 @@
     <script>
         // One-time cache buster — clears old service workers and caches
         (function() {
-            const CACHE_BUSTER_VERSION = 4;
-            const lastBust = parseInt(localStorage.getItem('cache_bust_v') || '0');
-            if (lastBust < CACHE_BUSTER_VERSION) {
-                console.log('🧹 Busting old caches (v' + CACHE_BUSTER_VERSION + ')...');
-                // Unregister all service workers
-                if ('serviceWorker' in navigator) {
-                    navigator.serviceWorker.getRegistrations().then(regs => {
-                        regs.forEach(r => r.unregister());
-                    });
-                }
-                // Delete all caches
-                if ('caches' in window) {
-                    caches.keys().then(names => {
-                        Promise.all(names.map(n => caches.delete(n))).then(() => {
-                            localStorage.setItem('cache_bust_v', String(CACHE_BUSTER_VERSION));
+            try {
+                var CACHE_BUSTER_VERSION = 5;
+                var lastBust = parseInt(localStorage.getItem('cache_bust_v') || '0');
+                if (lastBust < CACHE_BUSTER_VERSION) {
+                    // Save flag FIRST to prevent reload loops
+                    localStorage.setItem('cache_bust_v', String(CACHE_BUSTER_VERSION));
+                    console.log('🧹 Busting old caches (v' + CACHE_BUSTER_VERSION + ')...');
+                    if ('serviceWorker' in navigator) {
+                        navigator.serviceWorker.getRegistrations().then(function(regs) {
+                            regs.forEach(function(r) { r.unregister(); });
+                        });
+                    }
+                    if ('caches' in window) {
+                        caches.keys().then(function(names) {
+                            return Promise.all(names.map(function(n) { return caches.delete(n); }));
+                        }).then(function() {
                             console.log('✅ Caches cleared — reloading');
                             location.reload();
                         });
-                    });
-                } else {
-                    localStorage.setItem('cache_bust_v', String(CACHE_BUSTER_VERSION));
+                    }
                 }
+            } catch(e) {
+                console.log('Cache buster error:', e);
             }
         })();
     </script>
