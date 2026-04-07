@@ -1154,6 +1154,7 @@
                 </div>
                 <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">🌙</button>
                 <button class="ingestor-btn" onclick="openIngestor()" title="Add card URLs">+ Add Cards</button>
+                <button class="ingestor-btn" onclick="debugSync()" title="Debug sync" style="border-color:var(--yellow);color:var(--yellow);">🔍 Debug</button>
             </div>
         </header>
 
@@ -2074,6 +2075,34 @@ renderCards();
         }
 
         // Start the app
+        function debugSync() {
+            var msg = 'LOCAL STATE:\n';
+            msg += 'Cards loaded: ' + allCards.length + '\n';
+            msg += 'CSV loaded: ' + sampleData.length + '\n';
+            msg += 'Collected: ' + allCards.filter(c => c.collected).length + '\n';
+            msg += 'With links: ' + allCards.filter(c => c.cardLink && c.cardLink.trim()).length + '\n';
+            msg += 'With prices: ' + allCards.filter(c => c.nmPrices).length + '\n';
+            msg += 'localStorage: ' + (localStorage.getItem(STORAGE_KEY) ? JSON.parse(localStorage.getItem(STORAGE_KEY)).length + ' cards' : 'empty') + '\n';
+            msg += 'Firebase: ' + firebaseConfig.projectId + '\n';
+            msg += 'User ID: ' + userId + '\n\n';
+
+            fetch(firebaseConfig.databaseURL + '/users/' + userId + '/collection.json')
+                .then(r => r.json())
+                .then(d => {
+                    if (d && typeof d === 'object') {
+                        var entries = Object.values(d);
+                        msg += 'FIREBASE:\n';
+                        msg += 'Cards: ' + entries.length + '\n';
+                        msg += 'Collected: ' + entries.filter(e => e.collected).length + '\n';
+                        msg += 'With prices: ' + entries.filter(e => e.nmPrices).length + '\n';
+                    } else {
+                        msg += 'FIREBASE: empty/null';
+                    }
+                    alert(msg);
+                })
+                .catch(e => { msg += 'FIREBASE ERROR: ' + e.message; alert(msg); });
+        }
+
         function init() {
             initializeApp();
         }
