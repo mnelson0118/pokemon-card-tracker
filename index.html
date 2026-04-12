@@ -1191,7 +1191,7 @@
                     <button class="filter-gen-btn" onclick="setCollectedFilter('no-price')" style="border-color:var(--yellow);color:var(--yellow);">No Price</button>
                 </div>
                 <div class="filter-panel-label">Generation</div>
-                <div class="filter-gen-buttons">
+                <div class="filter-gen-buttons" style="margin-bottom: 12px;">
                     <button class="filter-gen-btn active" onclick="setGenFilter('all')">All</button>
                     <button class="filter-gen-btn" onclick="setGenFilter(1)">Gen 1</button>
                     <button class="filter-gen-btn" onclick="setGenFilter(2)">Gen 2</button>
@@ -1202,6 +1202,12 @@
                     <button class="filter-gen-btn" onclick="setGenFilter(7)">Gen 7</button>
                     <button class="filter-gen-btn" onclick="setGenFilter(8)">Gen 8</button>
                     <button class="filter-gen-btn" onclick="setGenFilter(9)">Gen 9</button>
+                </div>
+                <div class="filter-panel-label">Language</div>
+                <div class="filter-gen-buttons">
+                    <button class="filter-gen-btn active" onclick="setLangFilter('all')">All</button>
+                    <button class="filter-gen-btn" onclick="setLangFilter('english')">English</button>
+                    <button class="filter-gen-btn" onclick="setLangFilter('japanese')">Japanese</button>
                 </div>
             </div>
         </div>
@@ -1854,6 +1860,7 @@
 
         let activeGenFilter = 'all';
         let activeCollectedFilter = 'all';
+        let activeLangFilter = 'all';
 
         function setCollectedFilter(filter) {
             activeCollectedFilter = filter;
@@ -1888,10 +1895,35 @@
         function setGenFilter(gen) {
             activeGenFilter = gen;
             document.querySelectorAll('.filter-gen-btn').forEach(btn => {
-                btn.classList.remove('active');
-                if ((gen === 'all' && btn.textContent === 'All') ||
-                    (gen !== 'all' && btn.textContent === `Gen ${gen}`)) {
-                    btn.classList.add('active');
+                const t = btn.textContent.trim();
+                if (t.startsWith('Gen ') || (t === 'All' && btn.closest('.filter-gen-buttons') && btn.nextElementSibling && btn.nextElementSibling.textContent.trim() === 'Gen 1')) {
+                    btn.classList.remove('active');
+                    if ((gen === 'all' && t === 'All') ||
+                        (gen !== 'all' && t === `Gen ${gen}`)) {
+                        btn.classList.add('active');
+                    }
+                }
+            });
+            applyFilters();
+            setTimeout(() => {
+                const panel = document.getElementById('filterPanel');
+                const btn = document.getElementById('filterToggleBtn');
+                if (panel) panel.style.display = 'none';
+                if (btn) btn.classList.remove('active');
+            }, 2000);
+        }
+
+        function setLangFilter(lang) {
+            activeLangFilter = lang;
+            document.querySelectorAll('.filter-gen-btn').forEach(btn => {
+                const t = btn.textContent.trim();
+                if (['English', 'Japanese'].includes(t) || (t === 'All' && btn.closest('.filter-gen-buttons') && btn.nextElementSibling && btn.nextElementSibling.textContent.trim() === 'English')) {
+                    btn.classList.remove('active');
+                    if ((lang === 'all' && t === 'All') ||
+                        (lang === 'english' && t === 'English') ||
+                        (lang === 'japanese' && t === 'Japanese')) {
+                        btn.classList.add('active');
+                    }
                 }
             });
             applyFilters();
@@ -1920,7 +1952,11 @@
                     (activeCollectedFilter === 'collected' && card.collected) ||
                     (activeCollectedFilter === 'uncollected' && !card.collected) ||
                     (activeCollectedFilter === 'no-price' && (card.imageUrl && card.imageUrl.trim()) && (!card.nmPrices || !card.nmPrices.market));
-                return matchesGen && matchesSearch && matchesCollected;
+                const isJapanese = card.cardLink && card.cardLink.includes('pokemon-japan');
+                const matchesLang = activeLangFilter === 'all' ||
+                    (activeLangFilter === 'japanese' && isJapanese) ||
+                    (activeLangFilter === 'english' && !isJapanese);
+                return matchesGen && matchesSearch && matchesCollected && matchesLang;
             });
             updateFilterBanner();
             renderCards();
@@ -1929,13 +1965,15 @@
         function updateFilterBanner() {
             const banner = document.getElementById('activeFilterBanner');
             const tagsEl = document.getElementById('activeFilterTags');
-            const hasFilter = activeCollectedFilter !== 'all' || activeGenFilter !== 'all';
+            const hasFilter = activeCollectedFilter !== 'all' || activeGenFilter !== 'all' || activeLangFilter !== 'all';
             if (!hasFilter) { banner.classList.remove('visible'); return; }
             let tags = '';
             if (activeCollectedFilter === 'collected') tags += '<span class="filter-tag">Collected</span>';
             if (activeCollectedFilter === 'uncollected') tags += '<span class="filter-tag">Not Collected</span>';
             if (activeCollectedFilter === 'no-price') tags += '<span class="filter-tag">No Market Price</span>';
             if (activeGenFilter !== 'all') tags += `<span class="filter-tag">Gen ${activeGenFilter}</span>`;
+            if (activeLangFilter === 'english') tags += '<span class="filter-tag">English</span>';
+            if (activeLangFilter === 'japanese') tags += '<span class="filter-tag">Japanese</span>';
             tagsEl.innerHTML = tags;
             banner.classList.add('visible');
         }
@@ -1943,6 +1981,7 @@
         function clearAllFilters() {
             activeCollectedFilter = 'all';
             activeGenFilter = 'all';
+            activeLangFilter = 'all';
             document.querySelectorAll('.filter-gen-btn').forEach(btn => {
                 btn.classList.remove('active');
                 if (btn.textContent.trim() === 'All') btn.classList.add('active');
