@@ -1188,6 +1188,7 @@
                     <button class="filter-gen-btn active" onclick="setCollectedFilter('all')">All</button>
                     <button class="filter-gen-btn" onclick="setCollectedFilter('collected')">Collected</button>
                     <button class="filter-gen-btn" onclick="setCollectedFilter('uncollected')">Not collected</button>
+                    <button class="filter-gen-btn" onclick="setCollectedFilter('no-price')" style="border-color:var(--yellow);color:var(--yellow);">No Price</button>
                 </div>
                 <div class="filter-panel-label">Generation</div>
                 <div class="filter-gen-buttons">
@@ -1860,7 +1861,8 @@
                     btn.classList.remove('active');
                     if ((filter === 'all' && btn.textContent.trim() === 'All') ||
                         (filter === 'collected' && btn.textContent.trim() === 'Collected') ||
-                        (filter === 'uncollected' && btn.textContent.trim() === 'Not collected')) {
+                        (filter === 'uncollected' && btn.textContent.trim() === 'Not collected') ||
+                        (filter === 'no-price' && btn.textContent.trim() === 'No Price')) {
                         btn.classList.add('active');
                     }
                 }
@@ -1915,7 +1917,8 @@
                 const matchesSearch = !searchTerm || (card.name || '').toLowerCase().includes(searchTerm);
                 const matchesCollected = activeCollectedFilter === 'all' ||
                     (activeCollectedFilter === 'collected' && card.collected) ||
-                    (activeCollectedFilter === 'uncollected' && !card.collected);
+                    (activeCollectedFilter === 'uncollected' && !card.collected) ||
+                    (activeCollectedFilter === 'no-price' && (!card.nmPrices || !card.nmPrices.market));
                 return matchesGen && matchesSearch && matchesCollected;
             });
             updateFilterBanner();
@@ -1930,6 +1933,7 @@
             let tags = '';
             if (activeCollectedFilter === 'collected') tags += '<span class="filter-tag">Collected</span>';
             if (activeCollectedFilter === 'uncollected') tags += '<span class="filter-tag">Not Collected</span>';
+            if (activeCollectedFilter === 'no-price') tags += '<span class="filter-tag">No Market Price</span>';
             if (activeGenFilter !== 'all') tags += `<span class="filter-tag">Gen ${activeGenFilter}</span>`;
             tagsEl.innerHTML = tags;
             banner.classList.add('visible');
