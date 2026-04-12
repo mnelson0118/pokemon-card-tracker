@@ -1248,6 +1248,7 @@
                 <div class="ing-card-meta" id="ingDetailMeta"></div>
                 <div class="ing-section-label">Current Card Link</div>
                 <div class="ing-current-link" id="ingCurrentLink">None</div>
+                <div class="ing-pricing" id="ingPricing" style="display:none; background:#0F1729; border:1px solid #2A3A5C; border-radius:8px; padding:10px 14px; margin-bottom:14px;"></div>
                 <div class="ing-section-label">Paste TCGPlayer Card URL</div>
                 <input type="text" class="ing-url-input" id="ingUrlInput" placeholder="Paste a TCGPlayer URL here..." />
                 <div class="ing-extracted" id="ingExtracted"></div>
@@ -2321,6 +2322,22 @@ renderCards();
 
             document.getElementById('ingUrlInput').value = '';
             ingClearPreviewSilent();
+
+            // Show market price info
+            const pricingEl = document.getElementById('ingPricing');
+            if (card.nmPrices && Object.keys(card.nmPrices).length > 0) {
+                const p = card.nmPrices;
+                let rows = '<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:#FACC15;margin-bottom:8px;">Market Prices</div>';
+                if (p.market) rows += `<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:13px;"><span style="color:#8890A4;">Market</span><span style="color:#22C55E;font-weight:700;">$${p.market}</span></div>`;
+                if (p.firstEd) rows += `<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:13px;"><span style="color:#8890A4;">1st Edition</span><span style="color:#22C55E;font-weight:700;">$${p.firstEd}</span></div>`;
+                if (p.unlimited) rows += `<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:13px;"><span style="color:#8890A4;">Unlimited</span><span style="color:#22C55E;font-weight:700;">$${p.unlimited}</span></div>`;
+                if (p.lastSale) rows += `<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:13px;"><span style="color:#8890A4;">Last Sale</span><span style="color:#22C55E;font-weight:700;">$${p.lastSale}</span></div>`;
+                pricingEl.innerHTML = rows;
+                pricingEl.style.display = 'block';
+            } else {
+                pricingEl.innerHTML = '<div style="font-size:12px;color:#8890A4;text-align:center;">No market prices available</div>';
+                pricingEl.style.display = 'block';
+            }
 
             if (card.imageUrl && card.imageUrl.trim()) {
                 document.getElementById('ingPreview').innerHTML = `<img src="${card.imageUrl}" alt="${card.name}" />`;
