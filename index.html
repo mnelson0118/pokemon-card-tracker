@@ -1918,7 +1918,7 @@
                 const matchesCollected = activeCollectedFilter === 'all' ||
                     (activeCollectedFilter === 'collected' && card.collected) ||
                     (activeCollectedFilter === 'uncollected' && !card.collected) ||
-                    (activeCollectedFilter === 'no-price' && (!card.nmPrices || !card.nmPrices.market));
+                    (activeCollectedFilter === 'no-price' && (card.imageUrl && card.imageUrl.trim()) && (!card.nmPrices || !card.nmPrices.market));
                 return matchesGen && matchesSearch && matchesCollected;
             });
             updateFilterBanner();
