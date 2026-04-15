@@ -1189,6 +1189,7 @@
                     <button class="filter-gen-btn" onclick="setCollectedFilter('collected')">Collected</button>
                     <button class="filter-gen-btn" onclick="setCollectedFilter('uncollected')">Not collected</button>
                     <button class="filter-gen-btn" onclick="setCollectedFilter('no-price')" style="border-color:var(--yellow);color:var(--yellow);">No Price</button>
+                    <button class="filter-gen-btn" onclick="setCollectedFilter('no-image')" style="border-color:var(--yellow);color:var(--yellow);">No Image</button>
                 </div>
                 <div class="filter-panel-label">Generation</div>
                 <div class="filter-gen-buttons" style="margin-bottom: 12px;">
@@ -1870,7 +1871,8 @@
                     if ((filter === 'all' && btn.textContent.trim() === 'All') ||
                         (filter === 'collected' && btn.textContent.trim() === 'Collected') ||
                         (filter === 'uncollected' && btn.textContent.trim() === 'Not collected') ||
-                        (filter === 'no-price' && btn.textContent.trim() === 'No Price')) {
+                        (filter === 'no-price' && btn.textContent.trim() === 'No Price') ||
+                        (filter === 'no-image' && btn.textContent.trim() === 'No Image')) {
                         btn.classList.add('active');
                     }
                 }
@@ -1951,7 +1953,8 @@
                 const matchesCollected = activeCollectedFilter === 'all' ||
                     (activeCollectedFilter === 'collected' && card.collected) ||
                     (activeCollectedFilter === 'uncollected' && !card.collected) ||
-                    (activeCollectedFilter === 'no-price' && (card.imageUrl && card.imageUrl.trim()) && (!card.nmPrices || !card.nmPrices.market));
+                    (activeCollectedFilter === 'no-price' && (card.imageUrl && card.imageUrl.trim()) && (!card.nmPrices || !card.nmPrices.market)) ||
+                    (activeCollectedFilter === 'no-image' && (!card.imageUrl || !card.imageUrl.trim()));
                 const isJapanese = card.cardLink && card.cardLink.includes('pokemon-japan');
                 const matchesLang = activeLangFilter === 'all' ||
                     (activeLangFilter === 'japanese' && isJapanese) ||
@@ -1971,6 +1974,7 @@
             if (activeCollectedFilter === 'collected') tags += '<span class="filter-tag">Collected</span>';
             if (activeCollectedFilter === 'uncollected') tags += '<span class="filter-tag">Not Collected</span>';
             if (activeCollectedFilter === 'no-price') tags += '<span class="filter-tag">No Market Price</span>';
+            if (activeCollectedFilter === 'no-image') tags += '<span class="filter-tag">No Image</span>';
             if (activeGenFilter !== 'all') tags += `<span class="filter-tag">Gen ${activeGenFilter}</span>`;
             if (activeLangFilter === 'english') tags += '<span class="filter-tag">English</span>';
             if (activeLangFilter === 'japanese') tags += '<span class="filter-tag">Japanese</span>';
