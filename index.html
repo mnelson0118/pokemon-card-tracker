@@ -1978,6 +1978,7 @@
             if (activeGenFilter !== 'all') tags += `<span class="filter-tag">Gen ${activeGenFilter}</span>`;
             if (activeLangFilter === 'english') tags += '<span class="filter-tag">English</span>';
             if (activeLangFilter === 'japanese') tags += '<span class="filter-tag">Japanese</span>';
+            tags += `<span class="filter-tag" style="background:rgba(250,204,21,0.15);border-color:rgba(250,204,21,0.3);color:var(--yellow);">${filteredCards.length} cards</span>`;
             tagsEl.innerHTML = tags;
             banner.classList.add('visible');
         }
