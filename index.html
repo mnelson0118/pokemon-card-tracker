@@ -1118,7 +1118,7 @@
         <header>
             <div class="header-left">
                 <div class="dex-indicator"></div>
-                <div class="logo">
+                <div class="logo" onclick="resetView()" style="cursor:pointer;">
                     <div class="pokeball">
                         <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
                             <circle cx="50" cy="50" r="48" class="pokeball-outer"/>
@@ -1992,6 +1992,22 @@
                 if (btn.textContent.trim() === 'All') btn.classList.add('active');
             });
             applyFilters();
+        }
+
+        function resetView() {
+            // Clear search
+            const input = document.getElementById('searchInput');
+            if (input) { input.value = ''; }
+            document.getElementById('searchClear').classList.remove('visible');
+            // Close filter panel
+            const panel = document.getElementById('filterPanel');
+            const btn = document.getElementById('filterToggleBtn');
+            if (panel) panel.style.display = 'none';
+            if (btn) btn.classList.remove('active');
+            // Clear all filters
+            clearAllFilters();
+            // Scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
         function renderCards() {
