@@ -2473,7 +2473,13 @@ renderCards();
             this._debounce = setTimeout(() => ingHandleUrlInput(), 400);
         });
         document.getElementById('ingUrlInput').addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') ingHandleUrlInput();
+            if (e.key === 'Enter') {
+                if (!document.getElementById('ingApproveBtn').disabled) {
+                    ingApprove();
+                } else {
+                    ingHandleUrlInput();
+                }
+            }
         });
 
         // TCGPlayer set slug → proper display name lookup
