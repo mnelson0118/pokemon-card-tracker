@@ -2517,6 +2517,19 @@ function renderStats(el) {
       </div>
     ` : ''}
 
+    <div class="chart-block">
+      <div class="chart-header">
+        <span class="chart-label">Backup &amp; Import</span>
+      </div>
+      <div style="font-family:'Bricolage Grotesque', sans-serif; font-size:13px; color:var(--text-dim); line-height:1.55; margin-bottom:14px;">
+        Restore from your old Firebase data, import a backup, or export your current collection as JSON.
+      </div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <button class="dialog-btn primary" onclick="openImportDialog()">Import collection</button>
+        <button class="dialog-btn" onclick="exportCollection()">Export backup (JSON)</button>
+      </div>
+    </div>
+
     <div style="text-align:center; padding: 14px; color: var(--text-faint); font-family:'JetBrains Mono', monospace; font-size:11px; letter-spacing:1px; font-weight:500;">
       Press <kbd style="background:var(--screen-bg-deep); padding:2px 6px; border-radius:3px; border:1px solid var(--screen-border-bright); color:var(--text);">A</kbd> or tap <span style="color:var(--accent-red); font-weight:700;">DEX</span> to browse your collection
     </div>
@@ -3200,6 +3213,172 @@ function toast(msg) {
   document.body.appendChild(t);
   if (toastTimer) clearTimeout(toastTimer);
   toastTimer = setTimeout(() => t.remove(), 2400);
+}
+
+// ============================================================================
+// IMPORT / EXPORT — migrate from old versions, back up, restore
+// ============================================================================
+
+// Export current collection as a downloadable JSON file
+function exportCollection() {
+  const payload = {
+    exportedAt: new Date().toISOString(),
+    version: "v10",
+    collection,
+    valueHistory,
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `pokedex-tracker-backup-${new Date().toISOString().split("T")[0]}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast("Backup downloaded");
+}
+
+function openImportDialog() {
+  showModal(`
+    <div class="dialog" onclick="event.stopPropagation()">
+      <button class="dialog-close" onclick="closeModal()">✕</button>
+      <div class="dialog-title">Import Collection</div>
+      <div class="dialog-body">
+        <p>Paste exported JSON below to restore your collection. Supported formats:</p>
+        <ul style="font-size:12px; color:var(--text-dim); margin: 6px 0 12px 18px; line-height:1.7;">
+          <li>v10 backup (this app's <strong>Export</strong> output)</li>
+          <li>v1 Firebase data — paste the contents of <code style="background:var(--screen-bg-deep); padding:1px 5px; border-radius:3px; font-size:11px;">/users/pokemon_collection/collection.json</code></li>
+          <li>Any object mapping card IDs to <code>{ collected, price, cardLink, imageUrl, ... }</code></li>
+        </ul>
+      </div>
+      <div class="dialog-section-label">Collection JSON</div>
+      <textarea id="importJsonInput" class="dialog-input" style="min-height:160px; font-family:'JetBrains Mono', monospace; font-size:11px; resize:vertical;" placeholder='Paste your JSON here...'></textarea>
+
+      <div class="dialog-section-label" style="margin-top:14px;">Merge mode</div>
+      <div class="filter-chips" style="margin-bottom:14px;">
+        <button class="chip active" id="mergeBtnMerge" onclick="setImportMode('merge')">Merge (keep existing)</button>
+        <button class="chip warn" id="mergeBtnReplace" onclick="setImportMode('replace')">Replace all</button>
+      </div>
+
+      <div class="dialog-actions">
+        <button class="dialog-btn" onclick="closeModal()">Cancel</button>
+        <button class="dialog-btn primary" onclick="performImport()">Import</button>
+      </div>
+    </div>
+  `);
+}
+
+let importMode = "merge";
+function setImportMode(mode) {
+  importMode = mode;
+  const m = document.getElementById("mergeBtnMerge");
+  const r = document.getElementById("mergeBtnReplace");
+  if (m) m.classList.toggle("active", mode === "merge");
+  if (r) r.classList.toggle("active", mode === "replace");
+}
+
+function performImport() {
+  const text = document.getElementById("importJsonInput")?.value.trim();
+  if (!text) { toast("Paste JSON first"); return; }
+  let parsed;
+  try {
+    parsed = JSON.parse(text);
+  } catch (err) {
+    toast("Invalid JSON — check for typos");
+    return;
+  }
+
+  // Detect shape: v10 backup, v1 Firebase, or raw collection object
+  let incomingCollection = null;
+  let incomingHistory = null;
+
+  if (parsed && typeof parsed === "object" && parsed.collection && typeof parsed.collection === "object") {
+    // v10 backup format
+    incomingCollection = parsed.collection;
+    incomingHistory = Array.isArray(parsed.valueHistory) ? parsed.valueHistory : null;
+  } else if (parsed && typeof parsed === "object") {
+    // Heuristic: if values look like card entries, treat the whole thing as a collection
+    const sampleKey = Object.keys(parsed)[0];
+    const sample = sampleKey ? parsed[sampleKey] : null;
+    if (sample && typeof sample === "object" && (
+      "collected" in sample || "cardLink" in sample || "imageUrl" in sample ||
+      "price" in sample || "nmPrices" in sample
+    )) {
+      incomingCollection = parsed;
+    }
+  }
+
+  if (!incomingCollection) {
+    toast("Couldn't recognize this JSON format");
+    return;
+  }
+
+  // Normalize keys to numeric IDs and detect language from cardLink if missing
+  const normalized = {};
+  let imported = 0;
+  let skipped = 0;
+  for (const [key, raw] of Object.entries(incomingCollection)) {
+    const id = parseInt(key, 10);
+    if (isNaN(id) || id < 1 || id > TOTAL_POKEMON) { skipped++; continue; }
+    if (!raw || typeof raw !== "object") { skipped++; continue; }
+    const entry = {};
+    if (raw.collected) entry.collected = true;
+    if (typeof raw.price === "number") entry.price = raw.price;
+    else if (typeof raw.price === "string" && raw.price.trim()) {
+      const p = parseFloat(raw.price);
+      if (!isNaN(p)) entry.price = p;
+    }
+    if (raw.cardLink) entry.cardLink = String(raw.cardLink);
+    if (raw.productId) entry.productId = raw.productId;
+    if (raw.imageUrl) entry.imageUrl = String(raw.imageUrl);
+    if (raw.setName) entry.setName = String(raw.setName);
+    if (raw.nmPrices && typeof raw.nmPrices === "object") entry.nmPrices = raw.nmPrices;
+    if (raw.language) entry.language = raw.language;
+    else if (entry.cardLink) entry.language = parseLanguageFromUrl(entry.cardLink);
+    if (raw.addedAt) entry.addedAt = raw.addedAt;
+    if (raw.lastUpdated) entry.lastUpdated = raw.lastUpdated;
+    // Skip empty entries
+    if (Object.keys(entry).length === 0) { skipped++; continue; }
+    normalized[id] = entry;
+    imported++;
+  }
+
+  if (imported === 0) {
+    toast("No valid card entries found");
+    return;
+  }
+
+  // Apply
+  if (importMode === "replace") {
+    collection = normalized;
+  } else {
+    // Merge: incoming entries overwrite existing ones field-by-field
+    for (const [id, entry] of Object.entries(normalized)) {
+      collection[id] = { ...(collection[id] || {}), ...entry };
+    }
+  }
+  save(COLLECTION_KEY, collection);
+
+  if (incomingHistory) {
+    if (importMode === "replace") valueHistory = incomingHistory;
+    else valueHistory = mergeValueHistory(valueHistory, incomingHistory);
+    save(VALUE_HISTORY_KEY, valueHistory);
+  }
+
+  recordValueSnapshot();
+  closeModal();
+  const skipMsg = skipped > 0 ? ` · ${skipped} skipped` : "";
+  toast(`Imported ${imported} card${imported === 1 ? "" : "s"}${skipMsg}`);
+  render();
+}
+
+// Combine two history arrays, deduping by date (most recent value per day wins)
+function mergeValueHistory(a, b) {
+  const byDate = {};
+  for (const e of a) if (e?.date) byDate[e.date] = e;
+  for (const e of b) if (e?.date) byDate[e.date] = e;
+  return Object.values(byDate).sort((x, y) => x.date.localeCompare(y.date)).slice(-90);
 }
 
 // Boot the device
