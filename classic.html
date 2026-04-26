@@ -1,0 +1,3184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=0.9">
+    <meta name="theme-color" content="#1A1A2E">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Pokédex">
+    <link rel="apple-touch-icon" sizes="180x180" href="pokedex-favicon-180.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="pokedex-favicon-192.png" media="(prefers-color-scheme: light)">
+    <link rel="icon" type="image/png" sizes="192x192" href="pokedex-favicon-dark-192.png" media="(prefers-color-scheme: dark)">
+    <link rel="icon" type="image/png" sizes="32x32" href="pokedex-favicon-32.png" media="(prefers-color-scheme: light)">
+    <link rel="icon" type="image/png" sizes="32x32" href="pokedex-favicon-dark-32.png" media="(prefers-color-scheme: dark)">
+    <title>Pokédex Card Tracker</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-red: #DC143C;
+            --red-dark: #A0102C;
+            --red-deeper: #6B0A1D;
+            --blue: #3B82F6;
+            --blue-glow: #60A5FA;
+            --yellow: #FACC15;
+            --green: #22C55E;
+            --bg: #1A1A2E;
+            --surface: #16213E;
+            --surface-light: #1E2D4D;
+            --text: #E8E8F0;
+            --text-dim: #8890A4;
+            --border: #2A3A5C;
+            --input-bg: #0F1729;
+            --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        html {
+            height: 100%;
+            background-color: var(--bg);
+            background-attachment: fixed;
+        }
+
+        body {
+            height: 100%;
+            font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+            color: var(--text);
+            margin: 0;
+            padding: 0;
+            overflow-y: scroll;
+            background-color: var(--bg);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px 30px;
+            width: 100%;
+        }
+
+        @media (max-width: 768px) {
+            .container { max-width: 100%; padding: 0 12px 16px; }
+        }
+        @media (max-width: 430px) {
+            .container { padding: 0 10px 12px; }
+        }
+
+        /* Header - Pokédex Red Gradient */
+        header {
+            background: linear-gradient(135deg, var(--red-dark), var(--red-deeper));
+            border-bottom: 3px solid var(--primary-red);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0;
+            padding: 14px 24px;
+            gap: 12px;
+            flex-wrap: wrap;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        @media (min-width: 769px) {
+            header {
+                flex-wrap: nowrap;
+                gap: 24px;
+                padding: 16px 28px;
+            }
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            order: 1;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0;
+        }
+
+        .pokeball {
+            width: 28px; height: 28px;
+            position: relative;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+        }
+        @media (min-width: 769px) {
+            .pokeball { width: 32px; height: 32px; }
+        }
+        .pokeball svg { width: 100%; height: 100%; }
+
+        /* Override pokeball SVG for dark theme */
+        .pokeball-outer { fill: none; stroke: rgba(255,255,255,0.8); stroke-width: 2.5; }
+        .pokeball-red { fill: var(--primary-red); }
+        .pokeball-white { fill: rgba(255,255,255,0.9); }
+        .pokeball-line { stroke: rgba(255,255,255,0.8); stroke-width: 2.5; }
+        .pokeball-center-circle { fill: var(--red-deeper); stroke: rgba(255,255,255,0.8); stroke-width: 2.5; }
+        .pokeball-center-dot { fill: rgba(255,255,255,0.9); }
+
+        .logo-text h1 {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 14px;
+            font-weight: 400;
+            color: white;
+            letter-spacing: 2px;
+            line-height: 1.3;
+            text-shadow: 2px 2px 0 rgba(0,0,0,0.4);
+        }
+        @media (min-width: 769px) {
+            .logo-text h1 { font-size: 18px; }
+        }
+
+        .logo-text p {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 8px;
+            color: var(--yellow);
+            font-weight: 400;
+            letter-spacing: 1.5px;
+            line-height: 1;
+            margin-top: 4px;
+        }
+        @media (min-width: 769px) {
+            .logo-text p { font-size: 10px; }
+        }
+
+        /* Dex indicator - pulsing blue light */
+        .dex-indicator {
+            width: 14px; height: 14px;
+            border-radius: 50%;
+            background: var(--blue);
+            box-shadow: 0 0 12px var(--blue-glow), inset 0 -2px 4px rgba(0,0,0,0.3);
+            border: 2px solid rgba(255,255,255,0.2);
+            animation: pulse-glow 2s ease-in-out infinite;
+            flex-shrink: 0;
+        }
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 12px var(--blue-glow); }
+            50% { box-shadow: 0 0 24px var(--blue-glow), 0 0 48px rgba(96,165,250,0.3); }
+        }
+
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            align-items: center;
+            margin-left: auto;
+            order: 2;
+        }
+        @media (min-width: 769px) {
+            .stats-container {
+                display: flex;
+                gap: 24px;
+                grid-template-columns: unset;
+            }
+        }
+
+        .stat {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: auto;
+        }
+        @media (min-width: 769px) {
+            .stat { min-width: 60px; }
+        }
+
+        .stat-value {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 12px;
+            font-weight: 400;
+            color: white;
+            line-height: 1;
+        }
+        @media (min-width: 769px) {
+            .stat-value { font-size: 15px; }
+        }
+
+        .stat-label {
+            font-size: 8px;
+            color: rgba(255,255,255,0.5);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+            margin-top: 4px;
+            white-space: nowrap;
+        }
+        @media (min-width: 769px) {
+            .stat-label { font-size: 9px; }
+        }
+
+        .progress-section {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            margin-left: 0;
+            padding-left: 0;
+            border-left: none;
+            order: 3;
+        }
+        @media (min-width: 769px) {
+            .progress-section {
+                display: flex;
+                gap: 10px;
+                margin-left: 16px;
+                padding-left: 16px;
+                border-left: 1px solid rgba(255,255,255,0.15);
+            }
+        }
+
+        .progress-label {
+            font-size: 9px;
+            color: rgba(255,255,255,0.5);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        .progress-bar {
+            width: 80px; height: 4px;
+            background-color: rgba(255,255,255,0.15);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--blue), var(--blue-glow));
+            border-radius: 2px;
+            transition: width var(--transition);
+        }
+        .progress-percent {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 9px;
+            color: var(--blue-glow);
+            min-width: 28px;
+            text-align: right;
+        }
+
+        /* Hide theme toggle - always dark */
+        .theme-toggle { display: none !important; }
+
+        /* Filter Section */
+        .filter-toggle-section {
+            margin-bottom: 20px;
+        }
+
+        .filter-toggle-btn {
+            padding: 12px 18px;
+            border: 2px solid var(--primary-red);
+            background-color: transparent;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--primary-red);
+            cursor: pointer;
+            transition: all var(--transition);
+            width: 100%;
+            min-height: 48px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+        .filter-toggle-btn:hover {
+            background-color: var(--primary-red);
+            color: white;
+        }
+
+        .filter-toolbar {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+
+        .filter-toggle {
+            display: block;
+            padding: 10px 16px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            background-color: var(--surface);
+            color: var(--text-dim);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition);
+            font-size: 14px;
+        }
+        .filter-toggle:hover {
+            border-color: var(--blue);
+            color: var(--text);
+        }
+        .filter-toggle.active {
+            background-color: var(--blue);
+            color: white;
+            border-color: var(--blue);
+        }
+
+        /* Search */
+        .search-wrapper {
+            padding: 20px;
+            background-color: var(--surface);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 14px;
+            color: var(--text);
+            background-color: var(--input-bg);
+            transition: all var(--transition);
+            font-family: 'Outfit', sans-serif;
+        }
+        .search-input::placeholder { color: var(--text-dim); }
+        .search-input:focus {
+            outline: none;
+            border-color: var(--blue);
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+        }
+
+        .search-input-wrap { position: relative; flex: 1; }
+        .search-input-wrap .search-input { width: 100%; padding-right: 38px; }
+        .search-clear {
+            display: none; position: absolute; right: 10px; top: 50%;
+            transform: translateY(-50%); width: 22px; height: 22px;
+            border: none; background: var(--border); color: var(--text-dim);
+            border-radius: 50%; font-size: 13px; line-height: 1; cursor: pointer;
+            align-items: center; justify-content: center;
+            transition: all var(--transition); padding: 0;
+        }
+        .search-clear:hover { background: var(--blue); color: white; }
+        .search-clear.visible { display: flex; }
+
+        .search-filter-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .search-filter-row .search-input { flex: 1; }
+
+        .filter-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 12px 16px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            background-color: var(--surface-light);
+            color: var(--text-dim);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all var(--transition);
+        }
+        .filter-btn:hover { border-color: var(--blue); color: var(--text); }
+        .filter-btn.active { border-color: var(--blue); color: var(--blue); }
+        .filter-btn svg { fill: currentColor; }
+
+        .filter-panel {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+        }
+        .filter-panel-label {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 8px;
+            color: var(--yellow);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+
+        .filter-gen-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .filter-gen-btn {
+            padding: 7px 14px;
+            border: 2px solid var(--border);
+            border-radius: 20px;
+            background-color: var(--surface);
+            color: var(--text-dim);
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition);
+            font-family: 'Outfit', sans-serif;
+        }
+        .filter-gen-btn:hover { border-color: var(--blue); color: var(--text); }
+        .filter-gen-btn.active {
+            background: var(--blue);
+            color: white;
+            border-color: var(--blue);
+        }
+
+        .filter-group { display: flex; flex-direction: column; gap: 12px; }
+        .filter-group-label {
+            font-size: 12px; font-weight: 800;
+            color: var(--yellow); text-transform: uppercase; letter-spacing: 1px;
+        }
+
+        .filter-buttons { display: none; }
+        .filter-button { display: none; }
+        .filter-button:hover { display: none; }
+        .filter-button.active { display: none; }
+        .filter-button.active:hover { display: none; }
+        .search-box:focus { outline: none; border-color: var(--blue); }
+
+        .active-filter-banner {
+            display: none; align-items: center; justify-content: center; gap: 10px;
+            padding: 10px 20px; background: rgba(59, 130, 246, 0.1);
+            border-bottom: 1px solid rgba(59, 130, 246, 0.2);
+            font-size: 13px; color: var(--blue-glow); font-weight: 600;
+            cursor: pointer; transition: all var(--transition);
+        }
+        .active-filter-banner:hover { background: rgba(59, 130, 246, 0.18); }
+        .active-filter-banner.visible { display: flex; }
+        .active-filter-banner .filter-tags { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; justify-content: center; }
+        .active-filter-banner .filter-tag {
+            display: inline-flex; align-items: center; gap: 4px; padding: 4px 12px;
+            background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 20px; font-size: 12px; color: var(--blue-glow); font-weight: 600;
+        }
+        .active-filter-banner .clear-filters { font-size: 12px; color: var(--text-dim); text-decoration: underline; text-underline-offset: 2px; }
+        .active-filter-banner:hover .clear-filters { color: var(--text); }
+
+        /* Card Grid */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 14px;
+            padding: 20px;
+        }
+        @media (min-width: 500px) {
+            .card-grid { grid-template-columns: repeat(3, 1fr); gap: 14px; }
+        }
+        @media (min-width: 769px) {
+            .card-grid { grid-template-columns: repeat(4, 1fr); gap: 18px; }
+        }
+        @media (min-width: 1024px) {
+            .card-grid { grid-template-columns: repeat(5, 1fr); gap: 18px; }
+        }
+        @media (min-width: 1400px) {
+            .card-grid { grid-template-columns: repeat(6, 1fr); gap: 18px; }
+        }
+
+        .card {
+            background-color: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+            transition: all var(--transition);
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+        }
+        .card:hover {
+            box-shadow: 0 8px 32px rgba(59,130,246,0.15), 0 12px 32px rgba(0,0,0,0.2);
+            transform: translateY(-4px);
+            border-color: var(--blue);
+        }
+
+        .card-image-wrapper {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 63 / 88;
+            background-color: var(--input-bg);
+            display: flex;
+            align-items: center; justify-content: center;
+            overflow: hidden;
+            border-radius: 8px 8px 0 0;
+            cursor: pointer;
+            transition: transform var(--transition);
+            flex-shrink: 0;
+        }
+        .card-image-wrapper:hover { transform: scale(1.03); }
+
+        .card-image {
+            width: 100%; height: 100%;
+            object-fit: contain;
+            padding: 4px;
+            transition: transform var(--transition);
+            border-radius: 8px;
+            image-rendering: auto;
+            display: block !important;
+        }
+        .card:hover .card-image { transform: scale(1.05); }
+
+        .card-image-sprite {
+            width: 100%; height: 100%;
+            object-fit: contain; object-position: center;
+            transition: transform var(--transition), opacity var(--transition), filter var(--transition);
+            border-radius: 8px;
+            image-rendering: pixelated; image-rendering: -moz-crisp-edges; image-rendering: crisp-edges;
+            display: block !important; padding: 16%;
+            opacity: 0.55; filter: saturate(0.6) brightness(1.1); cursor: pointer;
+        }
+        .card:hover .card-image-sprite {
+            transform: scale(1.1); opacity: 0.85;
+            filter: saturate(1) brightness(1.15) drop-shadow(0 0 8px rgba(96, 165, 250, 0.4));
+        }
+
+        .card-image-placeholder {
+            width: 100%; height: 100%;
+            background: linear-gradient(180deg, var(--surface-light) 50%, var(--border) 50%);
+            display: none;
+            align-items: center; justify-content: center;
+            border-radius: 4px;
+            position: relative;
+        }
+        .card-image-placeholder[style*="display: flex"] { display: flex !important; }
+        .card-image-placeholder::after {
+            content: "⚪";
+            font-size: 48px;
+            color: var(--text-dim);
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: rgba(0,0,0,0.85);
+            z-index: 1000;
+            align-items: center; justify-content: center;
+            opacity: 0;
+            transition: opacity var(--transition);
+            backdrop-filter: blur(4px);
+        }
+        .modal.active { display: flex; opacity: 1; }
+
+        .modal-content {
+            position: relative;
+            width: 90%; max-width: 400px;
+            height: auto; max-height: 90vh;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+        }
+        .modal-image-container {
+            width: 100%;
+            aspect-ratio: 63 / 88;
+            overflow: hidden;
+            display: flex; align-items: center; justify-content: center;
+            background: rgba(0,0,0,0.5);
+            border-radius: 12px;
+        }
+        .modal-image {
+            width: 100%; height: 100%;
+            object-fit: contain; border-radius: 8px; cursor: zoom-in;
+            image-rendering: pixelated; image-rendering: -moz-crisp-edges; image-rendering: crisp-edges;
+        }
+        .modal-image.zoomed {
+            cursor: zoom-out;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            object-fit: contain;
+            border-radius: 0;
+            z-index: 1002;
+            background: rgba(0,0,0,0.95);
+        }
+
+        .modal-close {
+            position: fixed;
+            top: 20px; right: 20px;
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            font-size: 28px;
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: background var(--transition);
+            z-index: 1003;
+        }
+        .modal-close:hover { background: rgba(255,255,255,0.25); }
+
+        .modal-info {
+            position: relative;
+            margin-top: 12px;
+            color: white;
+            font-family: 'Outfit', sans-serif;
+            font-size: 14px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: 10px 16px;
+            border-radius: 8px;
+            z-index: 1001;
+            text-align: center;
+        }
+
+        .modal-pricing {
+            width: 100%;
+            margin-top: 8px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+            z-index: 1001;
+        }
+        .modal-pricing-header {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 8px;
+            color: var(--yellow);
+            padding: 10px 14px 6px;
+            letter-spacing: 1px;
+        }
+        .modal-pricing-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 14px;
+            font-family: 'Outfit', sans-serif;
+            font-size: 13px;
+        }
+        .modal-pricing-row:last-child { padding-bottom: 10px; }
+        .modal-pricing-label { color: var(--text-dim); font-weight: 500; }
+        .modal-pricing-value { color: var(--green); font-weight: 700; }
+        .modal-pricing-value.na { color: var(--text-dim); font-weight: 400; font-style: italic; }
+        .modal-pricing-empty {
+            padding: 12px 14px;
+            font-family: 'Outfit', sans-serif;
+            font-size: 12px;
+            color: var(--text-dim);
+            text-align: center;
+        }
+
+        .card-content {
+            padding: 12px;
+            display: flex; flex-direction: column;
+            gap: 8px;
+            flex: 0;
+        }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 4px;
+        }
+        .card-number {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 8px;
+            color: var(--text-dim);
+            font-weight: 400;
+            letter-spacing: 0.5px;
+        }
+        .card-generation {
+            font-size: 10px;
+            color: var(--text-dim);
+            font-weight: 600;
+            letter-spacing: 0.3px;
+            text-transform: uppercase;
+        }
+        .card-set-name {
+            display: inline-block;
+            margin-top: 4px;
+            padding: 2px 8px;
+            background: rgba(250, 204, 21, 0.12);
+            border: 1px solid rgba(250, 204, 21, 0.25);
+            border-radius: 10px;
+            font-size: 9px;
+            color: var(--yellow);
+            font-weight: 600;
+            max-width: 100%;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .card-nm-prices {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            margin-top: 4px;
+            font-family: 'Outfit', sans-serif;
+            font-size: 10px;
+        }
+        .card-nm-price {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .card-nm-label { color: var(--text-dim); font-weight: 500; }
+        .card-nm-value { color: var(--green); font-weight: 700; }
+        .card-price { font-size: 11px; color: var(--green); font-weight: 700; margin-top: 4px; }
+        .card-price-display {
+            background-color: var(--green);
+            color: #0A2E14;
+            border: none; border-radius: 8px;
+            padding: 6px 10px; font-size: 13px; font-weight: 700;
+            display: flex; align-items: center; justify-content: center;
+            margin-left: 6px; flex-shrink: 0;
+        }
+        .card-title {
+            font-size: 13px; font-weight: 700;
+            color: var(--text);
+            margin: 4px 0 0 0;
+            line-height: 1.2;
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 4px;
+            align-items: center; justify-content: center;
+        }
+        .mark-collected-btn {
+            flex: 1;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            background-color: var(--surface-light);
+            border-radius: 6px;
+            font-size: 12px; font-weight: 600;
+            color: var(--text-dim);
+            cursor: pointer;
+            transition: all var(--transition);
+            min-height: 40px;
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'Outfit', sans-serif;
+        }
+        .mark-collected-btn:hover {
+            border-color: var(--blue);
+            color: var(--text);
+        }
+        .mark-collected-btn.collected {
+            background-color: var(--green);
+            color: #0A2E14;
+            border-color: var(--green);
+            flex: 0 0 40px;
+            font-size: 16px;
+            padding: 8px;
+        }
+
+        .tcg-link-btn {
+            flex: 0 0 52px;
+            padding: 10px 8px;
+            border: 1px solid var(--blue);
+            background-color: transparent;
+            color: var(--blue);
+            border-radius: 6px;
+            font-size: 11px; font-weight: 700;
+            cursor: pointer;
+            transition: all var(--transition);
+            min-height: 40px;
+            display: flex; align-items: center; justify-content: center;
+            text-decoration: none;
+            font-family: 'Outfit', sans-serif;
+            letter-spacing: 0.5px;
+        }
+        .tcg-link-btn:hover {
+            background-color: var(--blue);
+            color: white;
+        }
+
+        /* Empty State */
+        .empty-state {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-dim);
+        }
+        .empty-state-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.4; }
+        .empty-state h2 {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 12px;
+            color: var(--text-dim);
+            font-weight: 400;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            header {
+                flex-direction: column;
+                gap: 12px;
+                align-items: flex-start;
+                padding: 12px 16px;
+            }
+            .stats-container {
+                width: 100%;
+                margin-left: 0;
+                justify-content: space-between;
+            }
+            .progress-section { margin-left: 0; padding-left: 0; border-left: none; }
+            .card-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 10px; padding: 12px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .card-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 10px; }
+            .search-input { font-size: 13px; padding: 10px 12px; }
+            .card-content { padding: 8px 6px; gap: 6px; }
+            .card-title { font-size: 12px; margin: 1px 0; }
+            .card-number { font-size: 7px; }
+            .card-generation { font-size: 8px; }
+            .mark-collected-btn { font-size: 10px; padding: 6px 8px; min-height: 36px; }
+            .tcg-link-btn { font-size: 10px; padding: 6px 4px; min-height: 36px; flex: 0 0 44px; }
+        }
+
+        @media (max-width: 430px) {
+            header { margin-bottom: 0; padding: 10px 12px; }
+            .stats-container { gap: 6px; }
+            .stat-value { font-size: 11px; }
+            .stat-label { font-size: 7px; }
+            .logo-text h1 { font-size: 10px; }
+            .logo-text p { font-size: 6px; }
+            .card-grid { grid-template-columns: repeat(3, 1fr); gap: 6px; }
+            .card-content { padding: 6px 5px; }
+            .card-title { font-size: 11px; }
+            .card-number { font-size: 7px; }
+            .card-price-display { padding: 5px; font-size: 12px; }
+            .card-nm-prices { font-size: 9px; }
+            .mark-collected-btn { font-size: 10px; padding: 6px 8px; min-height: 36px; }
+            .tcg-link-btn { flex: 0 0 40px; font-size: 10px; min-height: 36px; }
+        }
+
+        /* ======= CARD URL INGESTOR MODAL ======= */
+        .ingestor-btn {
+            background: none;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 8px;
+            color: white;
+            font-family: 'Outfit', sans-serif;
+            font-size: 12px;
+            font-weight: 700;
+            padding: 6px 12px;
+            cursor: pointer;
+            transition: all var(--transition);
+            white-space: nowrap;
+            order: 3;
+        }
+        .ingestor-btn:hover {
+            background: rgba(255,255,255,0.15);
+            border-color: rgba(255,255,255,0.5);
+        }
+        @media (min-width: 769px) {
+            .ingestor-btn { font-size: 13px; padding: 8px 16px; }
+        }
+
+        .ingestor-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.75);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(4px);
+        }
+        .ingestor-overlay.active { display: flex; }
+
+        .ingestor-modal {
+            background: #16213E;
+            border: 1px solid #2A3A5C;
+            border-radius: 16px;
+            width: 480px;
+            max-width: 92vw;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 28px;
+            box-shadow: 0 24px 64px rgba(0,0,0,0.5);
+            animation: ingestor-in 0.25s ease;
+            font-family: 'Outfit', -apple-system, sans-serif;
+            color: #E8E8F0;
+            position: relative;
+        }
+        @keyframes ingestor-in {
+            from { opacity: 0; transform: scale(0.95) translateY(10px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .ingestor-modal .ing-close {
+            position: absolute; top: 14px; right: 16px;
+            background: none; border: none; color: #8890A4;
+            font-size: 22px; cursor: pointer; padding: 4px;
+            transition: color 0.15s;
+        }
+        .ingestor-modal .ing-close:hover { color: #E8E8F0; }
+
+        .ingestor-modal h2 {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 12px; letter-spacing: 2px;
+            color: #FACC15; margin-bottom: 20px;
+        }
+
+        .ing-search-wrap { position: relative; margin-bottom: 0; }
+        .ing-search-wrap input {
+            width: 100%; padding: 12px 16px 12px 42px;
+            background: #0F1729; border: 2px solid #2A3A5C;
+            border-radius: 10px; color: #E8E8F0;
+            font-family: 'Outfit', sans-serif; font-size: 15px; outline: none;
+        }
+        .ing-search-wrap input:focus { border-color: #3B82F6; }
+        .ing-search-wrap::before {
+            content: '🔍'; position: absolute; left: 14px; top: 50%;
+            transform: translateY(-50%); font-size: 15px; pointer-events: none;
+        }
+
+        .ing-dropdown {
+            margin-top: 4px; background: #16213E; border: 1px solid #2A3A5C;
+            border-radius: 10px; max-height: 280px; overflow-y: auto;
+            box-shadow: 0 12px 32px rgba(0,0,0,0.4); display: none;
+        }
+        .ing-dropdown.open { display: block; }
+        .ing-dropdown::-webkit-scrollbar { width: 6px; }
+        .ing-dropdown::-webkit-scrollbar-thumb { background: #2A3A5C; border-radius: 3px; }
+
+        .ing-dd-item {
+            display: flex; align-items: center; gap: 10px;
+            padding: 10px 16px; cursor: pointer; transition: background 0.1s;
+            font-family: 'Outfit', sans-serif; color: #E8E8F0;
+        }
+        .ing-dd-item:hover, .ing-dd-item.highlighted { background: #1E2D4D; }
+        .ing-dd-item + .ing-dd-item { border-top: 1px solid #2A3A5C; }
+        .ing-dd-item.has-link { border-left: 3px solid #22C55E; }
+        .ing-dd-id { font-family: 'Press Start 2P', monospace; font-size: 8px; color: #8890A4; min-width: 38px; }
+        .ing-dd-name { font-weight: 600; font-size: 14px; flex: 1; }
+        .ing-dd-status { font-size: 13px; }
+
+        .ing-card-detail { display: none; margin-top: 18px; }
+        .ing-card-detail.visible { display: block; }
+
+        .ing-card-header { display: flex; align-items: baseline; gap: 10px; margin-bottom: 4px; }
+        .ing-card-header .ing-id { font-family: 'Press Start 2P', monospace; font-size: 10px; color: #FACC15; }
+        .ing-card-header .ing-name { font-size: 20px; font-weight: 700; }
+        .ing-card-meta { font-size: 13px; color: #8890A4; margin-bottom: 14px; }
+
+        .ing-section-label {
+            font-size: 11px; font-weight: 600; text-transform: uppercase;
+            letter-spacing: 1px; color: #8890A4; margin-bottom: 6px;
+        }
+
+        .ing-current-link {
+            background: #0F1729; border: 1px solid #2A3A5C;
+            border-radius: 8px; padding: 10px 14px;
+            font-size: 12px; word-break: break-all; margin-bottom: 14px;
+            min-height: 36px; color: #8890A4;
+        }
+        .ing-current-link.has-value { color: #22C55E; }
+        .ing-current-link a { color: #60A5FA; text-decoration: none; }
+        .ing-current-link a:hover { text-decoration: underline; }
+
+        .ing-url-input {
+            width: 100%; padding: 10px 14px;
+            background: #0F1729; border: 2px solid #2A3A5C;
+            border-radius: 8px; color: #E8E8F0;
+            font-family: 'Outfit', sans-serif; font-size: 14px;
+            outline: none; margin-bottom: 8px;
+        }
+        .ing-url-input:focus { border-color: #3B82F6; }
+
+        .ing-extracted {
+            font-size: 12px; margin-bottom: 10px; padding: 6px 10px;
+            border-radius: 8px; display: none;
+        }
+        .ing-extracted.visible { display: block; }
+        .ing-extracted.success { background: rgba(34,197,94,0.1); color: #22C55E; border: 1px solid rgba(34,197,94,0.2); }
+        .ing-extracted.error { background: rgba(248,113,113,0.1); color: #F87171; border: 1px solid rgba(248,113,113,0.2); }
+        .ing-extracted code { font-family: monospace; font-weight: 700; }
+
+        .ing-preview {
+            background: #0F1729; border: 1px solid #2A3A5C;
+            border-radius: 10px; min-height: 240px;
+            display: flex; align-items: center; justify-content: center;
+            margin-bottom: 14px; overflow: hidden;
+        }
+        .ing-preview img { max-width: 100%; max-height: 320px; object-fit: contain; display: block; image-rendering: pixelated; image-rendering: -moz-crisp-edges; }
+        .ing-preview-ph { color: #8890A4; font-size: 13px; text-align: center; padding: 24px; }
+        .ing-preview-ph .pb { font-size: 36px; display: block; margin-bottom: 8px; opacity: 0.3; }
+
+        .ing-actions { display: flex; gap: 10px; justify-content: flex-end; }
+        .ing-btn {
+            font-family: 'Outfit', sans-serif; font-weight: 600; font-size: 13px;
+            padding: 8px 18px; border: none; border-radius: 8px;
+            cursor: pointer; transition: all 0.15s; text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .ing-btn:disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
+        .ing-btn-approve { background: #22C55E; color: #0A2E14; }
+        .ing-btn-approve:hover { background: #16A34A; }
+        .ing-btn-clear { background: transparent; color: #F87171; border: 1px solid #7F1D1D; }
+        .ing-btn-clear:hover { background: rgba(127,29,29,0.2); }
+
+        /* "Added to Pokédex" overlay */
+        .ing-confirm-overlay {
+            position: absolute; inset: 0;
+            background: rgba(34,197,94,0.12);
+            border-radius: 16px;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            z-index: 5; pointer-events: none;
+            animation: ing-confirm-in 0.3s ease, ing-confirm-out 0.4s ease 1.4s forwards;
+        }
+        .ing-confirm-overlay .ico { font-size: 48px; margin-bottom: 10px; }
+        .ing-confirm-overlay .txt {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 11px; color: #22C55E;
+            text-shadow: 0 0 16px rgba(34,197,94,0.5);
+        }
+        .ing-confirm-overlay .nm {
+            font-family: 'Outfit', sans-serif;
+            font-size: 16px; font-weight: 600; color: #E8E8F0; margin-top: 6px;
+        }
+        @keyframes ing-confirm-in { from { opacity:0; transform:scale(0.9); } to { opacity:1; transform:scale(1); } }
+        @keyframes ing-confirm-out { from { opacity:1; } to { opacity:0; } }
+
+        /* TCG Browse Toast */
+        .tcg-toast {
+            position: fixed;
+            bottom: -200px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 500;
+            background: var(--surface);
+            border: 1px solid var(--blue);
+            border-radius: 12px;
+            padding: 14px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4), 0 0 12px rgba(59,130,246,0.15);
+            transition: bottom 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            width: 360px;
+            max-width: 92vw;
+        }
+        .tcg-toast.visible { bottom: 24px; }
+        .tcg-toast-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .tcg-toast-icon { font-size: 18px; flex-shrink: 0; }
+        .tcg-toast-text {
+            font-family: 'Outfit', sans-serif;
+            font-size: 13px;
+            color: var(--text);
+            line-height: 1.3;
+            flex: 1;
+        }
+        .tcg-toast-text strong {
+            color: var(--blue-glow);
+            font-weight: 700;
+        }
+        .tcg-toast-close {
+            flex-shrink: 0;
+            background: none;
+            border: none;
+            color: var(--text-dim);
+            font-size: 18px;
+            cursor: pointer;
+            padding: 0;
+            line-height: 1;
+        }
+        .tcg-toast-close:hover { color: var(--text); }
+        .tcg-toast-input {
+            width: 100%;
+            padding: 10px 12px;
+            background: var(--input-bg);
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-family: 'Outfit', sans-serif;
+            font-size: 13px;
+            outline: none;
+            transition: border-color var(--transition);
+        }
+        .tcg-toast-input::placeholder { color: var(--text-dim); }
+        .tcg-toast-input:focus {
+            border-color: var(--blue);
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+        }
+        .tcg-toast-success {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 9px;
+            color: var(--green);
+            text-align: center;
+            padding: 4px 0;
+        }
+    </style>
+</head>
+<body>
+        <header>
+            <div class="header-left">
+                <div class="dex-indicator"></div>
+                <div class="logo" onclick="resetView()" style="cursor:pointer;">
+                    <div class="pokeball">
+                        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="50" cy="50" r="48" class="pokeball-outer"/>
+                            <path d="M 2 50 A 48 48 0 0 1 98 50" class="pokeball-red"/>
+                            <path d="M 2 50 A 48 48 0 0 0 98 50" class="pokeball-white"/>
+                            <line x1="2" y1="50" x2="98" y2="50" class="pokeball-line"/>
+                            <circle cx="50" cy="50" r="13" class="pokeball-center-circle"/>
+                            <circle cx="50" cy="50" r="7" class="pokeball-center-dot"/>
+                        </svg>
+                    </div>
+                    <div class="logo-text">
+                        <h1>Pokédex</h1>
+                        <p>Card Tracker</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stats-container">
+                <div class="stat">
+                    <div class="stat-value" id="collectedCount">0</div>
+                    <div class="stat-label">Collected</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="totalCount">0</div>
+                    <div class="stat-label">Total</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="spentAmount">$0.00</div>
+                    <div class="stat-label">Spent</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value" id="marketValue">$0</div>
+                    <div class="stat-label">Mkt Value</div>
+                </div>
+                <div class="progress-section">
+                    <div class="progress-label">Progress</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <div class="progress-percent" id="progressPercent">0%</div>
+                </div>
+                <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">🌙</button>
+                <button class="ingestor-btn" onclick="openIngestor()" title="Add card URLs">+ Add Cards</button>
+                <button class="ingestor-btn" onclick="debugSync()" title="Debug sync" style="border-color:var(--yellow);color:var(--yellow);">🔍 Debug</button>
+            </div>
+        </header>
+
+    <div class="container">
+        <div class="search-wrapper">
+            <div class="search-filter-row">
+                <div class="search-input-wrap">
+                    <input type="text" id="searchInput" class="search-input" placeholder="Search Pokemon by name...">
+                    <button class="search-clear" id="searchClear" onclick="clearSearch()" title="Clear search">✕</button>
+                </div>
+                <button class="filter-btn" id="filterToggleBtn" onclick="toggleFilterPanel()">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                        <rect y="2" width="16" height="2" rx="1"/>
+                        <rect y="7" width="16" height="2" rx="1"/>
+                        <rect y="12" width="16" height="2" rx="1"/>
+                    </svg>
+                    Filter
+                </button>
+            </div>
+            <div class="filter-panel" id="filterPanel" style="display:none;">
+                <div class="filter-panel-label">Collection</div>
+                <div class="filter-gen-buttons" style="margin-bottom: 12px;">
+                    <button class="filter-gen-btn active" onclick="setCollectedFilter('all')">All</button>
+                    <button class="filter-gen-btn" onclick="setCollectedFilter('collected')">Collected</button>
+                    <button class="filter-gen-btn" onclick="setCollectedFilter('uncollected')">Not collected</button>
+                    <button class="filter-gen-btn" onclick="setCollectedFilter('no-price')" style="border-color:var(--yellow);color:var(--yellow);">No Price</button>
+                    <button class="filter-gen-btn" onclick="setCollectedFilter('no-image')" style="border-color:var(--yellow);color:var(--yellow);">No Image</button>
+                </div>
+                <div class="filter-panel-label">Generation</div>
+                <div class="filter-gen-buttons" style="margin-bottom: 12px;">
+                    <button class="filter-gen-btn active" onclick="setGenFilter('all')">All</button>
+                    <button class="filter-gen-btn" onclick="setGenFilter(1)">Gen 1</button>
+                    <button class="filter-gen-btn" onclick="setGenFilter(2)">Gen 2</button>
+                    <button class="filter-gen-btn" onclick="setGenFilter(3)">Gen 3</button>
+                    <button class="filter-gen-btn" onclick="setGenFilter(4)">Gen 4</button>
+                    <button class="filter-gen-btn" onclick="setGenFilter(5)">Gen 5</button>
+                    <button class="filter-gen-btn" onclick="setGenFilter(6)">Gen 6</button>
+                    <button class="filter-gen-btn" onclick="setGenFilter(7)">Gen 7</button>
+                    <button class="filter-gen-btn" onclick="setGenFilter(8)">Gen 8</button>
+                    <button class="filter-gen-btn" onclick="setGenFilter(9)">Gen 9</button>
+                </div>
+                <div class="filter-panel-label">Language</div>
+                <div class="filter-gen-buttons">
+                    <button class="filter-gen-btn active" onclick="setLangFilter('all')">All</button>
+                    <button class="filter-gen-btn" onclick="setLangFilter('english')">English</button>
+                    <button class="filter-gen-btn" onclick="setLangFilter('japanese')">Japanese</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="active-filter-banner" id="activeFilterBanner" onclick="clearAllFilters()">
+            <div class="filter-tags" id="activeFilterTags"></div>
+            <span class="clear-filters">Clear</span>
+        </div>
+
+        <div class="card-grid" id="cardGrid">
+            <div class="empty-state">
+                <div class="empty-state-icon">📦</div>
+                <h2>Loading your collection...</h2>
+            </div>
+        </div>
+    </div>
+
+    <!-- Image Modal -->
+    <div class="modal" id="imageModal">
+      <button class="modal-close" onclick="closeImageModal()">✕</button>
+      <div class="modal-content">
+          <div class="modal-image-container" id="modalImageContainer">
+              <img id="modalImage" class="modal-image" alt="Card image">
+          </div>
+          <div class="modal-info" id="modalInfo"></div>
+          <div class="modal-pricing" id="modalPricing" style="display:none;"></div>
+      </div>
+  </div>
+
+    <!-- Card URL Ingestor Modal -->
+    <div class="ingestor-overlay" id="ingestorOverlay">
+        <div class="ingestor-modal" id="ingestorModal">
+            <button class="ing-close" onclick="closeIngestor()">✕</button>
+            <h2>ADD CARD URL</h2>
+            <div class="ing-search-wrap">
+                <input type="text" id="ingSearchInput" placeholder="Type a Pokémon name..." />
+            </div>
+            <div class="ing-dropdown" id="ingDropdown"></div>
+            <div class="ing-card-detail" id="ingCardDetail">
+                <div class="ing-card-header">
+                    <span class="ing-id" id="ingDetailId"></span>
+                    <span class="ing-name" id="ingDetailName"></span>
+                </div>
+                <div class="ing-card-meta" id="ingDetailMeta"></div>
+                <div class="ing-section-label">Current Card Link</div>
+                <div class="ing-current-link" id="ingCurrentLink">None</div>
+                <div class="ing-pricing" id="ingPricing" style="display:none; background:#0F1729; border:1px solid #2A3A5C; border-radius:8px; padding:10px 14px; margin-bottom:14px;"></div>
+                <div class="ing-section-label">Paste TCGPlayer Card URL</div>
+                <input type="text" class="ing-url-input" id="ingUrlInput" placeholder="Paste a TCGPlayer URL here..." />
+                <div class="ing-extracted" id="ingExtracted"></div>
+                <div class="ing-preview" id="ingPreview">
+                    <div class="ing-preview-ph"><span class="pb">🔴</span>Paste a URL above — image loads automatically</div>
+                </div>
+                <div class="ing-actions">
+                    <button class="ing-btn ing-btn-clear" onclick="ingClear()" id="ingClearBtn" disabled>✗ Clear</button>
+                    <button class="ing-btn ing-btn-approve" onclick="ingApprove()" id="ingApproveBtn" disabled>✓ Approve</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="tcg-toast" id="tcgToast" onclick="document.getElementById('tcgToastInput').focus();">
+        <div class="tcg-toast-header">
+            <span class="tcg-toast-icon">🔍</span>
+            <div class="tcg-toast-text">Paste URL for <strong id="tcgToastName"></strong></div>
+            <button class="tcg-toast-close" onclick="event.stopPropagation(); tcgToastDismiss()" title="Dismiss">✕</button>
+        </div>
+        <input type="text" class="tcg-toast-input" id="tcgToastInput" placeholder="Paste TCGPlayer URL here..." autocomplete="off">
+    </div>
+
+    <script>
+        // Clean up any old service workers and caches on every load
+        (function() {
+            try {
+                if ('serviceWorker' in navigator) {
+                    navigator.serviceWorker.getRegistrations().then(function(regs) {
+                        regs.forEach(function(r) { r.unregister(); });
+                    });
+                }
+                if ('caches' in window) {
+                    caches.keys().then(function(names) {
+                        names.forEach(function(n) { caches.delete(n); });
+                    });
+                }
+            } catch(e) {}
+        })();
+    </script>
+    <script>
+        const STORAGE_KEY = 'pokemon_collection_data';
+        let allCards = [];
+        let filteredCards = [];
+        let currentFilters = {
+            collection: 'all',
+            generation: 'gen-all',
+            search: ''
+        };
+
+        // ========== PERFORMANCE UTILITIES ==========
+        
+        // Debounce: Wait for user to finish before executing
+        function debounce(func, delay) {
+            let timeoutId = null;
+            return function(...args) {
+                clearTimeout(timeoutId);
+                timeoutId = setTimeout(() => func.apply(this, args), delay);
+            };
+        }
+
+        // Throttle: Execute at most once per delay
+        function throttle(func, limit) {
+            let inThrottle = false;
+            return function(...args) {
+                if (!inThrottle) {
+                    func.apply(this, args);
+                    inThrottle = true;
+                    setTimeout(() => inThrottle = false, limit);
+                }
+            };
+        }
+
+        // Lazy load images with IntersectionObserver
+        function setupLazyLoading() {
+            if (!('IntersectionObserver' in window)) {
+                // Fallback for older browsers
+                document.querySelectorAll('img[data-src]').forEach(img => {
+                    img.src = img.dataset.src;
+                });
+                return;
+            }
+
+            const imageObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const img = entry.target;
+                        if (img.dataset.src) {
+                            img.src = img.dataset.src;
+                            img.removeAttribute('data-src');
+                        }
+                        imageObserver.unobserve(img);
+                    }
+                });
+            }, {
+                rootMargin: '100px'  // Start loading 100px before it enters view
+            });
+
+            document.querySelectorAll('img[data-src]').forEach(img => {
+                imageObserver.observe(img);
+            });
+        }
+
+        // Register Service Worker for offline support & caching
+        function registerServiceWorker() {
+            // Unregister any existing service workers and clear caches
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.getRegistrations().then(function(regs) {
+                    regs.forEach(function(r) { r.unregister(); });
+                });
+            }
+            if ('caches' in window) {
+                caches.keys().then(function(names) {
+                    names.forEach(function(n) { caches.delete(n); });
+                });
+            }
+        }
+
+        // IndexedDB setup for better storage
+        const dbPromise = (() => {
+            if (!('indexedDB' in window)) return Promise.resolve(null);
+            
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open('PokemonTrackerDB', 1);
+                
+                request.onerror = () => reject(request.error);
+                request.onsuccess = () => resolve(request.result);
+                
+                request.onupgradeneeded = (e) => {
+                    const db = e.target.result;
+                    
+                    if (!db.objectStoreNames.contains('cards')) {
+                        const store = db.createObjectStore('cards', { keyPath: 'id' });
+                        store.createIndex('generation', 'generation', { unique: false });
+                        store.createIndex('collected', 'collected', { unique: false });
+                        store.createIndex('name', 'name', { unique: false });
+                    }
+                };
+            });
+        })();
+
+        // Save to IndexedDB (async, doesn't block UI)
+        async function saveToIndexedDB(cards) {
+            try {
+                const db = await dbPromise;
+                if (!db) return;  // IndexedDB not available
+                
+                const tx = db.transaction('cards', 'readwrite');
+                const store = tx.objectStore('cards');
+                
+                cards.forEach(card => {
+                    store.put(card);
+                });
+                
+                await tx.complete;
+            } catch (err) {
+                console.log('IndexedDB save failed, using localStorage', err);
+            }
+        }
+
+        // Load from IndexedDB
+        async function loadFromIndexedDB() {
+            try {
+                const db = await dbPromise;
+                if (!db) return null;
+                
+                return new Promise((resolve, reject) => {
+                    const tx = db.transaction('cards', 'readonly');
+                    const store = tx.objectStore('cards');
+                    const request = store.getAll();
+                    
+                    request.onsuccess = () => resolve(request.result);
+                    request.onerror = () => reject(request.error);
+                });
+            } catch (err) {
+                console.log('IndexedDB load failed', err);
+                return null;
+            }
+        }
+
+        // Virtual scrolling setup
+        let virtualScrollConfig = {
+            itemHeight: 320,  // Approximate card height + gap
+            containerHeight: window.innerHeight,
+            visibleItems: 20,
+            buffer: 5
+        };
+
+        function setupVirtualScrolling() {
+            const grid = document.getElementById('cardGrid');
+            if (!grid) return;
+
+            let scrollHandler = throttle(() => {
+                const scrollTop = window.scrollY;
+                const startIndex = Math.max(0, Math.floor(scrollTop / virtualScrollConfig.itemHeight) - virtualScrollConfig.buffer);
+                
+                // Store scroll position for later use
+                grid.dataset.scrollStart = startIndex;
+            }, 100);
+
+            window.addEventListener('scroll', scrollHandler);
+        }
+
+        // Performance monitoring
+        function logPerformanceMetrics() {
+            const metrics = {
+                memory: performance.memory ? {
+                    usedJSHeapSize: Math.round(performance.memory.usedJSHeapSize / 1048576) + ' MB',
+                    totalJSHeapSize: Math.round(performance.memory.totalJSHeapSize / 1048576) + ' MB'
+                } : 'Not available',
+                navigation: performance.getEntriesByType('navigation')[0] ? {
+                    domContentLoaded: Math.round(performance.getEntriesByType('navigation')[0].domContentLoadedEventEnd - performance.getEntriesByType('navigation')[0].domContentLoadedEventStart) + 'ms',
+                    loadComplete: Math.round(performance.getEntriesByType('navigation')[0].loadEventEnd - performance.getEntriesByType('navigation')[0].loadEventStart) + 'ms'
+                } : 'Not available'
+            };
+
+            console.log('%c⚡ Performance Metrics', 'color: #00ff00; font-weight: bold; font-size: 14px;');
+            console.log('Memory Usage:', metrics.memory);
+            console.log('Navigation Timing:', metrics.navigation);
+            console.log('%c✅ Optimizations Active:', 'color: #00ff00; font-weight: bold;');
+            console.log('✓ Lazy loading images');
+            console.log('✓ Debounced search/filter');
+            console.log('✓ Throttled cloud sync');
+            console.log('✓ IndexedDB caching');
+            console.log('✓ Service Worker (offline support)');
+            console.log('✓ Virtual scroll tracking');
+        }
+
+        // ========== END PERFORMANCE UTILITIES ==========
+
+        // Load Pokemon data from CSV
+        let sampleData = [];
+        
+        
+        async function loadPokemonDataFromCSV() {
+            try {
+                // Get the directory of the current page (works on both local and GitHub Pages)
+                const pageDir = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/')) || '/';
+                const csvPath = pageDir + '/pokemon-data.csv';
+                
+                console.log('📁 Loading CSV from:', csvPath);
+                
+                const response = await fetch(csvPath + '?v=' + Date.now());         
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const csvText = await response.text();
+                
+                // Parse CSV with proper line ending handling
+                const lines = csvText.trim().split(/\r?\n/);
+                const headerLine = lines[0];
+                const headers = headerLine.split(',').map(h => h.trim());
+                
+                console.log('📊 CSV Headers:', headers);
+                console.log('📊 Total CSV lines:', lines.length - 1);
+                
+                sampleData = lines.slice(1)
+                    .filter(line => line.trim().length > 0)  // Skip empty lines
+                    .map((line, index) => {
+                        // Robust CSV parsing (handles quoted fields)
+                        const values = [];
+                        let current = '';
+                        let inQuotes = false;
+                        
+                        for (let i = 0; i < line.length; i++) {
+                            const char = line[i];
+                            if (char === '"') {
+                                inQuotes = !inQuotes;
+                            } else if (char === ',' && !inQuotes) {
+                                values.push(current.trim());
+                                current = '';
+                            } else {
+                                current += char;
+                            }
+                        }
+                        values.push(current.trim());
+                        
+                        // Map to object
+                        const obj = {};
+                        headers.forEach((header, i) => {
+                            const value = values[i] || '';
+                            // Convert types
+                            if (header === 'id' || header === 'generation') {
+                                obj[header] = parseInt(value) || null;
+                            } else if (header === 'collected') {
+                                obj[header] = value === 'true' || value === 'True' || value === '1';
+                            } else if (header === 'price') {
+                                obj[header] = value && value !== '' ? parseFloat(value) : null;
+                            } else {
+                                obj[header] = value || '';
+                            }
+                        });
+                        
+                        // Generate imageUrl if not provided
+                        if (!obj.imageUrl || obj.imageUrl.trim() === '') {
+                            if (obj.productId) {
+                                // Use TCGPlayer CDN direct image URL pattern
+                                obj.imageUrl = `https://tcgplayer-cdn.tcgplayer.com/product/${obj.productId}_in_1000x1000.jpg`;
+                            }
+                        }
+                        
+                        return obj;
+                    });
+                
+                // Count how many have images
+                const cardsWithImages = sampleData.filter(c => c.imageUrl && c.imageUrl.trim()).length;
+                console.log(`\n✅ CSV LOADED SUCCESSFULLY`);
+                console.log(`   Total cards: ${sampleData.length}`);
+                console.log(`   Cards with imageUrl: ${cardsWithImages}`);
+                
+                if (sampleData.length > 0) {
+                    console.log(`\n📝 Sample images:`);
+                    sampleData.filter(c => c.imageUrl).slice(0, 3).forEach(card => {
+                        console.log(`   - ${card.name}: ${card.imageUrl}`);
+                    });
+                }
+                
+                return sampleData;
+            } catch (error) {
+                console.error('❌ Error loading CSV:', error);
+                return [];
+            }
+        }
+
+
+        // Firebase Configuration
+        const firebaseConfig = {
+            projectId: "pokemon-card-tracker-2b5f8",
+            databaseURL: "https://pokemon-card-tracker-2b5f8-default-rtdb.firebaseio.com"
+        };
+
+        let db = null;
+        let userId = null;
+
+        // Initialize Firebase REST API (no CDN needed, no module errors)
+        function initFirebase() {
+            // Use a consistent user ID so all devices share the same collection
+            userId = 'pokemon_collection';  // Same for all devices = shared collection
+            
+            // If you have a proper Firebase project, this will sync
+            if (firebaseConfig.projectId !== "YOUR_PROJECT_ID") {
+                console.log('Firebase configured - syncing collection: ' + userId);
+            } else {
+                console.log('Firebase not configured - using localStorage only');
+            }
+        }
+
+        function syncToCloud() {
+            // This function is called after each save
+            if (firebaseConfig.projectId === "YOUR_PROJECT_ID") return;
+            
+            const url = firebaseConfig.databaseURL + '/users/' + userId + '/collection.json';
+
+                // Only save collected state, price, and card URLs — not the full 1025 card dataset
+                const collectionState = {};
+                allCards.filter(c => c.collected || (c.cardLink && c.cardLink.trim())).forEach(card => {
+                    const entry = {};
+                    if (card.collected) {
+                        entry.collected = true;
+                        entry.price = card.price || null;
+                    }
+                    if (card.cardLink && card.cardLink.trim()) {
+                        entry.cardLink = card.cardLink;
+                        entry.productId = card.productId || '';
+                        entry.imageUrl = card.imageUrl || '';
+                        if (card.setName) entry.setName = card.setName;
+                        if (card.nmPrices) entry.nmPrices = card.nmPrices;
+                    }
+                    collectionState[card.id] = entry;
+                });
+
+                fetch(url, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(collectionState)
+                }).then(res => {
+                    if (res.ok) {
+                        console.log('✅ Synced to cloud (' + Object.keys(collectionState).length + ' collected)');
+                    } else {
+                        console.log('⚠️ Cloud sync: HTTP ' + res.status);
+                    }
+                }).catch(err => {
+                    console.log('⚠️ Cloud sync failed - saved locally');
+                });
+            }
+
+        function loadFromCloud() {
+            if (firebaseConfig.projectId === "YOUR_PROJECT_ID") return Promise.resolve(null);
+            
+            const url = firebaseConfig.databaseURL + '/users/' + userId + '/collection.json';
+
+                return fetch(url)
+                    .then(res => {
+                        if (!res.ok) return null;
+                        return res.json();
+                    })
+                    .then(data => {
+                        if (data && typeof data === 'object' && Object.keys(data).length > 0) {
+                            console.log('✅ Valid cloud data: ' + Object.keys(data).length + ' collected');
+                            return data;
+                        }
+                        return null;
+                    })
+                    .catch(err => {
+                        console.log('Cloud load error: ' + err.message);
+                        return null;
+                    });
+            }
+
+        // Initialize
+
+        function initializeApp() {
+            // Register service worker for offline support & caching
+            registerServiceWorker();
+            
+            // Setup virtual scrolling tracking
+            setupVirtualScrolling();
+            
+            // Initialize Firebase
+            initFirebase();
+            
+            // Setup all event listeners (search, filters, toggles)
+            setupEventListeners();
+            
+            // Small delay to ensure userId is set
+            setTimeout(() => {
+                loadData();
+            }, 100);
+
+            // Re-sync from Firebase when app returns to foreground (e.g. switching back to PWA)
+            document.addEventListener('visibilitychange', () => {
+                if (!document.hidden && firebaseConfig.projectId !== "YOUR_PROJECT_ID") {
+                    loadFromCloud().then(cloudData => {
+                        if (cloudData && typeof cloudData === 'object' && Object.keys(cloudData).length > 0) {
+                            allCards.forEach(card => {
+                                if (cloudData[card.id]) {
+                                    const cd = cloudData[card.id];
+                                    if (cd.collected) { card.collected = true; card.price = cd.price || null; }
+                                    if (cd.cardLink) card.cardLink = cd.cardLink;
+                                    if (cd.productId) card.productId = cd.productId;
+                                    if (cd.imageUrl) card.imageUrl = cd.imageUrl;
+                                    if (cd.nmPrices) card.nmPrices = cd.nmPrices;
+                                }
+                            });
+                            backfillSetNames();
+                            filteredCards = [...allCards];
+                            applyFilters();
+                            updateStats();
+                        }
+                    });
+                }
+            });
+        }
+
+        // Backfill/refresh setName for all cards that have a cardLink
+        function backfillSetNames() {
+            let filled = 0;
+            allCards.forEach(card => {
+                if (card.cardLink && card.cardLink.trim()) {
+                    const parsed = parseSetName(card.cardLink);
+                    if (parsed && parsed !== card.setName) {
+                        card.setName = parsed;
+                        filled++;
+                    }
+                }
+            });
+            if (filled > 0) {
+                console.log(`✅ Updated set names for ${filled} cards`);
+                saveData();
+            }
+        }
+
+        async function loadData() {
+            if (sampleData.length === 0) {
+                await loadPokemonDataFromCSV();
+            }
+
+            // Always start with CSV data as base
+            allCards = JSON.parse(JSON.stringify(sampleData));
+
+            // Apply localStorage state first as immediate fallback
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) {
+                const localData = JSON.parse(saved);
+                // Build a lookup for fast merging
+                const localLookup = {};
+                localData.forEach(c => { localLookup[c.id] = c; });
+                allCards.forEach(card => {
+                    const lc = localLookup[card.id];
+                    if (lc) {
+                        if (lc.collected) {
+                            card.collected = true;
+                            card.price = lc.price || null;
+                        }
+                        if (lc.cardLink) card.cardLink = lc.cardLink;
+                        if (lc.productId) card.productId = lc.productId;
+                        if (lc.imageUrl) card.imageUrl = lc.imageUrl;
+                        if (lc.nmPrices) card.nmPrices = lc.nmPrices;
+                        // setName is always re-parsed from URL by backfillSetNames()
+                    }
+                });
+            }
+
+            // Render immediately so the app feels fast
+            filteredCards = [...allCards];
+            backfillSetNames();
+            renderCards();
+            updateStats();
+
+            // Then fetch Firebase and merge on top
+            if (firebaseConfig.projectId !== "YOUR_PROJECT_ID") {
+                loadFromCloud().then(cloudData => {
+                    if (cloudData && typeof cloudData === 'object' && Object.keys(cloudData).length > 0) {
+                        allCards.forEach(card => {
+                            if (cloudData[card.id]) {
+                                const cd = cloudData[card.id];
+                                if (cd.collected) {
+                                    card.collected = true;
+                                    card.price = cd.price || null;
+                                }
+                                // Merge card URL data from cloud
+                                if (cd.cardLink) card.cardLink = cd.cardLink;
+                                if (cd.productId) card.productId = cd.productId;
+                                if (cd.imageUrl) card.imageUrl = cd.imageUrl;
+                                if (cd.nmPrices) card.nmPrices = cd.nmPrices;
+                                // setName is always re-parsed from URL by backfillSetNames()
+                            }
+                            // Don't reset cards missing from cloud — they may not have synced yet
+                        });
+                        console.log('✅ Merged cloud collection: ' + Object.keys(cloudData).length + ' collected');
+                        backfillSetNames();
+                        filteredCards = [...allCards];
+                        renderCards();
+                        updateStats();
+                        // Save merged state locally
+                        localStorage.setItem(STORAGE_KEY, JSON.stringify(allCards));
+                        saveToIndexedDB(allCards);
+                    }
+                }).catch(err => {
+                    console.log('Cloud unavailable - using local data');
+                });
+            }
+        }
+
+        function loadLocal() {
+            return loadFromIndexedDB().then(idbData => {
+                if (idbData && idbData.length > 0) {
+                    allCards = idbData;
+                    console.log('✅ Loaded from IndexedDB');
+                } else {
+                    const saved = localStorage.getItem(STORAGE_KEY);
+                    if (saved) {
+                        allCards = JSON.parse(saved);
+                        console.log('✅ Loaded from localStorage');
+                        saveToIndexedDB(allCards);
+                    } else {
+                        allCards = JSON.parse(JSON.stringify(sampleData));
+                        console.log('✅ Loaded sample data');
+                        localStorage.setItem(STORAGE_KEY, JSON.stringify(allCards));
+                        saveToIndexedDB(allCards);
+                    }
+                }
+            }).catch(err => {
+                const saved = localStorage.getItem(STORAGE_KEY);
+                allCards = saved ? JSON.parse(saved) : JSON.parse(JSON.stringify(sampleData));
+            });
+        }
+
+        // Throttled cloud sync (max once per 5 seconds)
+        const syncToCloudThrottled = (() => {
+            let timer = null;
+            return function() {
+                clearTimeout(timer);
+                timer = setTimeout(() => syncToCloud(), 2000);
+            };
+        })();
+
+        function saveData() {
+            // Save to localStorage (synchronous, fast)
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(allCards));
+            
+            // Save to IndexedDB (async, doesn't block)
+            saveToIndexedDB(allCards);
+            
+            // Sync to cloud (throttled - max once per 5 seconds)
+            syncToCloudThrottled();
+        }
+
+        function setupEventListeners() {
+            // Search functionality
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) {
+                searchInput.addEventListener('input', () => {
+                    const clearBtn = document.getElementById('searchClear');
+                    if (clearBtn) clearBtn.classList.toggle('visible', searchInput.value.length > 0);
+                    applyFilters();
+                });
+            }
+            
+            console.log('✅ Event listeners initialized');
+        }
+
+        let activeGenFilter = 'all';
+        let activeCollectedFilter = 'all';
+        let activeLangFilter = 'all';
+
+        function setCollectedFilter(filter) {
+            activeCollectedFilter = filter;
+            document.querySelectorAll('.filter-gen-btn').forEach(btn => {
+                if (['All', 'Collected', 'Not collected'].includes(btn.textContent.trim())) {
+                    btn.classList.remove('active');
+                    if ((filter === 'all' && btn.textContent.trim() === 'All') ||
+                        (filter === 'collected' && btn.textContent.trim() === 'Collected') ||
+                        (filter === 'uncollected' && btn.textContent.trim() === 'Not collected') ||
+                        (filter === 'no-price' && btn.textContent.trim() === 'No Price') ||
+                        (filter === 'no-image' && btn.textContent.trim() === 'No Image')) {
+                        btn.classList.add('active');
+                    }
+                }
+            });
+            applyFilters();
+            setTimeout(() => {
+                const panel = document.getElementById('filterPanel');
+                const btn = document.getElementById('filterToggleBtn');
+                if (panel) panel.style.display = 'none';
+                if (btn) btn.classList.remove('active');
+            }, 2000);
+        }
+
+        function toggleFilterPanel() {
+            const panel = document.getElementById('filterPanel');
+            const btn = document.getElementById('filterToggleBtn');
+            const isVisible = panel.style.display !== 'none';
+            panel.style.display = isVisible ? 'none' : 'block';
+            btn.classList.toggle('active', !isVisible);
+        }
+
+        function setGenFilter(gen) {
+            activeGenFilter = gen;
+            document.querySelectorAll('.filter-gen-btn').forEach(btn => {
+                const t = btn.textContent.trim();
+                if (t.startsWith('Gen ') || (t === 'All' && btn.closest('.filter-gen-buttons') && btn.nextElementSibling && btn.nextElementSibling.textContent.trim() === 'Gen 1')) {
+                    btn.classList.remove('active');
+                    if ((gen === 'all' && t === 'All') ||
+                        (gen !== 'all' && t === `Gen ${gen}`)) {
+                        btn.classList.add('active');
+                    }
+                }
+            });
+            applyFilters();
+            setTimeout(() => {
+                const panel = document.getElementById('filterPanel');
+                const btn = document.getElementById('filterToggleBtn');
+                if (panel) panel.style.display = 'none';
+                if (btn) btn.classList.remove('active');
+            }, 2000);
+        }
+
+        function setLangFilter(lang) {
+            activeLangFilter = lang;
+            document.querySelectorAll('.filter-gen-btn').forEach(btn => {
+                const t = btn.textContent.trim();
+                if (['English', 'Japanese'].includes(t) || (t === 'All' && btn.closest('.filter-gen-buttons') && btn.nextElementSibling && btn.nextElementSibling.textContent.trim() === 'English')) {
+                    btn.classList.remove('active');
+                    if ((lang === 'all' && t === 'All') ||
+                        (lang === 'english' && t === 'English') ||
+                        (lang === 'japanese' && t === 'Japanese')) {
+                        btn.classList.add('active');
+                    }
+                }
+            });
+            applyFilters();
+            setTimeout(() => {
+                const panel = document.getElementById('filterPanel');
+                const btn = document.getElementById('filterToggleBtn');
+                if (panel) panel.style.display = 'none';
+                if (btn) btn.classList.remove('active');
+            }, 2000);
+        }
+
+        function clearSearch() {
+            const input = document.getElementById('searchInput');
+            input.value = '';
+            document.getElementById('searchClear').classList.remove('visible');
+            input.focus();
+            applyFilters();
+        }
+
+        function applyFilters() {
+            const searchTerm = (document.getElementById('searchInput')?.value || '').toLowerCase().trim();
+            filteredCards = allCards.filter(card => {
+                const matchesGen = activeGenFilter === 'all' || card.generation === activeGenFilter;
+                const matchesSearch = !searchTerm || (card.name || '').toLowerCase().includes(searchTerm);
+                const matchesCollected = activeCollectedFilter === 'all' ||
+                    (activeCollectedFilter === 'collected' && card.collected) ||
+                    (activeCollectedFilter === 'uncollected' && !card.collected) ||
+                    (activeCollectedFilter === 'no-price' && (card.imageUrl && card.imageUrl.trim()) && (!card.nmPrices || !card.nmPrices.market)) ||
+                    (activeCollectedFilter === 'no-image' && (!card.imageUrl || !card.imageUrl.trim()));
+                const isJapanese = card.cardLink && card.cardLink.includes('pokemon-japan');
+                const matchesLang = activeLangFilter === 'all' ||
+                    (activeLangFilter === 'japanese' && isJapanese) ||
+                    (activeLangFilter === 'english' && !isJapanese);
+                return matchesGen && matchesSearch && matchesCollected && matchesLang;
+            });
+            updateFilterBanner();
+            renderCards();
+        }
+
+        function updateFilterBanner() {
+            const banner = document.getElementById('activeFilterBanner');
+            const tagsEl = document.getElementById('activeFilterTags');
+            const hasFilter = activeCollectedFilter !== 'all' || activeGenFilter !== 'all' || activeLangFilter !== 'all';
+            if (!hasFilter) { banner.classList.remove('visible'); return; }
+            let tags = '';
+            if (activeCollectedFilter === 'collected') tags += '<span class="filter-tag">Collected</span>';
+            if (activeCollectedFilter === 'uncollected') tags += '<span class="filter-tag">Not Collected</span>';
+            if (activeCollectedFilter === 'no-price') tags += '<span class="filter-tag">No Market Price</span>';
+            if (activeCollectedFilter === 'no-image') tags += '<span class="filter-tag">No Image</span>';
+            if (activeGenFilter !== 'all') tags += `<span class="filter-tag">Gen ${activeGenFilter}</span>`;
+            if (activeLangFilter === 'english') tags += '<span class="filter-tag">English</span>';
+            if (activeLangFilter === 'japanese') tags += '<span class="filter-tag">Japanese</span>';
+            tags += `<span class="filter-tag" style="background:rgba(250,204,21,0.15);border-color:rgba(250,204,21,0.3);color:var(--yellow);">${filteredCards.length} cards</span>`;
+            tagsEl.innerHTML = tags;
+            banner.classList.add('visible');
+        }
+
+        function clearAllFilters() {
+            activeCollectedFilter = 'all';
+            activeGenFilter = 'all';
+            activeLangFilter = 'all';
+            document.querySelectorAll('.filter-gen-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.textContent.trim() === 'All') btn.classList.add('active');
+            });
+            applyFilters();
+        }
+
+        function resetView() {
+            // Clear search
+            const input = document.getElementById('searchInput');
+            if (input) { input.value = ''; }
+            document.getElementById('searchClear').classList.remove('visible');
+            // Close filter panel
+            const panel = document.getElementById('filterPanel');
+            const btn = document.getElementById('filterToggleBtn');
+            if (panel) panel.style.display = 'none';
+            if (btn) btn.classList.remove('active');
+            // Clear all filters
+            clearAllFilters();
+            // Scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function renderCards() {
+            const grid = document.getElementById('cardGrid');
+            if (filteredCards.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🎯</div>
+                        <h2>No cards found</h2>
+                    </div>
+                `;
+                return;
+            }
+
+            grid.innerHTML = filteredCards.map(card => {
+                const spriteUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${card.id}.png`;
+                const hasCustomImage = card.imageUrl && card.imageUrl.trim();
+                const tcgUrl = card.cardLink && card.cardLink.trim() ? card.cardLink : `https://www.tcgplayer.com/search/pokemon/product?productLineName=pokemon&q=${encodeURIComponent(card.name)}&view=grid&ProductTypeName=Cards&page=1`;
+                return `
+                <div class="card">
+                    <div class="card-image-wrapper" onclick="${hasCustomImage ? `openImageModal('${card.imageUrl}', '${card.name}', ${card.id})` : `openIngestorForCard(${card.id})`}">
+                        ${hasCustomImage ? 
+                            `<img data-src="${card.imageUrl}" alt="${card.name}" class="card-image" 
+                                   src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 140'%3E%3Crect fill='%23f0f0f0' width='100' height='140'/%3E%3C/svg%3E"
+                                   onerror="this.onerror=null; this.className='card-image-sprite'; this.src='${spriteUrl}'; this.parentElement.setAttribute('onclick', 'openIngestorForCard(${card.id})');"
+                                   onload="this.style.display='block'; if(this.nextElementSibling) this.nextElementSibling.style.display='none';">
+                             <div class="card-image-placeholder" style="display:none;"></div>` 
+                            : 
+                            `<img data-src="${spriteUrl}" alt="${card.name}" class="card-image-sprite"
+                                   src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 140'%3E%3Crect fill='%23f0f0f0' width='100' height='140'/%3E%3C/svg%3E"
+                                   onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                             <div class="card-image-placeholder" style="display:none;"></div>`
+                        }
+                    </div>
+                    <div class="card-content">
+                        <div class="card-header">
+                            <div style="flex:1;min-width:0;">
+                                <div class="card-number">#${String(card.id).padStart(3, '0')}</div>
+                                <div class="card-title">${card.name}</div>
+                                <div class="card-generation">Gen ${card.generation}</div>
+                                ${card.setName ? `<div class="card-set-name">${card.setName}</div>` : ''}
+                                ${!card.collected && card.nmPrices && card.nmPrices.market ? `<div class="card-nm-prices">
+                                    <div class="card-nm-price"><span class="card-nm-label">Market</span><span class="card-nm-value">$${card.nmPrices.market}</span></div>
+                                </div>` : ''}
+                            </div>
+                            ${card.collected && card.price ? `<div class="card-price-display">$${Math.round(card.price)}</div>` : ''}
+                        </div>
+                        <div class="card-actions">
+                            <button class="mark-collected-btn ${card.collected ? 'collected' : ''}" onclick="toggleCollected(${card.id})">
+                                ${card.collected ? '✓' : 'Mark collected'}
+                            </button>
+                            <a href="${tcgUrl}" target="_blank" rel="noopener noreferrer" onclick="showTcgToast(${card.id}, '${card.name.replace(/'/g, "\\'")}')" class="tcg-link-btn">TCG</a>
+                        </div>
+                    </div>
+                </div>
+            `}).join('');
+
+            // Setup lazy loading for newly rendered images
+            setupLazyLoading();
+        }
+
+        function toggleCollected(cardId) {
+            const card = allCards.find(c => c.id === cardId);
+            if (card) {
+                if (!card.collected) {
+                    // Asking for price when marking as collected
+                    const priceInput = prompt(`How much did you spend on ${card.name}?`, card.price ? card.price.toString() : '');
+                    if (priceInput !== null) {
+                        const price = parseFloat(priceInput);
+                        if (!isNaN(price) && price >= 0) {
+                            card.price = price;
+                            card.collected = true;
+                        } else if (priceInput === '') {
+                            // Allow collecting without price
+                            card.price = null;
+                            card.collected = true;
+                        } else {
+                            alert('Please enter a valid price');
+                            return;
+                        }
+                    } else {
+                        // User cancelled
+                        return;
+                    }
+                } else {
+                    // Unmark as collected - clear the price
+                    card.collected = false;
+                    card.price = null;
+                }
+                saveData();
+                updateStats();
+            // Update just this card in filteredCards without reloading
+                const filteredCard = filteredCards.find(c => c.id === cardId);
+                if (filteredCard) {
+                    filteredCard.collected = card.collected;
+                    filteredCard.price = card.price;
+        }
+updateStats();
+renderCards();
+            }
+        }
+
+        function updateStats() {
+            const total = allCards.length;
+            const collected = allCards.filter(c => c.collected).length;
+            const spent = allCards.filter(c => c.price).reduce((sum, c) => sum + (c.price || 0), 0);
+            const marketTotal = allCards.reduce((sum, c) => {
+                if (c.nmPrices && c.nmPrices.market) return sum + parseFloat(c.nmPrices.market);
+                return sum;
+            }, 0);
+            const progress = total > 0 ? Math.round((collected / total) * 100) : 0;
+
+            document.getElementById('collectedCount').textContent = collected;
+            document.getElementById('totalCount').textContent = total;
+            document.getElementById('spentAmount').textContent = '$' + spent.toFixed(2);
+            document.getElementById('marketValue').textContent = '$' + Math.round(marketTotal).toLocaleString();
+            document.getElementById('progressFill').style.width = progress + '%';
+            document.getElementById('progressPercent').textContent = progress + '%';
+        }
+
+        // Start the app
+        function debugSync() {
+            var msg = 'LOCAL STATE:\n';
+            msg += 'Cards loaded: ' + allCards.length + '\n';
+            msg += 'CSV loaded: ' + sampleData.length + '\n';
+            msg += 'Collected: ' + allCards.filter(c => c.collected).length + '\n';
+            msg += 'With links: ' + allCards.filter(c => c.cardLink && c.cardLink.trim()).length + '\n';
+            msg += 'With prices: ' + allCards.filter(c => c.nmPrices).length + '\n';
+            msg += 'localStorage: ' + (localStorage.getItem(STORAGE_KEY) ? JSON.parse(localStorage.getItem(STORAGE_KEY)).length + ' cards' : 'empty') + '\n';
+            msg += 'Firebase: ' + firebaseConfig.projectId + '\n';
+            msg += 'User ID: ' + userId + '\n\n';
+
+            fetch(firebaseConfig.databaseURL + '/users/' + userId + '/collection.json')
+                .then(r => r.json())
+                .then(d => {
+                    if (d && typeof d === 'object') {
+                        var entries = Object.values(d);
+                        msg += 'FIREBASE:\n';
+                        msg += 'Cards: ' + entries.length + '\n';
+                        msg += 'Collected: ' + entries.filter(e => e.collected).length + '\n';
+                        msg += 'With prices: ' + entries.filter(e => e.nmPrices).length + '\n';
+                    } else {
+                        msg += 'FIREBASE: empty/null';
+                    }
+                    alert(msg);
+                })
+                .catch(e => { msg += 'FIREBASE ERROR: ' + e.message; alert(msg); });
+        }
+
+        function init() {
+            initializeApp();
+        }
+
+        init();
+
+        // Filter toggle
+        // Filter toggle - both buttons (large and small)
+        
+        // Modal and zoom functions
+        function openImageModal(imageUrl, cardName, cardId) {
+            if (!imageUrl) return;
+            const modal = document.getElementById('imageModal');
+            const modalImage = document.getElementById('modalImage');
+            const modalInfo = document.getElementById('modalInfo');
+            const modalPricing = document.getElementById('modalPricing');
+            const modalContainer = document.getElementById('modalImageContainer');
+            
+            modalImage.src = imageUrl;
+            modalImage.alt = cardName;
+            modalImage.className = 'modal-image';
+            modalInfo.textContent = `#${String(cardId).padStart(3, '0')} ${cardName} • Click to zoom`;
+
+            // Show pricing if available
+            const card = allCards.find(c => c.id === cardId);
+            if (card && card.nmPrices) {
+                const p = card.nmPrices;
+                let rows = '<div class="modal-pricing-header">NEAR MINT PRICES</div>';
+                if (p.firstEd) rows += `<div class="modal-pricing-row"><span class="modal-pricing-label">1st Edition</span><span class="modal-pricing-value">$${p.firstEd}</span></div>`;
+                if (p.unlimited) rows += `<div class="modal-pricing-row"><span class="modal-pricing-label">Unlimited</span><span class="modal-pricing-value">$${p.unlimited}</span></div>`;
+                if (p.market) rows += `<div class="modal-pricing-row"><span class="modal-pricing-label">Market Price</span><span class="modal-pricing-value">$${p.market}</span></div>`;
+                if (p.lastSale) rows += `<div class="modal-pricing-row"><span class="modal-pricing-label">Last Sale</span><span class="modal-pricing-value">$${p.lastSale}</span></div>`;
+                modalPricing.innerHTML = rows;
+                modalPricing.style.display = 'block';
+            } else {
+                modalPricing.style.display = 'none';
+            }
+
+            modal.classList.add('active');
+
+            modalImage.onclick = (e) => {
+                e.stopPropagation();
+                modalImage.classList.toggle('zoomed');
+            };
+
+            modal.onclick = (e) => {
+                if (e.target === modal) closeImageModal();
+            };
+        }
+
+        function closeImageModal() {
+            const modal = document.getElementById('imageModal');
+            modal.classList.remove('active');
+        }
+
+        // Close modal with Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeImageModal();
+            }
+        });
+
+        // Reset button with confirmation
+        function deleteCloudData() {
+            if (firebaseConfig.projectId === "YOUR_PROJECT_ID") return;
+            
+            const url = firebaseConfig.databaseURL + '/users/' + userId + '/collection.json';
+            
+            fetch(url, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' }
+            }).then(res => {
+                if (res.ok) {
+                    console.log('✅ Cloud data deleted');
+                } else {
+                    console.log('⚠️ Cloud delete: HTTP ' + res.status);
+                }
+            }).catch(err => {
+                // Silently fail
+            });
+        }
+
+        // Initialize the app when DOM is loaded
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                console.log('📄 DOM Content Loaded - App Initializing');
+                initializeApp();
+                setTimeout(() => logPerformanceMetrics(), 1000);
+            });
+        } else {
+            // DOM is already loaded
+            console.log('📄 DOM Already Loaded - App Initializing');
+            initializeApp();
+            setTimeout(() => logPerformanceMetrics(), 1000);
+        }
+
+        // ======= CARD URL INGESTOR =======
+        let ingSelectedIndex = null;
+        let ingHighlightIdx = -1;
+        let ingPreviewedProductId = null;
+        let ingPreviewedUrl = null;
+        let ingPreviewedImageUrl = null;
+
+        const ING_IMAGE_BASE = 'https://tcgplayer-cdn.tcgplayer.com/product/';
+        const ING_IMAGE_SUFFIX = '_in_1000x1000.jpg';
+
+        function openIngestor() {
+            if (!allCards || allCards.length === 0) {
+                alert('⚠️ Card data hasn\'t loaded yet. Make sure pokemon-data.csv is available (deploy to GitHub Pages or run a local server).');
+                return;
+            }
+            document.getElementById('ingestorOverlay').classList.add('active');
+            ingSelectedIndex = null;
+            document.getElementById('ingCardDetail').classList.remove('visible');
+            document.getElementById('ingSearchInput').value = '';
+            document.getElementById('ingDropdown').classList.remove('open');
+            setTimeout(() => document.getElementById('ingSearchInput').focus(), 100);
+        }
+
+        function openIngestorForCard(cardId) {
+            if (!allCards || allCards.length === 0) return;
+            const idx = allCards.findIndex(c => c.id === cardId);
+            if (idx === -1) return;
+            document.getElementById('ingestorOverlay').classList.add('active');
+            document.getElementById('ingSearchInput').value = '';
+            document.getElementById('ingDropdown').classList.remove('open');
+            ingPick(idx);
+        }
+
+        function closeIngestor() {
+            document.getElementById('ingestorOverlay').classList.remove('active');
+            // Refresh main view in case cards were updated
+            filteredCards = [...allCards];
+            applyFilters();
+            renderCards();
+            updateStats();
+        }
+
+        // Close on overlay click
+        document.getElementById('ingestorOverlay').addEventListener('click', function(e) {
+            if (e.target === this) closeIngestor();
+        });
+
+        // Search dropdown
+        const ingSearchInput = document.getElementById('ingSearchInput');
+        const ingDropdown = document.getElementById('ingDropdown');
+
+        ingSearchInput.addEventListener('input', function() {
+            const q = this.value.toLowerCase().trim();
+            if (q.length < 1) { ingDropdown.classList.remove('open'); return; }
+
+            const matches = allCards
+                .map((card, idx) => ({ card, idx }))
+                .filter(({ card }) => (card.name || '').toLowerCase().includes(q))
+                .slice(0, 10);
+
+            if (!matches.length) {
+                ingDropdown.innerHTML = '<div style="padding:14px 16px;color:#8890A4;font-size:13px;">No results</div>';
+                ingDropdown.classList.add('open');
+                return;
+            }
+
+            ingHighlightIdx = -1;
+            ingDropdown.innerHTML = matches.map(({ card, idx }, i) => {
+                const hasLink = card.cardLink && card.cardLink.trim();
+                return `<div class="ing-dd-item${hasLink ? ' has-link' : ''}" data-i="${i}" data-idx="${idx}" onclick="ingPick(${idx})">
+                    <span class="ing-dd-id">#${String(card.id).padStart(4,'0')}</span>
+                    <span class="ing-dd-name">${card.name}</span>
+                    <span class="ing-dd-status">${hasLink ? '✅' : '⬜'}</span>
+                </div>`;
+            }).join('');
+            ingDropdown.classList.add('open');
+        });
+
+        ingSearchInput.addEventListener('keydown', function(e) {
+            const items = ingDropdown.querySelectorAll('.ing-dd-item');
+            if (!items.length || !ingDropdown.classList.contains('open')) return;
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                ingHighlightIdx = Math.min(ingHighlightIdx + 1, items.length - 1);
+                items.forEach((el, i) => el.classList.toggle('highlighted', i === ingHighlightIdx));
+                if (items[ingHighlightIdx]) items[ingHighlightIdx].scrollIntoView({ block: 'nearest' });
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                ingHighlightIdx = Math.max(ingHighlightIdx - 1, 0);
+                items.forEach((el, i) => el.classList.toggle('highlighted', i === ingHighlightIdx));
+            } else if (e.key === 'Enter' && ingHighlightIdx >= 0) {
+                e.preventDefault();
+                ingPick(parseInt(items[ingHighlightIdx].dataset.idx));
+            } else if (e.key === 'Escape') {
+                ingDropdown.classList.remove('open');
+            }
+        });
+
+        // Close dropdown on outside click
+        document.getElementById('ingestorModal').addEventListener('click', function(e) {
+            if (!e.target.closest('.ing-search-wrap') && !e.target.closest('.ing-dropdown')) ingDropdown.classList.remove('open');
+        });
+
+        function ingPick(idx) {
+            ingDropdown.classList.remove('open');
+            ingSelectedIndex = idx;
+            const card = allCards[idx];
+            ingSearchInput.value = card.name;
+
+            document.getElementById('ingCardDetail').classList.add('visible');
+            document.getElementById('ingDetailId').textContent = `#${String(card.id).padStart(4,'0')}`;
+            document.getElementById('ingDetailName').textContent = card.name || 'Unknown';
+
+            const meta = [`Gen ${card.generation || '?'}`];
+            if (card.setName) meta.push(card.setName);
+            if (card.collected) meta.push('✅ Collected');
+            document.getElementById('ingDetailMeta').textContent = meta.join('  •  ');
+
+            const linkEl = document.getElementById('ingCurrentLink');
+            if (card.cardLink && card.cardLink.trim()) {
+                linkEl.className = 'ing-current-link has-value';
+                linkEl.innerHTML = `<a href="${card.cardLink}" target="_blank" rel="noopener">${card.cardLink}</a>`;
+            } else {
+                linkEl.className = 'ing-current-link';
+                linkEl.textContent = 'None — paste a URL below';
+            }
+
+            document.getElementById('ingUrlInput').value = '';
+            ingClearPreviewSilent();
+
+            // Show market price info
+            const pricingEl = document.getElementById('ingPricing');
+            if (card.nmPrices && Object.keys(card.nmPrices).length > 0) {
+                const p = card.nmPrices;
+                let rows = '<div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:#FACC15;margin-bottom:8px;">Market Prices</div>';
+                if (p.market) rows += `<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:13px;"><span style="color:#8890A4;">Market</span><span style="color:#22C55E;font-weight:700;">$${p.market}</span></div>`;
+                if (p.firstEd) rows += `<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:13px;"><span style="color:#8890A4;">1st Edition</span><span style="color:#22C55E;font-weight:700;">$${p.firstEd}</span></div>`;
+                if (p.unlimited) rows += `<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:13px;"><span style="color:#8890A4;">Unlimited</span><span style="color:#22C55E;font-weight:700;">$${p.unlimited}</span></div>`;
+                if (p.lastSale) rows += `<div style="display:flex;justify-content:space-between;padding:3px 0;font-size:13px;"><span style="color:#8890A4;">Last Sale</span><span style="color:#22C55E;font-weight:700;">$${p.lastSale}</span></div>`;
+                pricingEl.innerHTML = rows;
+                pricingEl.style.display = 'block';
+            } else {
+                pricingEl.innerHTML = '<div style="font-size:12px;color:#8890A4;text-align:center;">No market prices available</div>';
+                pricingEl.style.display = 'block';
+            }
+
+            if (card.imageUrl && card.imageUrl.trim()) {
+                document.getElementById('ingPreview').innerHTML = `<img src="${card.imageUrl}" alt="${card.name}" />`;
+            } else {
+                const spriteUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${card.id}.png`;
+                document.getElementById('ingPreview').innerHTML = `<img src="${spriteUrl}" alt="${card.name}" style="opacity:0.5; padding:20px;" />`;
+            }
+
+            document.getElementById('ingUrlInput').focus();
+        }
+
+        // Auto-extract product ID on paste/input
+        function ingExtractProductId(url) {
+            const m = url.match(/\/product\/(\d+)/);
+            if (m) return m[1];
+            const n = url.match(/^(\d{4,})$/);
+            return n ? n[1] : null;
+        }
+
+        function ingHandleUrlInput() {
+            const url = document.getElementById('ingUrlInput').value.trim();
+            const infoEl = document.getElementById('ingExtracted');
+            if (!url) { infoEl.classList.remove('visible'); ingClearPreviewSilent(); return; }
+
+            const pid = ingExtractProductId(url);
+            const prices = parsePricesFromHash(url);
+            const priceInfo = prices ? ` • 💰 Prices included` : '';
+
+            if (pid) {
+                const imgUrl = ING_IMAGE_BASE + pid + ING_IMAGE_SUFFIX;
+                ingPreviewedProductId = pid;
+                ingPreviewedUrl = url;
+                ingPreviewedImageUrl = imgUrl;
+                infoEl.className = 'ing-extracted visible success';
+                infoEl.innerHTML = `Product ID: <code>${pid}</code> → loading image...${priceInfo}`;
+                ingLoadPreview(imgUrl, pid);
+            } else {
+                ingPreviewedProductId = null;
+                ingPreviewedUrl = url;
+                ingPreviewedImageUrl = null;
+                infoEl.className = 'ing-extracted visible error';
+                infoEl.innerHTML = '⚠️ Could not find a product number in this URL';
+                ingClearPreviewSilent();
+            }
+        }
+
+        function ingLoadPreview(imgUrl, pid) {
+            const area = document.getElementById('ingPreview');
+            const infoEl = document.getElementById('ingExtracted');
+            area.innerHTML = '<div style="color:#60A5FA;font-size:14px;">Loading preview...</div>';
+            const img = new Image();
+            img.onload = () => {
+                area.innerHTML = ''; area.appendChild(img);
+                infoEl.innerHTML = `Product ID: <code>${pid}</code> → ✅ Image loaded`;
+                document.getElementById('ingApproveBtn').disabled = false;
+                document.getElementById('ingClearBtn').disabled = false;
+            };
+            img.onerror = () => {
+                area.innerHTML = '<div style="color:#F87171;font-size:13px;text-align:center;padding:24px;">❌ No image found for this product</div>';
+                infoEl.innerHTML = `Product ID: <code>${pid}</code> → ❌ Image not found`;
+                infoEl.className = 'ing-extracted visible error';
+                document.getElementById('ingApproveBtn').disabled = true;
+                document.getElementById('ingClearBtn').disabled = false;
+            };
+            img.src = imgUrl;
+        }
+
+        document.getElementById('ingUrlInput').addEventListener('paste', function() {
+            setTimeout(() => ingHandleUrlInput(), 50);
+        });
+        document.getElementById('ingUrlInput').addEventListener('input', function() {
+            clearTimeout(this._debounce);
+            this._debounce = setTimeout(() => ingHandleUrlInput(), 400);
+        });
+        document.getElementById('ingUrlInput').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                if (!document.getElementById('ingApproveBtn').disabled) {
+                    ingApprove();
+                } else {
+                    ingHandleUrlInput();
+                }
+            }
+        });
+
+        // TCGPlayer set slug → proper display name lookup
+        const SET_NAME_LOOKUP = {
+            // Original Series
+            'base-set': 'Base Set',
+            'jungle': 'Jungle',
+            'fossil': 'Fossil',
+            'base-set-2': 'Base Set 2',
+            'team-rocket': 'Team Rocket',
+            'gym-heroes': 'Gym Heroes',
+            'gym-challenge': 'Gym Challenge',
+            // Neo Series
+            'neo-genesis': 'Neo Genesis',
+            'neo-discovery': 'Neo Discovery',
+            'southern-islands': 'Southern Islands',
+            'neo-revelation': 'Neo Revelation',
+            'neo-destiny': 'Neo Destiny',
+            // Legendary / e-Card Series
+            'legendary-collection': 'Legendary Collection',
+            'expedition-base-set': 'Expedition Base Set',
+            'expedition': 'Expedition Base Set',
+            'aquapolis': 'Aquapolis',
+            'skyridge': 'Skyridge',
+            // EX Series
+            'ruby-and-sapphire': 'Ruby & Sapphire',
+            'ex-ruby-and-sapphire': 'Ruby & Sapphire',
+            'sandstorm': 'Sandstorm',
+            'ex-sandstorm': 'Sandstorm',
+            'dragon': 'Dragon',
+            'ex-dragon': 'Dragon',
+            'team-magma-vs-team-aqua': 'Team Magma vs Team Aqua',
+            'ex-team-magma-vs-team-aqua': 'Team Magma vs Team Aqua',
+            'hidden-legends': 'Hidden Legends',
+            'ex-hidden-legends': 'Hidden Legends',
+            'firered-and-leafgreen': 'FireRed & LeafGreen',
+            'ex-firered-and-leafgreen': 'FireRed & LeafGreen',
+            'team-rocket-returns': 'Team Rocket Returns',
+            'ex-team-rocket-returns': 'Team Rocket Returns',
+            'deoxys': 'Deoxys',
+            'ex-deoxys': 'Deoxys',
+            'emerald': 'Emerald',
+            'ex-emerald': 'Emerald',
+            'unseen-forces': 'Unseen Forces',
+            'ex-unseen-forces': 'Unseen Forces',
+            'delta-species': 'Delta Species',
+            'ex-delta-species': 'Delta Species',
+            'legend-maker': 'Legend Maker',
+            'ex-legend-maker': 'Legend Maker',
+            'holon-phantoms': 'Holon Phantoms',
+            'ex-holon-phantoms': 'Holon Phantoms',
+            'crystal-guardians': 'Crystal Guardians',
+            'ex-crystal-guardians': 'Crystal Guardians',
+            'dragon-frontiers': 'Dragon Frontiers',
+            'ex-dragon-frontiers': 'Dragon Frontiers',
+            'power-keepers': 'Power Keepers',
+            'ex-power-keepers': 'Power Keepers',
+            // Diamond & Pearl Series
+            'diamond-and-pearl': 'Diamond & Pearl',
+            'mysterious-treasures': 'Mysterious Treasures',
+            'dp-mysterious-treasures': 'Mysterious Treasures',
+            'secret-wonders': 'Secret Wonders',
+            'dp-secret-wonders': 'Secret Wonders',
+            'great-encounters': 'Great Encounters',
+            'dp-great-encounters': 'Great Encounters',
+            'majestic-dawn': 'Majestic Dawn',
+            'dp-majestic-dawn': 'Majestic Dawn',
+            'legends-awakened': 'Legends Awakened',
+            'dp-legends-awakened': 'Legends Awakened',
+            'stormfront': 'Stormfront',
+            'dp-stormfront': 'Stormfront',
+            // Platinum Series
+            'platinum': 'Platinum',
+            'rising-rivals': 'Rising Rivals',
+            'platinum-rising-rivals': 'Rising Rivals',
+            'supreme-victors': 'Supreme Victors',
+            'platinum-supreme-victors': 'Supreme Victors',
+            'arceus': 'Arceus',
+            'platinum-arceus': 'Arceus',
+            // HeartGold & SoulSilver Series
+            'heartgold-and-soulsilver': 'HeartGold & SoulSilver',
+            'heartgold-soulsilver': 'HeartGold & SoulSilver',
+            'hs-unleashed': 'HS Unleashed',
+            'unleashed': 'HS Unleashed',
+            'hs-undaunted': 'HS Undaunted',
+            'undaunted': 'HS Undaunted',
+            'hs-triumphant': 'HS Triumphant',
+            'triumphant': 'HS Triumphant',
+            'call-of-legends': 'Call of Legends',
+            // Black & White Series
+            'black-and-white': 'Black & White',
+            'emerging-powers': 'Emerging Powers',
+            'bw-emerging-powers': 'Emerging Powers',
+            'noble-victories': 'Noble Victories',
+            'bw-noble-victories': 'Noble Victories',
+            'next-destinies': 'Next Destinies',
+            'bw-next-destinies': 'Next Destinies',
+            'dark-explorers': 'Dark Explorers',
+            'bw-dark-explorers': 'Dark Explorers',
+            'dragons-exalted': 'Dragons Exalted',
+            'bw-dragons-exalted': 'Dragons Exalted',
+            'dragon-vault': 'Dragon Vault',
+            'bw-dragon-vault': 'Dragon Vault',
+            'boundaries-crossed': 'Boundaries Crossed',
+            'bw-boundaries-crossed': 'Boundaries Crossed',
+            'plasma-storm': 'Plasma Storm',
+            'bw-plasma-storm': 'Plasma Storm',
+            'plasma-freeze': 'Plasma Freeze',
+            'bw-plasma-freeze': 'Plasma Freeze',
+            'plasma-blast': 'Plasma Blast',
+            'bw-plasma-blast': 'Plasma Blast',
+            'legendary-treasures': 'Legendary Treasures',
+            'bw-legendary-treasures': 'Legendary Treasures',
+            // XY Series
+            'xy': 'XY',
+            'xy-base-set': 'XY',
+            'flashfire': 'Flashfire',
+            'xy-flashfire': 'Flashfire',
+            'furious-fists': 'Furious Fists',
+            'xy-furious-fists': 'Furious Fists',
+            'phantom-forces': 'Phantom Forces',
+            'xy-phantom-forces': 'Phantom Forces',
+            'primal-clash': 'Primal Clash',
+            'xy-primal-clash': 'Primal Clash',
+            'double-crisis': 'Double Crisis',
+            'roaring-skies': 'Roaring Skies',
+            'xy-roaring-skies': 'Roaring Skies',
+            'ancient-origins': 'Ancient Origins',
+            'xy-ancient-origins': 'Ancient Origins',
+            'breakthrough': 'BREAKthrough',
+            'xy-breakthrough': 'BREAKthrough',
+            'breakpoint': 'BREAKpoint',
+            'xy-breakpoint': 'BREAKpoint',
+            'generations': 'Generations',
+            'fates-collide': 'Fates Collide',
+            'xy-fates-collide': 'Fates Collide',
+            'steam-siege': 'Steam Siege',
+            'xy-steam-siege': 'Steam Siege',
+            'evolutions': 'Evolutions',
+            'xy-evolutions': 'Evolutions',
+            // Sun & Moon Series
+            'sun-and-moon': 'Sun & Moon',
+            'sm-base-set': 'Sun & Moon',
+            'guardians-rising': 'Guardians Rising',
+            'sm-guardians-rising': 'Guardians Rising',
+            'burning-shadows': 'Burning Shadows',
+            'sm-burning-shadows': 'Burning Shadows',
+            'shining-legends': 'Shining Legends',
+            'crimson-invasion': 'Crimson Invasion',
+            'sm-crimson-invasion': 'Crimson Invasion',
+            'ultra-prism': 'Ultra Prism',
+            'sm-ultra-prism': 'Ultra Prism',
+            'forbidden-light': 'Forbidden Light',
+            'sm-forbidden-light': 'Forbidden Light',
+            'celestial-storm': 'Celestial Storm',
+            'sm-celestial-storm': 'Celestial Storm',
+            'dragon-majesty': 'Dragon Majesty',
+            'lost-thunder': 'Lost Thunder',
+            'sm-lost-thunder': 'Lost Thunder',
+            'team-up': 'Team Up',
+            'sm-team-up': 'Team Up',
+            'detective-pikachu': 'Detective Pikachu',
+            'unbroken-bonds': 'Unbroken Bonds',
+            'sm-unbroken-bonds': 'Unbroken Bonds',
+            'unified-minds': 'Unified Minds',
+            'sm-unified-minds': 'Unified Minds',
+            'hidden-fates': 'Hidden Fates',
+            'hidden-fates-shiny-vault': 'Hidden Fates',
+            'cosmic-eclipse': 'Cosmic Eclipse',
+            'sm-cosmic-eclipse': 'Cosmic Eclipse',
+            // Sword & Shield Series
+            'sword-and-shield': 'Sword & Shield',
+            'swsh-base-set': 'Sword & Shield',
+            'rebel-clash': 'Rebel Clash',
+            'darkness-ablaze': 'Darkness Ablaze',
+            'champions-path': "Champion's Path",
+            'vivid-voltage': 'Vivid Voltage',
+            'shining-fates': 'Shining Fates',
+            'shining-fates-shiny-vault': 'Shining Fates',
+            'battle-styles': 'Battle Styles',
+            'chilling-reign': 'Chilling Reign',
+            'evolving-skies': 'Evolving Skies',
+            'celebrations': 'Celebrations',
+            'celebrations-classic-collection': 'Celebrations: Classic Collection',
+            'fusion-strike': 'Fusion Strike',
+            'brilliant-stars': 'Brilliant Stars',
+            'brilliant-stars-trainer-gallery': 'Brilliant Stars',
+            'astral-radiance': 'Astral Radiance',
+            'astral-radiance-trainer-gallery': 'Astral Radiance',
+            'pokemon-go': 'Pokémon GO',
+            'lost-origin': 'Lost Origin',
+            'lost-origin-trainer-gallery': 'Lost Origin',
+            'silver-tempest': 'Silver Tempest',
+            'silver-tempest-trainer-gallery': 'Silver Tempest',
+            'crown-zenith': 'Crown Zenith',
+            'crown-zenith-galarian-gallery': 'Crown Zenith',
+            // Scarlet & Violet Series
+            'scarlet-and-violet': 'Scarlet & Violet',
+            'sv-base-set': 'Scarlet & Violet',
+            'paldea-evolved': 'Paldea Evolved',
+            'obsidian-flames': 'Obsidian Flames',
+            'sv-151': 'Pokémon 151',
+            '151': 'Pokémon 151',
+            'pokemon-151': 'Pokémon 151',
+            'paradox-rift': 'Paradox Rift',
+            'paldean-fates': 'Paldean Fates',
+            'temporal-forces': 'Temporal Forces',
+            'twilight-masquerade': 'Twilight Masquerade',
+            'shrouded-fable': 'Shrouded Fable',
+            'stellar-crown': 'Stellar Crown',
+            'surging-sparks': 'Surging Sparks',
+            'prismatic-evolutions': 'Prismatic Evolutions',
+            'journey-together': 'Journey Together',
+            'destined-rivals': 'Destined Rivals',
+            'black-bolt': 'Black Bolt',
+            'white-flare': 'White Flare',
+            'mega-evolutions': 'Mega Evolutions',
+            'mega-evolution': 'Mega Evolutions',
+            'phantasmal-flames': 'Phantasmal Flames',
+            'ascended-heroes': 'Ascended Heroes',
+            'perfect-order': 'Perfect Order',
+            'chaos-rising': 'Chaos Rising',
+            // Promos & Special
+            'swsh-promos': 'Promos',
+            'sv-promos': 'Promos',
+            'sm-promos': 'Promos',
+            'xy-promos': 'Promos',
+            'bw-promos': 'Promos',
+            'dp-promos': 'Promos',
+            'pop-series': 'POP Series',
+            'best-of-game': 'Best of Game',
+            'wizards-black-star-promos': 'Black Star Promos',
+            'nintendo-black-star-promos': 'Black Star Promos',
+            'mcdonalds-collection': "McDonald's Collection",
+            // ======= JAPANESE SETS =======
+            // Original Era (JP)
+            'expansion-pack': 'Expansion Pack (JP)',
+            'pokemon-jungle': 'Pokémon Jungle (JP)',
+            'mystery-of-the-fossils': 'Mystery of the Fossils',
+            'rocket-gang': 'Rocket Gang',
+            'leaders-stadium': "Leaders' Stadium",
+            'challenge-from-the-darkness': 'Challenge from the Darkness',
+            // Neo Era (JP)
+            'gold-silver-to-a-new-world': 'Gold, Silver, to a New World...',
+            'crossing-the-ruins': 'Crossing the Ruins...',
+            'awakening-legends': 'Awakening Legends',
+            'darkness-and-to-light': 'Darkness, and to Light...',
+            // VS / Web Era
+            'pokemon-card-vs': 'Pokémon Card★VS',
+            'pokemon-vs': 'Pokémon Card★VS',
+            'pokemon-card-web': 'Pokémon Card★web',
+            'pokemon-web': 'Pokémon Card★web',
+            // e-Card Era (JP)
+            'base-expansion-pack': 'Base Expansion Pack (JP)',
+            'the-town-on-no-map': 'The Town on No Map',
+            'wind-from-the-sea': 'Wind from the Sea',
+            'split-earth': 'Split Earth',
+            'mysterious-mountains': 'Mysterious Mountains',
+            // ADV Era (JP)
+            'adv-expansion-pack': 'ADV Expansion Pack',
+            'miracle-of-the-desert': 'Miracle of the Desert',
+            'rulers-of-the-heavens': 'Rulers of the Heavens',
+            'undone-seal': 'Undone Seal',
+            // PCG Era (JP)
+            'flight-of-legends': 'Flight of Legends',
+            'clash-of-the-blue-sky': 'Clash of the Blue Sky',
+            'rocket-gang-strikes-back': 'Rocket Gang Strikes Back',
+            'golden-sky-silvery-ocean': 'Golden Sky, Silvery Ocean',
+            'mirage-forest': 'Mirage Forest',
+            'holon-research-tower': 'Holon Research Tower',
+            'holon-phantom': 'Holon Phantom',
+            'miracle-crystal': 'Miracle Crystal',
+            'offense-and-defense-of-the-furthest-ends': 'Offense and Defense of the Furthest Ends',
+            'world-champions-pack': 'World Champions Pack',
+            // DP Era (JP)
+            'space-time-creation': 'Space-Time Creation',
+            'diamond-collection': 'Diamond Collection',
+            'pearl-collection': 'Pearl Collection',
+            'secret-of-the-lakes': 'Secret of the Lakes',
+            'shining-darkness': 'Shining Darkness',
+            'moonlit-pursuit': 'Moonlit Pursuit',
+            'dawn-dash': 'Dawn Dash',
+            'cry-from-the-mysterious': 'Cry from the Mysterious',
+            'temple-of-anger': 'Temple of Anger',
+            'intense-fight-in-the-destroyed-sky': 'Intense Fight in the Destroyed Sky',
+            // DPt Era (JP)
+            'galactics-conquest': "Galactic's Conquest",
+            'bonds-to-the-end-of-time': 'Bonds to the End of Time',
+            'beat-of-the-frontier': 'Beat of the Frontier',
+            'advent-of-arceus': 'Advent of Arceus',
+            // LEGEND Era (JP)
+            'heartgold-collection': 'HeartGold Collection',
+            'soulsilver-collection': 'SoulSilver Collection',
+            'reviving-legends': 'Reviving Legends',
+            'clash-at-the-summit': 'Clash at the Summit',
+            'lost-link': 'Lost Link',
+            // BW Era (JP)
+            'black-collection': 'Black Collection',
+            'white-collection': 'White Collection',
+            'red-collection': 'Red Collection',
+            'psycho-drive': 'Psycho Drive',
+            'hail-blizzard': 'Hail Blizzard',
+            'dark-rush': 'Dark Rush',
+            'dragon-blast': 'Dragon Blast',
+            'dragon-blade': 'Dragon Blade',
+            'freeze-bolt': 'Freeze Bolt',
+            'cold-flare': 'Cold Flare',
+            'plasma-gale': 'Plasma Gale',
+            'spiral-force': 'Spiral Force',
+            'thunder-knuckle': 'Thunder Knuckle',
+            'megalo-cannon': 'Megalo Cannon',
+            'everyone-is-everyones-campaign': "Everyone's Exciting Battle",
+            'shiny-collection': 'Shiny Collection',
+            // XY Era (JP)
+            'collection-x': 'Collection X',
+            'collection-y': 'Collection Y',
+            'wild-blaze': 'Wild Blaze',
+            'rising-fist': 'Rising Fist',
+            'phantom-gate': 'Phantom Gate',
+            'gaia-volcano': 'Gaia Volcano',
+            'tidal-storm': 'Tidal Storm',
+            'emerald-break': 'Emerald Break',
+            'bandit-ring': 'Bandit Ring',
+            'magma-gang-vs-aqua-gang-double-crisis': 'Magma Gang vs Aqua Gang: Double Crisis',
+            // XY BREAK Era (JP)
+            'blue-shock': 'Blue Shock',
+            'red-flash': 'Red Flash',
+            'rage-of-the-broken-heavens': 'Rage of the Broken Heavens',
+            'awakening-psychic-king': 'Awakening Psychic King',
+            'fever-burst-fighter': 'Fever-Burst Fighter',
+            'cruel-traitor': 'Cruel Traitor',
+            'mythical-legendary-dream-holo-collection': 'Mythical & Legendary Dream Holo Collection',
+            'pokekyun-collection': 'Poké Kyun Collection',
+            'premium-champion-pack': 'Premium Champion Pack',
+            'cp6-20th-anniversary-expansion-pack': '20th Anniversary Expansion Pack',
+            '20th-anniversary-expansion-pack': '20th Anniversary Expansion Pack',
+            // Sun & Moon Era (JP)
+            'collection-sun': 'Collection Sun',
+            'collection-moon': 'Collection Moon',
+            'islands-await-you': 'Islands Await You',
+            'alolan-moonlight': 'Alolan Moonlight',
+            'to-have-seen-the-battle-rainbow': 'To Have Seen the Battle Rainbow',
+            'darkness-that-consumes-light': 'Darkness that Consumes Light',
+            'awakened-heroes': 'Awakened Heroes',
+            'ultradimensional-beasts': 'Ultradimensional Beasts',
+            'ultra-sun': 'Ultra Sun',
+            'ultra-moon': 'Ultra Moon',
+            'ultra-force': 'Ultra Force',
+            'forbidden-light-jp': 'Forbidden Light (JP)',
+            'sky-splitting-charisma': 'Sky-Splitting Charisma',
+            'champion-road': 'Champion Road',
+            'super-burst-impact': 'Super-Burst Impact',
+            'tag-bolt': 'Tag Bolt',
+            'double-blaze': 'Double Blaze',
+            'miracle-twin': 'Miracle Twin',
+            'alter-genesis': 'Alter Genesis',
+            'dream-league': 'Dream League',
+            'remix-bout': 'Remix Bout',
+            'gg-end': 'GG End',
+            'sky-legend': 'Sky Legend',
+            'full-metal-wall': 'Full Metal Wall',
+            'night-unison': 'Night Unison',
+            'dark-order': 'Dark Order',
+            'detective-pikachu-jp': 'Detective Pikachu (JP)',
+            'gx-ultra-shiny': 'GX Ultra Shiny',
+            'gx-battle-boost': 'GX Battle Boost',
+            'sm-best-of-xy': 'Best of XY',
+            // Sword & Shield Era (JP)
+            'sword': 'Sword',
+            'shield': 'Shield',
+            'rebellion-crash': 'Rebellion Crash',
+            'infinity-zone': 'Infinity Zone',
+            'amazing-volt-tackle': 'Amazing Volt Tackle',
+            'single-strike-master': 'Single Strike Master',
+            'rapid-strike-master': 'Rapid Strike Master',
+            'silver-lance': 'Silver Lance',
+            'jet-black-spirit': 'Jet-Black Spirit',
+            'skyscraping-perfection': 'Skyscraping Perfection',
+            'blue-sky-stream': 'Blue Sky Stream',
+            'fusion-arts': 'Fusion Arts',
+            'star-birth': 'Star Birth',
+            'time-gazer': 'Time Gazer',
+            'space-juggler': 'Space Juggler',
+            'lost-abyss': 'Lost Abyss',
+            'paradigm-trigger': 'Paradigm Trigger',
+            'vmax-climax': 'VMAX Climax',
+            'vstar-universe': 'VSTAR Universe',
+            'dark-phantasma': 'Dark Phantasma',
+            'pokemon-go-jp': 'Pokémon GO (JP)',
+            'incandescent-arcana': 'Incandescent Arcana',
+            'battle-region': 'Battle Region',
+            'legendary-heartbeat': 'Legendary Heartbeat',
+            'explosive-walker': 'Explosive Walker',
+            'rebellious-clash': 'Rebellious Clash',
+            'matchless-fighters': 'Matchless Fighters',
+            'eevee-heroes': 'Eevee Heroes',
+            'towering-perfection': 'Towering Perfection',
+            'shiny-star-v': 'Shiny Star V',
+            'legendary-beat': 'Legendary Beat',
+            'startling-volt-tackle': 'Startling Volt Tackle',
+            'shiny-crobat-v': 'Shiny Crobat V',
+            'vmaxrising': 'VMAX Rising',
+            'start-deck-100': 'Start Deck 100',
+            'battle-legion': 'Battle Legion',
+            // Scarlet & Violet Era (JP)
+            'scarlet-ex': 'Scarlet EX',
+            'violet-ex': 'Violet EX',
+            'triplet-beat': 'Triplet Beat',
+            'snow-hazard': 'Snow Hazard',
+            'clay-burst': 'Clay Burst',
+            'pokemon-card-151': 'Pokémon Card 151',
+            'ruler-of-the-black-flame': 'Ruler of the Black Flame',
+            'raging-surf': 'Raging Surf',
+            'ancient-roar': 'Ancient Roar',
+            'future-flash': 'Future Flash',
+            'shiny-treasure-ex': 'Shiny Treasure EX',
+            'wild-force': 'Wild Force',
+            'cyber-judge': 'Cyber Judge',
+            'crimson-haze': 'Crimson Haze',
+            'mask-of-change': 'Mask of Change',
+            'night-wanderer': 'Night Wanderer',
+            'stellar-miracle': 'Stellar Miracle',
+            'transformation-mask': 'Transformation Mask',
+            'superelectric-breaker': 'Superelectric Breaker',
+            'paradise-dragona': 'Paradise Dragona',
+            'terastal-fest-ex': 'Terastal Fest EX',
+            'battle-partners': 'Battle Partners',
+            'journey-together-jp': 'Journey Together (JP)',
+            'destined-rivals-jp': 'Destined Rivals (JP)',
+            'super-electric-breaker': 'Superelectric Breaker',
+            // MEGA Series (JP)
+            'black-bolt-jp': 'Black Bolt (JP)',
+            'white-flare-jp': 'White Flare (JP)',
+            'mega-evolution-jp': 'Mega Evolutions (JP)',
+            'phantasmal-flames-jp': 'Phantasmal Flames (JP)',
+            'ascended-heroes-jp': 'Ascended Heroes (JP)',
+            'perfect-order-jp': 'Perfect Order (JP)',
+            'chaos-rising-jp': 'Chaos Rising (JP)',
+            // Japanese Promos & Special
+            'sv-p-promotional-cards': 'SV-P Promotional Cards',
+            's-p-promotional-cards': 'S-P Promotional Cards',
+            'sm-p-promotional-cards': 'SM-P Promotional Cards',
+            'xy-p-promotional-cards': 'XY-P Promotional Cards',
+            'bw-p-promotional-cards': 'BW-P Promotional Cards',
+            'dp-p-promotional-cards': 'DP-P Promotional Cards',
+            'adv-p-promotional-cards': 'ADV-P Promotional Cards',
+            'unnumbered-promotional-cards': 'Unnumbered Promotional Cards',
+            'limited-collection-master-battle-set': 'Limited Collection Master Battle Set',
+            '10th-movie-commemoration-set': '10th Movie Commemoration Set',
+            '25th-anniversary-collection': '25th Anniversary Collection',
+            // Japanese Starter/Structure Decks
+            'ex-start-decks': 'EX Start Decks',
+            'starter-deck-ex': 'Starter Deck EX',
+            'family-card-game': 'Family Card Game',
+            'vstar-special-set': 'VSTAR Special Set',
+            'special-deck-set-ex': 'Special Deck Set EX',
+        };
+
+        // Parse set name from TCGPlayer URL slug
+        function parseSetName(url) {
+            if (!url) return null;
+            const clean = url.split('?')[0];
+            const m = clean.match(/\/product\/\d+\/pokemon-(.+)/i);
+            if (!m) return null;
+            let parts = m[1].split('-');
+
+            // Strip series prefixes: numbered (sv03, swsh11) or plain abbreviations (me, sv, sm, etc.)
+            // Also strip 'japan' prefix for Japanese product line URLs
+            if (parts.length > 1 && parts[0] === 'japan') {
+                parts = parts.slice(1);
+            }
+            while (parts.length > 1 && /^[a-z]{1,5}\d+[a-z]?$/i.test(parts[0])) {
+                parts = parts.slice(1);
+            }
+            if (parts.length > 1 && /^(me|sv|sm|xy|bw|dp|ex|hs|swsh|pop|adv|pcg|dpt)$/i.test(parts[0])) {
+                parts = parts.slice(1);
+            }
+
+            // Walk backwards to find where the card number starts
+            let cutIdx = parts.length;
+            for (let i = parts.length - 1; i >= 0; i--) {
+                if (/^\d+$/.test(parts[i])) {
+                    cutIdx = i;
+                } else {
+                    break;
+                }
+            }
+            if (cutIdx < 1) return null;
+
+            // Try progressively shorter slug prefixes against the lookup — ONLY return known names
+            for (let nameEnd = cutIdx; nameEnd >= 1; nameEnd--) {
+                const slug = parts.slice(0, nameEnd).join('-');
+                if (SET_NAME_LOOKUP[slug]) return SET_NAME_LOOKUP[slug];
+            }
+
+            // No match in lookup — return null (don't show a set name)
+            return null;
+        }
+
+        // Extract near-mint price data from URL hash fragment
+        // Format: #prices=1stEd:7.91,Unlimited:1.33,Market:0.78,LastSale:0.99
+        function parsePricesFromHash(url) {
+            if (!url) return null;
+            const hashIdx = url.indexOf('#prices=');
+            if (hashIdx === -1) return null;
+            const fragment = url.substring(hashIdx + 8);
+            const prices = {};
+            fragment.split(',').forEach(pair => {
+                const [key, val] = pair.split(':');
+                if (key && val) {
+                    const num = parseFloat(val);
+                    if (!isNaN(num)) {
+                        if (key === '1stEd') prices.firstEd = num.toFixed(2);
+                        if (key === 'Unlimited') prices.unlimited = num.toFixed(2);
+                        if (key === 'Market') prices.market = num.toFixed(2);
+                        if (key === 'LastSale') prices.lastSale = num.toFixed(2);
+                    }
+                }
+            });
+            return Object.keys(prices).length > 0 ? prices : null;
+        }
+
+        // Strip price hash from URL for clean storage
+        function stripPriceHash(url) {
+            if (!url) return url;
+            return url.split('#prices=')[0];
+        }
+
+        // Approve — save to allCards + Firebase
+        function ingApprove() {
+            if (ingSelectedIndex === null || !ingPreviewedUrl) return;
+            const card = allCards[ingSelectedIndex];
+            
+            // Extract prices from hash before stripping it
+            const prices = parsePricesFromHash(ingPreviewedUrl);
+            if (prices) card.nmPrices = prices;
+            
+            card.cardLink = stripPriceHash(ingPreviewedUrl);
+            if (ingPreviewedProductId) {
+                card.productId = ingPreviewedProductId;
+                card.imageUrl = ingPreviewedImageUrl;
+            }
+            // Extract set name from URL
+            const setName = parseSetName(card.cardLink);
+            if (setName) card.setName = setName;
+
+            // Save to localStorage + Firebase
+            saveData();
+
+            // Show "Added to Pokédex" overlay
+            const modal = document.getElementById('ingestorModal');
+            const existing = modal.querySelector('.ing-confirm-overlay');
+            if (existing) existing.remove();
+            const overlay = document.createElement('div');
+            overlay.className = 'ing-confirm-overlay';
+            overlay.innerHTML = `
+                <span class="ico">✨</span>
+                <span class="txt">ADDED TO YOUR POKÉDEX!</span>
+                <span class="nm">${card.name}</span>
+            `;
+            modal.appendChild(overlay);
+            setTimeout(() => {
+                overlay.remove();
+                closeIngestor();
+            }, 2000);
+        }
+
+        // Clear
+        function ingClear() {
+            document.getElementById('ingUrlInput').value = '';
+            ingClearPreviewSilent();
+            document.getElementById('ingUrlInput').focus();
+        }
+
+        function ingClearPreviewSilent() {
+            document.getElementById('ingPreview').innerHTML =
+                '<div class="ing-preview-ph"><span class="pb">🔴</span>Paste a URL above — image loads automatically</div>';
+            document.getElementById('ingExtracted').classList.remove('visible');
+            document.getElementById('ingApproveBtn').disabled = true;
+            document.getElementById('ingClearBtn').disabled = true;
+            ingPreviewedProductId = null;
+            ingPreviewedUrl = null;
+            ingPreviewedImageUrl = null;
+        }
+
+        // Close ingestor with Escape
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && document.getElementById('ingestorOverlay').classList.contains('active')) {
+                closeIngestor();
+            }
+            if (e.key === 'Escape' && document.getElementById('tcgToast').classList.contains('visible')) {
+                tcgToastDismiss();
+            }
+        });
+
+        // TCG Browse Toast
+        let tcgToastCardId = null;
+        let tcgToastTimer = null;
+
+        function showTcgToast(cardId, cardName) {
+            tcgToastCardId = cardId;
+
+            const toast = document.getElementById('tcgToast');
+            const input = document.getElementById('tcgToastInput');
+            document.getElementById('tcgToastName').textContent = cardName;
+            input.value = '';
+            toast.classList.add('visible');
+            clearTimeout(tcgToastTimer);
+            // Auto-focus so paste works immediately when user returns
+            setTimeout(() => input.focus(), 400);
+        }
+
+        function tcgToastProcessUrl(url) {
+            if (!url || tcgToastCardId === null) return;
+
+            const toast = document.getElementById('tcgToast');
+            const cardId = tcgToastCardId;
+            tcgToastCardId = null;
+
+            // Smooth fade-out: slide down + fade
+            toast.style.transition = 'bottom 0.35s ease-in, opacity 0.35s ease-in';
+            toast.style.opacity = '0';
+            toast.style.bottom = '-200px';
+
+            // After toast animates out, open ingestor
+            setTimeout(() => {
+                toast.classList.remove('visible');
+                toast.style.transition = '';
+                toast.style.opacity = '';
+                toast.style.bottom = '';
+
+                openIngestorForCard(cardId);
+
+                // Pre-fill the URL and trigger the preview
+                setTimeout(() => {
+                    const ingInput = document.getElementById('ingUrlInput');
+                    if (ingInput) {
+                        ingInput.value = url;
+                        ingHandleUrlInput();
+                    }
+                }, 150);
+            }, 350);
+        }
+
+        function tcgToastDismiss() {
+            document.getElementById('tcgToast').classList.remove('visible');
+            tcgToastCardId = null;
+            clearTimeout(tcgToastTimer);
+        }
+
+        // Listen for paste on the toast input
+        document.getElementById('tcgToastInput').addEventListener('paste', function() {
+            setTimeout(() => {
+                const url = this.value.trim();
+                if (url) tcgToastProcessUrl(url);
+            }, 50);
+        });
+
+        document.getElementById('tcgToastInput').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                const url = this.value.trim();
+                if (url) tcgToastProcessUrl(url);
+            }
+        });
+
+        // Global paste — if toast is visible, intercept paste anywhere on the page
+        document.addEventListener('paste', function(e) {
+            const toast = document.getElementById('tcgToast');
+            const input = document.getElementById('tcgToastInput');
+            if (tcgToastCardId !== null && toast.classList.contains('visible') && document.activeElement !== input) {
+                e.preventDefault();
+                const url = (e.clipboardData || window.clipboardData).getData('text').trim();
+                if (url) {
+                    input.value = url;
+                    tcgToastProcessUrl(url);
+                }
+            }
+        });
+
+        // Aggressively focus the toast input whenever the user returns
+        function focusToastInput() {
+            if (tcgToastCardId !== null) {
+                const toast = document.getElementById('tcgToast');
+                const input = document.getElementById('tcgToastInput');
+                if (toast.classList.contains('visible')) {
+                    toast.style.transform = 'translateX(-50%) scale(1.03)';
+                    setTimeout(() => { toast.style.transform = 'translateX(-50%)'; }, 200);
+                    input.focus();
+                }
+            }
+        }
+        document.addEventListener('visibilitychange', () => { if (!document.hidden) focusToastInput(); });
+        window.addEventListener('focus', focusToastInput);
+        // Also focus when clicking anywhere on the page while toast is up
+        document.addEventListener('click', function(e) {
+            if (tcgToastCardId !== null && !e.target.closest('.tcg-toast')) {
+                focusToastInput();
+            }
+        });
+    </script>
+</body>
+</html>
