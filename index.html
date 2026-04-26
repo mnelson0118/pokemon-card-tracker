@@ -2028,49 +2028,105 @@
      RESPONSIVE — adaptive frame
      ============================================================ */
   @media (max-width: 700px) {
-    .device { padding: 16px 14px; margin: 12px; border-radius: 18px; }
-    .screw { width: 8px; height: 8px; }
-    .screw.tl { top: 6px; left: 8px; }
-    .screw.tr { top: 6px; right: 8px; }
-    .screw.bl { bottom: 6px; left: 8px; }
-    .screw.br { bottom: 6px; right: 8px; }
-    .dome { width: 42px; height: 42px; box-shadow:
+    /* ---- Strip the red plastic chassis entirely ---- */
+    .device {
+      padding: 0;
+      margin: 0;
+      border-radius: 0;
+      background: var(--screen-bg-deep);
+      box-shadow: none;
+      min-height: 100vh;
+    }
+    .device::after { display: none; }
+    .device-hinge { display: none; }
+    .screw { display: none; }
+
+    /* ---- Chassis header becomes a dark nav strip ---- */
+    .chassis-header {
+      gap: 10px;
+      margin-bottom: 0;
+      flex-wrap: wrap;
+      padding: 10px 14px 8px;
+      background: var(--shell-red-dark);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+    .header-left { gap: 10px; }
+    .dome { width: 36px; height: 36px; box-shadow:
       0 0 0 2px var(--shell-red-darker),
       0 0 0 3px rgba(0,0,0,0.5),
-      0 0 0 5px var(--shell-red-dark),
+      0 0 0 5px rgba(0,0,0,0.3),
       inset 0 -4px 12px rgba(0, 0, 0, 0.35),
       inset 0 0 12px rgba(123, 196, 255, 0.5),
       inset 0 0 3px rgba(200, 235, 255, 0.7); }
-    .led { width: 7px; height: 7px; }
-    .chassis-header { gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
-    .header-left { gap: 10px; }
+    .led { width: 6px; height: 6px; }
+
+    /* Stats strip wraps below dome row */
     .header-stats {
       order: 3;
       flex-basis: 100%;
-      padding: 10px 14px;
+      padding: 8px 0 4px;
+      background: transparent;
+      border: none;
+      box-shadow: none;
       justify-content: space-between;
     }
-    .header-stat { padding: 0 4px; }
-    .header-stat .hs-value { font-size: 16px; }
-    .header-stat .hs-label { font-size: 8px; letter-spacing: 1.2px; }
+    .header-stat { padding: 0 2px; }
+    .header-stat .hs-value { font-size: 15px; }
+    .header-stat .hs-label { font-size: 8px; letter-spacing: 1px; color: rgba(255,200,200,0.5); }
     .hs-divider { display: none; }
-    .header-progress { padding: 0 4px; }
-    .header-progress .hp-bar { width: 50px; }
+    .header-progress { padding: 0 2px; }
+    .header-progress .hp-bar { width: 44px; }
     .header-progress .hp-label { display: none; }
-    .header-add-btn { padding: 9px 14px; font-size: 12px; margin-left: auto; }
-    .screen-content { padding: 16px 14px 12px; }
+    .header-progress .hp-pct { font-size: 11px; color: rgba(160, 210, 255, 0.9); }
+    .header-add-btn {
+      padding: 7px 12px;
+      font-size: 12px;
+      margin-left: auto;
+      background: rgba(0,0,0,0.3);
+      border-color: rgba(255,255,255,0.35);
+    }
+
+    /* ---- Bezel disappears — screen goes flush ---- */
+    .screen-bezel {
+      padding: 0;
+      border-radius: 0;
+      background: none;
+      box-shadow: none;
+    }
+    .bezel-label, .bezel-label-r { display: none; }
+    .screen {
+      border-radius: 0;
+      min-height: calc(100vh - 90px);
+    }
+    .screen-content { padding: 14px 12px 12px; }
+
+    /* ---- Tab bar ---- */
+    .tab-bar { padding: 4px 8px; }
+    .tab { font-size: 12px; padding: 8px 4px; letter-spacing: 0.5px; }
+    .tab-key { display: none; }
+
+    /* ---- 3 columns exactly ---- */
+    .dex-grid {
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      max-height: none;
+    }
+    .dex-entry-name { font-size: 12px; }
+    .dex-entry-sub { font-size: 9px; }
+    .dex-id { font-size: 8px; }
+
+    /* ---- Other content ---- */
+    .control-deck { display: none; }
     .dash-banner h1 { font-size: 22px; }
     .dash-grid { grid-template-columns: repeat(2, 1fr); }
     .stat-value { font-size: 18px; }
-    .control-deck { display: none; }
-    .dex-grid { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px; }
     .progress-segments { grid-template-columns: repeat(20, 1fr); }
-    .tab { font-size: 13px; padding: 8px 4px; letter-spacing: 0.5px; }
     .filter-panel { padding: 12px; }
     .filter-group { flex-direction: column; align-items: stretch; gap: 8px; }
     .filter-group-label { width: auto; }
     .chip { padding: 6px 12px; font-size: 11px; }
-    .tab-key { display: none; }
   }
 
   /* ============================================================
