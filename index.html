@@ -3102,7 +3102,8 @@ function openCardDetail(id) {
         <a href="${tcgSearchUrl}" target="_blank" rel="noopener noreferrer"
           style="display:flex; align-items:center; justify-content:space-between; padding:14px 16px; background:rgba(77,163,255,0.08); border:1px solid rgba(77,163,255,0.35); border-radius:8px; text-decoration:none; color:var(--accent-blue); font-family:'Bricolage Grotesque',sans-serif; font-weight:700; font-size:14px; margin-bottom:18px; transition:all 0.15s;"
           onmouseover="this.style.background='rgba(77,163,255,0.15)'"
-          onmouseout="this.style.background='rgba(77,163,255,0.08)'">
+          onmouseout="this.style.background='rgba(77,163,255,0.08)'"
+          onclick="setTimeout(() => { closeModal(); openAddDialog(${c.id}); }, 150)">
           <span>Search ${c.name} on TCGPlayer</span>
           <span style="font-size:18px;">↗</span>
         </a>
