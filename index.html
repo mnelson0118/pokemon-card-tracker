@@ -3085,8 +3085,33 @@ function openCardDetail(id) {
       </div>
     `, { zoom: true });
   } else {
-    // No image yet — open the catch dialog directly
-    openCatchDialog(c);
+    // No image — show a dialog with TCGPlayer search + option to paste URL or catch
+    const tcgSearchUrl = `https://www.tcgplayer.com/search/pokemon/product?productLineName=pokemon&q=${encodeURIComponent(c.name)}&view=grid&ProductTypeName=Cards&page=1`;
+    showModal(`
+      <div class="dialog" onclick="event.stopPropagation()">
+        <button class="dialog-close" onclick="closeModal()">✕</button>
+        <div class="dialog-title">Find this card</div>
+        <div class="dialog-name-row">
+          <span class="dialog-name-id">#${String(c.id).padStart(4,'0')}</span>
+          <span class="dialog-name">${c.name}</span>
+        </div>
+        <div class="dialog-meta">Generation ${c.generation}</div>
+        <div class="dialog-body">
+          <p>No card image saved yet. Find this card on TCGPlayer, copy the URL, then paste it below.</p>
+        </div>
+        <a href="${tcgSearchUrl}" target="_blank" rel="noopener noreferrer"
+          style="display:flex; align-items:center; justify-content:space-between; padding:14px 16px; background:rgba(77,163,255,0.08); border:1px solid rgba(77,163,255,0.35); border-radius:8px; text-decoration:none; color:var(--accent-blue); font-family:'Bricolage Grotesque',sans-serif; font-weight:700; font-size:14px; margin-bottom:18px; transition:all 0.15s;"
+          onmouseover="this.style.background='rgba(77,163,255,0.15)'"
+          onmouseout="this.style.background='rgba(77,163,255,0.08)'">
+          <span>Search ${c.name} on TCGPlayer</span>
+          <span style="font-size:18px;">↗</span>
+        </a>
+        <div class="dialog-actions">
+          ${!c.collected ? `<button class="dialog-btn" onclick="closeModal(); catchPrompt(${c.id})">Mark collected</button>` : ''}
+          <button class="dialog-btn primary" onclick="closeModal(); openAddDialog(${c.id})">Paste card URL</button>
+        </div>
+      </div>
+    `);
   }
 }
 
