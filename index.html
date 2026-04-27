@@ -3080,6 +3080,7 @@ function openCardDetail(id) {
                 <button class="dialog-btn primary" onclick="event.stopPropagation(); catchPrompt(${c.id})">Catch it!</button>
               `}
               <button class="dialog-btn" onclick="event.stopPropagation(); openAddDialog(${c.id})">Edit URL</button>
+              <a href="${c.cardLink || `https://www.tcgplayer.com/search/pokemon/product?q=${encodeURIComponent(c.name)}&view=grid&ProductTypeName=Cards`}" target="_blank" rel="noopener noreferrer" class="dialog-btn" onclick="event.stopPropagation();" style="text-decoration:none; text-align:center;">TCGPlayer ↗</a>
             </div>
           </div>
         </div>
