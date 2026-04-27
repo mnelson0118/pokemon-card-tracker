@@ -2797,11 +2797,9 @@ function renderDex(el) {
           </div>
         </div>
 
-        ${activeFilterCount() > 0 ? `
-          <div style="display:flex; justify-content:flex-end; padding-top:8px; border-top:1px solid var(--screen-border); margin-top:6px;">
-            <button class="clear-all-btn" onclick="clearAllFilters()">Clear all filters</button>
-          </div>
-        ` : ''}
+        <div style="display:flex; justify-content:flex-end; padding-top:10px; border-top:1px solid var(--screen-border); margin-top:6px;">
+          <button class="clear-all-btn" onclick="clearAllFilters()" style="${activeFilterCount() === 0 ? 'opacity:0.35; cursor:default;' : ''}">Clear all filters</button>
+        </div>
       </div>
     ` : ''}
 
