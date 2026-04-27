@@ -27,7 +27,7 @@
     /* The dome light */
     --dome-blue: #5BA3F0;
     --dome-blue-glow: #7CC4FF;
-    --dome-blue-deep: #191970;
+    --dome-blue-deep: #1B5BA8;
 
     /* Screen — dark charcoal full-color panel */
     --screen-bg: #15171C;
@@ -46,7 +46,7 @@
     /* Pokédex accents */
     --accent-red: #E63946;       /* primary action / Pokéball red */
     --accent-red-dim: #B22D38;
-    --accent-blue: #191970;      /* info / dome light echo */
+    --accent-blue: #4DA3FF;      /* info / dome light echo */
     --accent-blue-dim: #2C7DD9;
     --accent-amber: #F4B740;     /* market value / price */
     --accent-green: #4ADE80;     /* caught / success */
@@ -354,9 +354,6 @@
         rgba(10, 50, 140, 1) 75%,
         rgba(5, 25, 80, 1) 100%);
     box-shadow:
-      0 0 0 3px var(--shell-red-darker),
-      0 0 0 4px rgba(0,0,0,0.5),
-      0 0 0 7px var(--shell-red-dark),
       inset 0 -6px 16px rgba(0, 0, 0, 0.35),
       inset 0 0 18px rgba(123, 196, 255, 0.75),
       inset 0 0 6px rgba(200, 235, 255, 0.9);
@@ -389,18 +386,12 @@
   @keyframes domePulse {
     0%, 100% {
       box-shadow:
-        0 0 0 3px var(--shell-red-darker),
-        0 0 0 4px rgba(0,0,0,0.5),
-        0 0 0 7px var(--shell-red-dark),
         inset 0 -6px 16px rgba(0, 0, 0, 0.35),
         inset 0 0 18px rgba(123, 196, 255, 0.75),
         inset 0 0 6px rgba(200, 235, 255, 0.9);
     }
     50% {
       box-shadow:
-        0 0 0 3px var(--shell-red-darker),
-        0 0 0 4px rgba(0,0,0,0.5),
-        0 0 0 7px var(--shell-red-dark),
         inset 0 -6px 16px rgba(0, 0, 0, 0.2),
         inset 0 0 32px rgba(123, 196, 255, 1),
         inset 0 0 14px rgba(220, 245, 255, 1);
@@ -2053,14 +2044,10 @@
       z-index: 50;
     }
     .header-left { gap: 10px; }
-    .dome { width: 36px; height: 36px; box-shadow:
-      0 0 0 2px var(--shell-red-darker),
-      0 0 0 3px rgba(0,0,0,0.5),
-      0 0 0 5px rgba(0,0,0,0.3),
-      inset 0 -4px 12px rgba(0, 0, 0, 0.35),
-      inset 0 0 12px rgba(123, 196, 255, 0.5),
-      inset 0 0 3px rgba(200, 235, 255, 0.7); }
-    .led { width: 6px; height: 6px; }
+    .dome { display: none; }
+    .led-row { display: none; }
+    .device-hinge { display: none; }
+    .header-left { display: none; }
 
     /* Stats strip wraps below dome row */
     .header-stats {
