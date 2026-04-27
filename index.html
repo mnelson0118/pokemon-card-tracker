@@ -2752,17 +2752,6 @@ function renderDex(el) {
   });
 
   el.innerHTML = `
-    <div class="sys-bar">
-      <div class="sys-bar-left">
-        <span class="sys-cursor"></span>
-        <span>National Dex</span>
-      </div>
-      <div class="sys-bar-right">
-        <span class="lcd-glow">${filtered.length}</span>
-        <span class="lcd-dim">entries</span>
-      </div>
-    </div>
-
     <div class="dex-controls">
       <input type="text" class="lcd-input" id="searchInput" placeholder="Search by name or number..." value="${searchQuery.replace(/"/g, '&quot;')}">
       <button class="filter-toggle ${filtersOpen ? 'open' : ''} ${activeFilterCount() > 0 ? 'has-active' : ''}" onclick="toggleFilters()" aria-label="Toggle filters">
