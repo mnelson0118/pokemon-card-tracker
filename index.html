@@ -2043,8 +2043,9 @@
       top: 0;
       z-index: 50;
     }
-    .header-left { gap: 10px; }
+    .header-left { gap: 10px; display: flex; align-items: center; }
     .dome {
+      display: block;
       width: 36px;
       height: 36px;
       box-shadow:
@@ -2055,8 +2056,8 @@
         inset 0 0 12px rgba(123, 196, 255, 0.75),
         inset 0 0 4px rgba(200, 235, 255, 0.9);
     }
+    .led-row { display: flex; }
     .led { width: 6px; height: 6px; }
-    .header-left { display: flex; }
 
     /* Stats strip wraps below dome row */
     .header-stats {
