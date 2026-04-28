@@ -2270,7 +2270,7 @@
 // ============================================================================
 
 const TOTAL_POKEMON = 1025;
-const ROSTER_KEY = "pokedex_v2:roster";
+const ROSTER_KEY = "pokedex_v2:roster:v2";
 const COLLECTION_KEY = "pokedex_v2:collection";
 const VALUE_HISTORY_KEY = "pokedex_v2:valueHistory";
 
@@ -2517,9 +2517,12 @@ async function boot() {
   collection = loadLocal("pokedex_v2:collection") || {};
   valueHistory = loadLocal(VALUE_HISTORY_KEY) || [];
 
-  // Try cached roster first, fetch from PokeAPI if missing
+  // Try cached roster first, fetch from PokeAPI if missing or stale
   let cached = loadLocal(ROSTER_KEY);
-  if (cached && cached.length === TOTAL_POKEMON) {
+  // Validate the cache has correct special names (bust if type-null is wrong)
+  const cacheValid = cached && cached.length === TOTAL_POKEMON &&
+    cached[771]?.name === "Type: Null";
+  if (cacheValid) {
     roster = cached;
   } else {
     try {
@@ -2652,15 +2655,18 @@ function renderStats(el) {
     return { gen: r.gen, count, total, pct: (count / total) * 100 };
   });
 
-  // Find biggest single card by market value
-  const topCard = Object.entries(collection)
-    .filter(([_, c]) => c.nmPrices?.market)
-    .map(([id, c]) => {
-      const r = roster.find(x => x.id === parseInt(id));
-      return r ? { ...r, ...c, mkt: parseFloat(c.nmPrices.market) } : null;
-    })
-    .filter(Boolean)
-    .sort((a, b) => b.mkt - a.mkt)[0];
+  // Top sets by card count
+  const setMap = {};
+  Object.entries(collection).forEach(([id, c]) => {
+    if (!c.setName) return;
+    if (!setMap[c.setName]) setMap[c.setName] = { count: 0, collected: 0 };
+    setMap[c.setName].count++;
+    if (c.collected) setMap[c.setName].collected++;
+  });
+  const topSets = Object.entries(setMap)
+    .sort((a, b) => b[1].count - a[1].count)
+    .slice(0, 10);
+  const maxSetCount = topSets.length > 0 ? topSets[0][1].count : 1;
 
   el.innerHTML = `
     <div class="sys-bar">
@@ -2710,21 +2716,33 @@ function renderStats(el) {
       `).join('')}
     </div>
 
-    ${topCard ? `
+    ${topSets.length > 0 ? `
       <div class="chart-block">
         <div class="chart-header">
-          <span class="chart-label">Top Card by Market Value</span>
+          <span class="chart-label">Top Sets by Card Count</span>
+          <span class="lcd-dim" style="font-size:10px;">${Object.keys(setMap).length} sets total</span>
         </div>
-        <div style="display:flex; align-items:center; gap:14px; padding: 6px 0; cursor:pointer;" onclick="openCardDetail(${topCard.id})">
-          <img src="${topCard.imageUrl || spriteUrl(topCard.id)}" alt="${topCard.name}" style="width:64px; height:64px; object-fit:contain; background:var(--screen-bg-deep); border:1px solid var(--screen-border); border-radius:6px; padding:4px; flex-shrink:0;" onerror="this.src='${spriteUrl(topCard.id)}'">
-          <div style="flex:1; min-width:0;">
-            <div style="font-family:'Bricolage Grotesque', sans-serif; font-weight:700; font-size:18px; color:var(--text-bright); letter-spacing:-0.3px;">#${String(topCard.id).padStart(4, '0')} · ${topCard.name}</div>
-            <div style="font-family:'JetBrains Mono', monospace; font-size:11px; color:var(--text-dim); margin-top:2px;">
-              Generation ${topCard.generation}${topCard.setName ? ` · ${topCard.setName}` : ''}
-            </div>
-          </div>
-          <div style="font-family:'JetBrains Mono', monospace; font-weight:700; font-size:24px; color:var(--accent-amber); font-variant-numeric:tabular-nums; flex-shrink:0;">$${topCard.mkt.toFixed(2)}</div>
+        <div style="display:flex; gap:12px; margin-bottom:12px;">
+          <span style="display:flex; align-items:center; gap:6px; font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--accent-green);">
+            <span style="width:10px; height:10px; border-radius:2px; background:var(--accent-green); display:inline-block;"></span>Collected
+          </span>
+          <span style="display:flex; align-items:center; gap:6px; font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--text-faint);">
+            <span style="width:10px; height:10px; border-radius:2px; background:var(--screen-border-bright); display:inline-block;"></span>Tracked only
+          </span>
         </div>
+        ${topSets.map(([name, d]) => {
+          const pctCollected = ((d.collected / maxSetCount) * 100).toFixed(1);
+          const pctTracked = (((d.count - d.collected) / maxSetCount) * 100).toFixed(1);
+          return `
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
+              <div style="width:140px; flex-shrink:0; text-align:right; font-family:'Bricolage Grotesque',sans-serif; font-size:11px; font-weight:500; color:var(--text-dim); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${name}">${name}</div>
+              <div style="flex:1; height:18px; background:var(--screen-bg-deep); border-radius:3px; overflow:hidden; display:flex;">
+                <div style="width:${pctCollected}%; height:100%; background:var(--accent-green); transition:width 0.6s;"></div>
+                <div style="width:${pctTracked}%; height:100%; background:var(--screen-border-bright); transition:width 0.6s;"></div>
+              </div>
+              <div style="font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:600; color:var(--text); min-width:24px; text-align:right;">${d.count}</div>
+            </div>`;
+        }).join('')}
       </div>
     ` : ''}
 
