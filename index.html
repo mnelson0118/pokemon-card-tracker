@@ -2379,6 +2379,7 @@ let searchQuery = "";
 let genFilter = "all";
 let collectedFilter = "all";
 let langFilter = "all";
+let setFilter = "all";
 let filtersOpen = false;
 
 // ============================================================================
@@ -2820,6 +2821,7 @@ function renderDex(el) {
       const cardLang = c.language || "english";
       if (cardLang !== langFilter) return false;
     }
+    if (setFilter !== "all" && (c.setName || "") !== setFilter) return false;
     return true;
   });
 
@@ -2869,6 +2871,33 @@ function renderDex(el) {
             <button class="chip ${langFilter==='all'?'active':''}" onclick="setLangFilter('all')">All</button>
             <button class="chip ${langFilter==='english'?'active':''}" onclick="setLangFilter('english')">English</button>
             <button class="chip ${langFilter==='japanese'?'active':''}" onclick="setLangFilter('japanese')">Japanese</button>
+          </div>
+        </div>
+
+        <div class="filter-group">
+          <div class="filter-group-label">Set</div>
+          <div class="filter-chips">
+            ${(() => {
+              // Build sorted alphabetical list of sets from current collection
+              const setNames = [...new Set(
+                Object.values(collection)
+                  .map(c => c.setName)
+                  .filter(Boolean)
+              )].sort((a, b) => a.localeCompare(b));
+              const counts = {};
+              Object.values(collection).forEach(c => {
+                if (c.setName) counts[c.setName] = (counts[c.setName] || 0) + 1;
+              });
+              const opts = setNames.map(name =>
+                `<option value="${name.replace(/"/g,'&quot;')}" ${setFilter===name?'selected':''}>${name} (${counts[name]})</option>`
+              ).join('');
+              return `<select
+                style="flex:1; padding:8px 14px; background:var(--screen-bg-deep); border:1px solid ${setFilter!=='all'?'var(--accent-blue)':'var(--screen-border-bright)'}; border-radius:8px; color:${setFilter!=='all'?'var(--accent-blue)':'var(--text-dim)'}; font-family:'Bricolage Grotesque',sans-serif; font-size:13px; font-weight:600; cursor:pointer; outline:none;"
+                onchange="setSetFilter(this.value)">
+                <option value="all" ${setFilter==='all'?'selected':''}>All sets</option>
+                ${opts}
+              </select>`;
+            })()}
           </div>
         </div>
 
@@ -3001,6 +3030,7 @@ function setView(v) { currentView = v; render(); }
 function setGenFilter(g) { genFilter = g; render(); }
 function setCollectedFilter(f) { collectedFilter = f; render(); }
 function setLangFilter(l) { langFilter = l; render(); }
+function setSetFilter(s) { setFilter = s; render(); }
 function toggleFilters() { filtersOpen = !filtersOpen; render(); }
 
 function activeFilterCount() {
@@ -3008,6 +3038,7 @@ function activeFilterCount() {
   if (collectedFilter !== "all") n++;
   if (genFilter !== "all") n++;
   if (langFilter !== "all") n++;
+  if (setFilter !== "all") n++;
   return n;
 }
 
@@ -3042,6 +3073,14 @@ function renderActiveFilterPills() {
       <span class="ap-x">✕</span>
     </button>`);
   }
+  // Set pill
+  if (setFilter !== "all") {
+    const shortName = setFilter.length > 20 ? setFilter.slice(0, 18) + "…" : setFilter;
+    pills.push(`<button class="active-pill" onclick="setSetFilter('all')" title="Remove filter">
+      <span class="ap-label">${shortName}</span>
+      <span class="ap-x">✕</span>
+    </button>`);
+  }
   return pills.join("");
 }
 
@@ -3049,6 +3088,7 @@ function clearAllFilters() {
   collectedFilter = "all";
   genFilter = "all";
   langFilter = "all";
+  setFilter = "all";
   render();
 }
 
