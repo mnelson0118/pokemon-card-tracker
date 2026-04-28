@@ -2785,7 +2785,7 @@ function renderDex(el) {
     if (genFilter !== "all" && c.generation !== genFilter) return false;
     if (collectedFilter === "collected" && !c.collected) return false;
     if (collectedFilter === "uncollected" && c.collected) return false;
-    if (collectedFilter === "no-price" && c.nmPrices?.market) return false;
+    if (collectedFilter === "no-price" && (!c.imageUrl || c.nmPrices?.market)) return false;
     if (collectedFilter === "no-image" && c.imageUrl) return false;
     if (langFilter !== "all") {
       // Default unset language to "english"
