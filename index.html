@@ -2551,6 +2551,7 @@ async function boot() {
   document.getElementById("tabBar").style.display = "flex";
   setupTabs();
   setupKeyboard();
+  setupSwipe();
 
   // Render immediately from local cache so the app feels instant
   render();
@@ -3095,6 +3096,38 @@ function setupTabs() {
   document.querySelectorAll(".tab").forEach(t => {
     t.addEventListener("click", () => setView(t.dataset.view));
   });
+}
+
+function setupSwipe() {
+  const screen = document.getElementById("screen");
+  if (!screen) return;
+  const ORDER = ["dex", "stats"];
+  let startX = null;
+  let startY = null;
+
+  screen.addEventListener("touchstart", (e) => {
+    // Don't hijack scrolls or modal interactions
+    if (document.querySelector(".modal-overlay")) return;
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+  }, { passive: true });
+
+  screen.addEventListener("touchend", (e) => {
+    if (startX === null) return;
+    const dx = e.changedTouches[0].clientX - startX;
+    const dy = e.changedTouches[0].clientY - startY;
+    startX = null;
+    startY = null;
+    // Only fire if mostly horizontal and long enough
+    if (Math.abs(dx) < 50 || Math.abs(dy) > Math.abs(dx) * 0.6) return;
+    // Don't fire if user is interacting with a scrollable element (dex grid)
+    const target = e.target;
+    const scrollable = target.closest(".dex-grid, .recent-list, select, input");
+    if (scrollable) return;
+    const current = ORDER.indexOf(currentView);
+    if (dx < 0 && current < ORDER.length - 1) setView(ORDER[current + 1]); // swipe left → next
+    if (dx > 0 && current > 0) setView(ORDER[current - 1]);               // swipe right → prev
+  }, { passive: true });
 }
 
 function setupKeyboard() {
