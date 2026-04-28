@@ -1944,26 +1944,65 @@
 
   /* Image zoom modal */
   .zoom-modal {
-    background: rgba(0,0,0,0.95);
+    background: rgba(0, 0, 0, 0.88);
+    backdrop-filter: blur(8px);
+    cursor: default;
+    align-items: center;
+    padding: 16px;
+  }
+  .zoom-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    max-width: 360px;
+    max-height: 92vh;
+    overflow-y: auto;
+    scrollbar-width: none;
+  }
+  .zoom-card::-webkit-scrollbar { display: none; }
+  .zoom-close {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.3);
+    color: white;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1010;
+    transition: background 0.15s;
+  }
+  .zoom-close:hover { background: rgba(255,255,255,0.28); }
+  .zoom-img {
+    width: 100%;
+    max-height: 55vh;
+    object-fit: contain;
+    border-radius: 10px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+    cursor: zoom-in;
+  }
+  .zoom-img.fullsize {
+    max-height: 85vh;
     cursor: zoom-out;
   }
-  .zoom-modal img {
-    max-width: 95vw;
-    max-height: 90vh;
-    object-fit: contain;
-    border-radius: 12px;
-    box-shadow: 0 0 80px rgba(0, 0, 0, 0.8);
-  }
   .zoom-pricing {
-    margin-top: 16px;
+    width: 100%;
     background: var(--screen-bg-card);
     border: 1px solid var(--screen-border-bright);
     border-radius: 10px;
-    padding: 16px 20px;
+    padding: 14px 16px;
     color: var(--text);
     font-family: 'Bricolage Grotesque', sans-serif;
     font-size: 13px;
-    min-width: 280px;
   }
   .zoom-pricing-header {
     font-family: 'JetBrains Mono', monospace;
@@ -3058,36 +3097,36 @@ function openCardDetail(id) {
   const hasImage = !!c.imageUrl;
 
   if (hasImage) {
-    // Show zoomed card view
     showModal(`
-      <div style="display:flex; flex-direction:column; align-items:center; gap:14px;" onclick="event.stopPropagation()">
-        <img src="${c.imageUrl}" alt="${c.name}" onclick="event.stopPropagation();">
-        <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center;">
-          ${c.nmPrices ? `
-            <div class="zoom-pricing">
-              <div class="zoom-pricing-header">Near Mint · ${c.name}</div>
-              ${c.nmPrices.firstEd ? `<div class="zoom-pricing-row"><span>1st Edition</span><span class="val">$${c.nmPrices.firstEd}</span></div>` : ''}
-              ${c.nmPrices.unlimited ? `<div class="zoom-pricing-row"><span>Unlimited</span><span class="val">$${c.nmPrices.unlimited}</span></div>` : ''}
-              ${c.nmPrices.market ? `<div class="zoom-pricing-row"><span>Market Price</span><span class="val">$${c.nmPrices.market}</span></div>` : ''}
-              ${c.nmPrices.lastSale ? `<div class="zoom-pricing-row"><span>Last Sale</span><span class="val">$${c.nmPrices.lastSale}</span></div>` : ''}
-            </div>
-          ` : ''}
+      <button class="zoom-close" onclick="closeModal()">✕</button>
+      <div class="zoom-card" onclick="event.stopPropagation()">
+        <img class="zoom-img" src="${c.imageUrl}" alt="${c.name}"
+          onclick="this.classList.toggle('fullsize')"
+          title="Tap to zoom">
+        ${c.nmPrices ? `
           <div class="zoom-pricing">
-            <div class="zoom-pricing-header">Entry #${String(c.id).padStart(4, '0')}</div>
-            <div class="zoom-pricing-row"><span>Pokémon</span><span class="val">${c.name}</span></div>
-            <div class="zoom-pricing-row"><span>Generation</span><span class="val">${c.generation}</span></div>
-            ${c.setName ? `<div class="zoom-pricing-row"><span>Set</span><span class="val">${c.setName}</span></div>` : ''}
-            ${c.collected ? `<div class="zoom-pricing-row"><span>Status</span><span class="val">● CAUGHT</span></div>` : ''}
-            ${c.price ? `<div class="zoom-pricing-row"><span>Spent</span><span class="val">$${c.price.toFixed(2)}</span></div>` : ''}
-            <div style="display:flex; gap:6px; margin-top:10px; flex-wrap:wrap;">
-              ${c.collected ? `
-                <button class="dialog-btn danger" onclick="event.stopPropagation(); uncatch(${c.id})">Release</button>
-              ` : `
-                <button class="dialog-btn primary" onclick="event.stopPropagation(); catchPrompt(${c.id})">Catch it!</button>
-              `}
-              <button class="dialog-btn" onclick="event.stopPropagation(); openAddDialog(${c.id})">Edit URL</button>
-              <a href="${c.cardLink || `https://www.tcgplayer.com/search/pokemon/product?q=${encodeURIComponent(c.name)}&view=grid&ProductTypeName=Cards`}" target="_blank" rel="noopener noreferrer" class="dialog-btn" onclick="event.stopPropagation();" style="text-decoration:none; text-align:center;">TCGPlayer ↗</a>
-            </div>
+            <div class="zoom-pricing-header">Near Mint · ${c.name}</div>
+            ${c.nmPrices.firstEd ? `<div class="zoom-pricing-row"><span>1st Edition</span><span class="val">$${c.nmPrices.firstEd}</span></div>` : ''}
+            ${c.nmPrices.unlimited ? `<div class="zoom-pricing-row"><span>Unlimited</span><span class="val">$${c.nmPrices.unlimited}</span></div>` : ''}
+            ${c.nmPrices.market ? `<div class="zoom-pricing-row"><span>Market Price</span><span class="val">$${c.nmPrices.market}</span></div>` : ''}
+            ${c.nmPrices.lastSale ? `<div class="zoom-pricing-row"><span>Last Sale</span><span class="val">$${c.nmPrices.lastSale}</span></div>` : ''}
+          </div>
+        ` : ''}
+        <div class="zoom-pricing">
+          <div class="zoom-pricing-header">Entry #${String(c.id).padStart(4, '0')}</div>
+          <div class="zoom-pricing-row"><span>Pokémon</span><span class="val">${c.name}</span></div>
+          <div class="zoom-pricing-row"><span>Generation</span><span class="val">${c.generation}</span></div>
+          ${c.setName ? `<div class="zoom-pricing-row"><span>Set</span><span class="val">${c.setName}</span></div>` : ''}
+          ${c.collected ? `<div class="zoom-pricing-row"><span>Status</span><span class="val" style="color:var(--accent-green);">● Caught</span></div>` : ''}
+          ${c.price ? `<div class="zoom-pricing-row"><span>Spent</span><span class="val">$${c.price.toFixed(2)}</span></div>` : ''}
+          <div style="display:flex; gap:6px; margin-top:12px; flex-wrap:wrap;">
+            ${c.collected ? `
+              <button class="dialog-btn danger" onclick="event.stopPropagation(); uncatch(${c.id})">Release</button>
+            ` : `
+              <button class="dialog-btn primary" onclick="event.stopPropagation(); catchPrompt(${c.id})">Catch it!</button>
+            `}
+            <button class="dialog-btn" onclick="event.stopPropagation(); openAddDialog(${c.id})">Edit URL</button>
+            <a href="${c.cardLink || `https://www.tcgplayer.com/search/pokemon/product?q=${encodeURIComponent(c.name)}&view=grid&ProductTypeName=Cards`}" target="_blank" rel="noopener noreferrer" class="dialog-btn" onclick="event.stopPropagation();" style="text-decoration:none; text-align:center;">TCGPlayer ↗</a>
           </div>
         </div>
       </div>
