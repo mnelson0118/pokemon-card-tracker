@@ -2480,9 +2480,19 @@ async function fetchRoster() {
   const res = await fetch(`https://pokeapi.co/api/v2/pokemon?limit=${TOTAL_POKEMON}&offset=0`);
   if (!res.ok) throw new Error("PokeAPI " + res.status);
   const data = await res.json();
+  const SPECIAL_NAMES = {
+    "type-null": "Type: Null",
+    "jangmo-o": "Jangmo-o",
+    "hakamo-o": "Hakamo-o",
+    "kommo-o": "Kommo-o",
+    "wo-chien": "Wo-Chien",
+    "chien-pao": "Chien-Pao",
+    "ting-lu": "Ting-Lu",
+    "chi-yu": "Chi-Yu",
+  };
   return data.results.map((p, i) => ({
     id: i + 1,
-    name: p.name.split("-")[0].replace(/^./, c => c.toUpperCase()),
+    name: SPECIAL_NAMES[p.name] || p.name.split("-")[0].replace(/^./, c => c.toUpperCase()),
     generation: getGen(i + 1),
   }));
 }
