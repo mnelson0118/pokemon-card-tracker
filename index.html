@@ -2238,8 +2238,7 @@
       </div>
       <div class="tab-bar" id="tabBar" style="display:none;">
         <button class="tab active" data-view="dex"><span class="tab-key">A</span>DEX</button>
-        <button class="tab" data-view="recent"><span class="tab-key">B</span>RECENT</button>
-        <button class="tab" data-view="stats"><span class="tab-key">SEL</span>ANALYTICS</button>
+        <button class="tab" data-view="stats"><span class="tab-key">B</span>ANALYTICS</button>
       </div>
     </div>
   </div>
@@ -3103,7 +3102,7 @@ function setupKeyboard() {
     if (document.querySelector(".modal-overlay")) return; // modals own keys
     if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
     if (e.key === "1" || e.key.toLowerCase() === "a") setView("dex");
-    else if (e.key === "2" || e.key.toLowerCase() === "b") setView("recent");
+    else if (e.key === "2" || e.key.toLowerCase() === "b") setView("stats");
     else if (e.key === "3") setView("stats");
     else if (e.key === "/") {
       e.preventDefault();
@@ -3117,13 +3116,13 @@ function setupKeyboard() {
     btn.addEventListener("click", () => {
       const k = btn.dataset.key;
       if (k === "a") setView("dex");
-      else if (k === "b") setView("recent");
+      else if (k === "b") setView("stats");
       else if (k === "left" || k === "up") {
-        const order = ["dex", "recent", "stats"];
+        const order = ["dex", "stats"];
         const i = order.indexOf(currentView);
         setView(order[(i - 1 + order.length) % order.length]);
       } else if (k === "right" || k === "down") {
-        const order = ["dex", "recent", "stats"];
+        const order = ["dex", "stats"];
         const i = order.indexOf(currentView);
         setView(order[(i + 1) % order.length]);
       }
@@ -3721,7 +3720,7 @@ function mergeValueHistory(a, b) {
         }
       </style>
       <div class="egg-shroom">🍄</div>
-      <div class="egg-initials">Dr.V &amp; ZBH</div>
+      <div class="egg-initials">ZBH &amp; JV</div>
       <div class="egg-sub">you found it</div>
       <div class="egg-dismiss">tap to close</div>
     `;
