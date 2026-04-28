@@ -2878,16 +2878,16 @@ function renderDex(el) {
           <div class="filter-group-label">Set</div>
           <div class="filter-chips">
             ${(() => {
-              // Build sorted alphabetical list of sets from current collection
-              const setNames = [...new Set(
-                Object.values(collection)
-                  .map(c => c.setName)
-                  .filter(Boolean)
-              )].sort((a, b) => a.localeCompare(b));
+              // Build counts first, then sort by count descending
               const counts = {};
               Object.values(collection).forEach(c => {
                 if (c.setName) counts[c.setName] = (counts[c.setName] || 0) + 1;
               });
+              const setNames = [...new Set(
+                Object.values(collection)
+                  .map(c => c.setName)
+                  .filter(Boolean)
+              )].sort((a, b) => (counts[b] || 0) - (counts[a] || 0));
               const opts = setNames.map(name =>
                 `<option value="${name.replace(/"/g,'&quot;')}" ${setFilter===name?'selected':''}>${name} (${counts[name]})</option>`
               ).join('');
@@ -3663,6 +3663,94 @@ function mergeValueHistory(a, b) {
   for (const e of b) if (e?.date) byDate[e.date] = e;
   return Object.values(byDate).sort((x, y) => x.date.localeCompare(y.date)).slice(-90);
 }
+
+// ============================================================================
+// EASTER EGG — 5 taps on the dome light
+// ============================================================================
+(function() {
+  let tapCount = 0;
+  let tapTimer = null;
+
+  function triggerEasterEgg() {
+    const splash = document.createElement("div");
+    splash.style.cssText = `
+      position: fixed; inset: 0; z-index: 9999;
+      background: #0C0E12;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 16px;
+      animation: eggIn 0.3s cubic-bezier(0.4,0,0.2,1);
+      cursor: pointer;
+    `;
+    splash.innerHTML = `
+      <style>
+        @keyframes eggIn {
+          from { opacity: 0; transform: scale(0.95); }
+          to   { opacity: 1; transform: scale(1); }
+        }
+        @keyframes eggOut {
+          from { opacity: 1; transform: scale(1); }
+          to   { opacity: 0; transform: scale(1.04); }
+        }
+        @keyframes mushroomBounce {
+          0%,100% { transform: translateY(0); }
+          40%     { transform: translateY(-18px); }
+          60%     { transform: translateY(-10px); }
+        }
+        .egg-shroom { font-size: 96px; animation: mushroomBounce 1.4s ease-in-out infinite; }
+        .egg-initials {
+          font-family: 'Press Start 2P', monospace;
+          font-size: 20px;
+          color: white;
+          letter-spacing: 6px;
+          text-shadow: 0 0 20px rgba(255,255,255,0.4);
+        }
+        .egg-sub {
+          font-family: 'JetBrains Mono', monospace;
+          font-size: 11px;
+          color: rgba(255,255,255,0.3);
+          letter-spacing: 3px;
+          text-transform: uppercase;
+        }
+        .egg-dismiss {
+          margin-top: 24px;
+          font-family: 'JetBrains Mono', monospace;
+          font-size: 10px;
+          color: rgba(255,255,255,0.18);
+          letter-spacing: 2px;
+        }
+      </style>
+      <div class="egg-shroom">🍄</div>
+      <div class="egg-initials">ZBH &amp; JV</div>
+      <div class="egg-sub">you found it</div>
+      <div class="egg-dismiss">tap to close</div>
+    `;
+
+    function dismiss() {
+      splash.style.animation = "eggOut 0.25s cubic-bezier(0.4,0,0.2,1) forwards";
+      setTimeout(() => splash.remove(), 250);
+    }
+    splash.addEventListener("click", dismiss);
+    document.body.appendChild(splash);
+    // Auto-dismiss after 6s
+    setTimeout(dismiss, 6000);
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const dome = document.getElementById("dome");
+    if (!dome) return;
+    dome.addEventListener("click", () => {
+      tapCount++;
+      clearTimeout(tapTimer);
+      if (tapCount >= 5) {
+        tapCount = 0;
+        triggerEasterEgg();
+        return;
+      }
+      tapTimer = setTimeout(() => { tapCount = 0; }, 2500);
+    });
+  });
+})();
 
 // Boot the device
 boot();
