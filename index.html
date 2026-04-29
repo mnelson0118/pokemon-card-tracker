@@ -2207,7 +2207,7 @@
      AUTH / LOGIN SCREEN
      ====================================================== */
   .auth-overlay {
-    display: none;
+    display: flex;
     position: fixed;
     inset: 0;
     background: #1a0a0a;
@@ -2218,7 +2218,7 @@
     padding: 24px;
     gap: 20px;
   }
-  .auth-overlay.visible { display: flex; }
+  .auth-overlay.hidden { display: none; }
   .auth-card {
     background: var(--screen-bg-card, #0d1f0d);
     border: 2px solid var(--shell-red, #B82435);
@@ -2332,7 +2332,7 @@
 <body>
 
 <!-- ====== AUTH OVERLAY ====== -->
-<div class="auth-overlay" id="authOverlay">
+<div class="auth-overlay visible" id="authOverlay">
   <div class="auth-card">
     <div class="auth-logo">POKÉDEX</div>
     <div class="auth-subtitle">▸ TRAINER TERMINAL ◂</div>
@@ -4048,10 +4048,10 @@ function initFirebaseAuth() {
 }
 
 function authShowLogin() {
-  document.getElementById("authOverlay").classList.add("visible");
+  document.getElementById("authOverlay").classList.remove("hidden");
 }
 function authHideLogin() {
-  document.getElementById("authOverlay").classList.remove("visible");
+  document.getElementById("authOverlay").classList.add("hidden");
 }
 function authToggleEmailForm() {
   const form = document.getElementById("authEmailForm");
