@@ -8,6 +8,9 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&family=JetBrains+Mono:wght@400;500;600;700&family=Press+Start+2P&display=swap" rel="stylesheet">
+<!-- Firebase Auth SDK (compat) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <style>
   /* ============================================================
      POKÉDEX // TRAINER TERMINAL
@@ -2199,9 +2202,155 @@
     .recent-row:hover,
     .header-add-btn:hover { transform: none !important; }
   }
+
+  /* ======================================================
+     AUTH / LOGIN SCREEN
+     ====================================================== */
+  .auth-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: #1a0a0a;
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    padding: 24px;
+    gap: 20px;
+  }
+  .auth-overlay.visible { display: flex; }
+  .auth-card {
+    background: var(--screen-bg-card, #0d1f0d);
+    border: 2px solid var(--shell-red, #B82435);
+    border-radius: 16px;
+    padding: 32px 28px;
+    width: 100%;
+    max-width: 380px;
+    text-align: center;
+    box-shadow: 0 0 40px rgba(184,36,53,0.3);
+  }
+  .auth-logo {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 13px;
+    color: var(--shell-red, #B82435);
+    letter-spacing: 2px;
+    margin-bottom: 6px;
+  }
+  .auth-subtitle {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: #5a9a5a;
+    margin-bottom: 28px;
+    letter-spacing: 1px;
+  }
+  .auth-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    padding: 14px 20px;
+    border-radius: 10px;
+    border: none;
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s;
+    margin-bottom: 12px;
+  }
+  .auth-btn:hover { opacity: 0.88; }
+  .auth-btn-google { background: #fff; color: #1a1a1a; }
+  .auth-btn-email { background: var(--shell-red, #B82435); color: #fff; }
+  .auth-divider {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: #2a5a2a;
+    margin: 4px 0 12px;
+    letter-spacing: 1px;
+  }
+  .auth-email-form { display: none; margin-top: 4px; }
+  .auth-email-form.visible { display: block; }
+  .auth-input {
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--shell-red, #B82435);
+    background: var(--screen-bg-deep, #050f05);
+    color: #a0e0a0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    margin-bottom: 10px;
+    box-sizing: border-box;
+    outline: none;
+  }
+  .auth-input:focus { border-color: #e05070; }
+  .auth-error {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: #FF6B47;
+    min-height: 16px;
+    margin-bottom: 6px;
+    letter-spacing: 0.5px;
+  }
+  .auth-signout-btn {
+    display: none;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 20px;
+    padding: 5px 10px 5px 6px;
+    cursor: pointer;
+    color: rgba(255,255,255,0.8);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    transition: background 0.15s;
+  }
+  .auth-signout-btn:hover { background: rgba(255,255,255,0.1); }
+  .auth-signout-btn.visible { display: flex; }
+  .auth-avatar {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid rgba(255,255,255,0.3);
+  }
+  .auth-avatar-initials {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: var(--shell-red, #B82435);
+    color: #fff;
+    font-size: 9px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Bricolage Grotesque', sans-serif;
+  }
 </style>
 </head>
 <body>
+
+<!-- ====== AUTH OVERLAY ====== -->
+<div class="auth-overlay" id="authOverlay">
+  <div class="auth-card">
+    <div class="auth-logo">POKÉDEX</div>
+    <div class="auth-subtitle">▸ TRAINER TERMINAL ◂</div>
+    <button class="auth-btn auth-btn-google" onclick="authSignInGoogle()">
+      <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.08 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.35-8.16 2.35-6.26 0-11.57-3.59-13.46-8.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+      Continue with Google
+    </button>
+    <div class="auth-divider">— or —</div>
+    <button class="auth-btn auth-btn-email" onclick="authToggleEmailForm()" id="emailToggleBtn">✉ Continue with Email</button>
+    <div class="auth-email-form" id="authEmailForm">
+      <input class="auth-input" id="authEmail" type="email" placeholder="trainer@email.com" autocomplete="email">
+      <input class="auth-input" id="authPassword" type="password" placeholder="Password" autocomplete="current-password">
+      <div class="auth-error" id="authError"></div>
+      <button class="auth-btn auth-btn-email" onclick="authSignInEmail()" style="margin-bottom:8px;">▸ Sign In</button>
+      <button class="auth-btn" style="background:rgba(255,255,255,0.08);color:#a0e0a0;font-size:13px;margin-bottom:0;" onclick="authCreateAccount()">Create Account</button>
+    </div>
+  </div>
+</div>
 
 <div class="device" id="device">
   <span class="screw tl"></span><span class="screw tr"></span>
@@ -2224,6 +2373,10 @@
     <button class="header-add-btn" onclick="openAddDialog()">
       <span class="add-plus">+</span>
       <span>Add Cards</span>
+    </button>
+    <button class="auth-signout-btn" id="signOutBtn" onclick="authSignOut()" title="Sign out">
+      <div class="auth-avatar-initials" id="userInitials">?</div>
+      <span id="signOutLabel">Sign out</span>
     </button>
   </div>
 
@@ -2387,8 +2540,16 @@ let filtersOpen = false;
 // ============================================================================
 
 const FIREBASE_URL = "https://pokemon-card-tracker-2b5f8-default-rtdb.firebaseio.com";
-const USER_ID = "pokemon_collection";
-const FIREBASE_COLLECTION_URL = `${FIREBASE_URL}/users/${USER_ID}/collection.json`;
+// ⚠️  FILL THESE IN FROM YOUR FIREBASE PROJECT SETTINGS (Project settings → Your apps → Web app)
+const FIREBASE_AUTH_API_KEY    = "AIzaSyDyWGdRbTpQUnX4cQ387AkWe9x_yjhYn4g";
+const FIREBASE_AUTH_DOMAIN_VAL = "pokemon-card-tracker-2b5f8.firebaseapp.com";
+const FIREBASE_PROJECT_ID      = "pokemon-card-tracker-2b5f8";
+// USER_ID is set dynamically after Google/Email sign-in (see auth section below)
+let CURRENT_USER_ID = null;
+function getFirebaseUrl() {
+  if (!CURRENT_USER_ID) return null;
+  return `${FIREBASE_URL}/users/${CURRENT_USER_ID}/collection.json`;
+}
 
 // localStorage helpers — fast synchronous cache
 function loadLocal(key) {
@@ -2400,7 +2561,8 @@ function saveLocal(key, val) {
 
 // Load collection from Firebase
 function loadFromFirebase() {
-  return fetch(FIREBASE_COLLECTION_URL)
+  const fbUrl = getFirebaseUrl(); if (!fbUrl) return Promise.resolve(null);
+  return fetch(fbUrl)
     .then(res => res.ok ? res.json() : null)
     .then(data => {
       if (data && typeof data === "object" && Object.keys(data).length > 0) {
@@ -2429,7 +2591,8 @@ function saveToFirebase(col) {
     }
     if (Object.keys(e).length > 0) payload[id] = e;
   }
-  return fetch(FIREBASE_COLLECTION_URL, {
+  const fbUrl = getFirebaseUrl(); if (!fbUrl) return Promise.resolve();
+  return fetch(fbUrl, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
@@ -3777,8 +3940,166 @@ function mergeValueHistory(a, b) {
   });
 })();
 
-// Boot the device
-boot();
+
+// ============================================================================
+// FIREBASE AUTH — Google + Email/Password
+// ============================================================================
+const FIREBASE_API_KEY = ""; // Leave blank — populated from firebaseConfig below
+const FIREBASE_AUTH_DOMAIN = "";
+
+// Initialize Firebase app for auth only
+// We reuse the existing FIREBASE_URL for the database.
+// Firebase config — same project as the REST database
+const _fbConfig = {
+  apiKey: (function() {
+    // Extract apiKey from the existing Firebase REST URL domain isn't needed
+    // We read it from a meta tag or inline constant if you add one.
+    // For now, users must set FIREBASE_API_KEY below.
+    return window.__FIREBASE_API_KEY__ || "";
+  })(),
+  authDomain: window.__FIREBASE_AUTH_DOMAIN__ || "",
+  databaseURL: FIREBASE_URL,
+  projectId: window.__FIREBASE_PROJECT_ID__ || "",
+};
+
+let _fbApp = null;
+let _fbAuth = null;
+
+function initFirebaseAuth() {
+  try {
+    if (typeof firebase === "undefined") {
+      console.warn("Firebase SDK not loaded — auth unavailable");
+      return false;
+    }
+    // Get config from the inline constants at top of file
+    const cfg = {
+      apiKey: FIREBASE_AUTH_API_KEY,
+      authDomain: FIREBASE_AUTH_DOMAIN_VAL,
+      databaseURL: FIREBASE_URL,
+      projectId: FIREBASE_PROJECT_ID,
+    };
+    _fbApp = firebase.apps.length ? firebase.apps[0] : firebase.initializeApp(cfg);
+    _fbAuth = firebase.auth(_fbApp);
+    return true;
+  } catch(e) {
+    console.warn("Firebase auth init failed:", e.message);
+    return false;
+  }
+}
+
+function authShowLogin() {
+  document.getElementById("authOverlay").classList.add("visible");
+}
+function authHideLogin() {
+  document.getElementById("authOverlay").classList.remove("visible");
+}
+function authToggleEmailForm() {
+  const form = document.getElementById("authEmailForm");
+  form.classList.toggle("visible");
+  if (form.classList.contains("visible")) {
+    document.getElementById("emailToggleBtn").textContent = "✕ Cancel";
+    document.getElementById("authEmail").focus();
+  } else {
+    document.getElementById("emailToggleBtn").textContent = "✉ Continue with Email";
+  }
+}
+function authSetError(msg) {
+  document.getElementById("authError").textContent = msg;
+}
+async function authSignInGoogle() {
+  if (!_fbAuth) { authSetError("Auth not configured — see setup guide."); return; }
+  authSetError("");
+  try {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    await _fbAuth.signInWithPopup(provider);
+  } catch(e) {
+    authSetError(e.message);
+  }
+}
+async function authSignInEmail() {
+  if (!_fbAuth) { authSetError("Auth not configured."); return; }
+  const email = document.getElementById("authEmail").value.trim();
+  const pass = document.getElementById("authPassword").value;
+  if (!email || !pass) { authSetError("Enter email and password."); return; }
+  authSetError("");
+  try {
+    await _fbAuth.signInWithEmailAndPassword(email, pass);
+  } catch(e) {
+    authSetError(e.message);
+  }
+}
+async function authCreateAccount() {
+  if (!_fbAuth) { authSetError("Auth not configured."); return; }
+  const email = document.getElementById("authEmail").value.trim();
+  const pass = document.getElementById("authPassword").value;
+  if (!email || !pass) { authSetError("Enter email and password."); return; }
+  authSetError("");
+  try {
+    await _fbAuth.createUserWithEmailAndPassword(email, pass);
+  } catch(e) {
+    authSetError(e.message);
+  }
+}
+async function authSignOut() {
+  if (!_fbAuth) return;
+  if (!confirm("Sign out? Your collection is safely stored in the cloud.")) return;
+  await _fbAuth.signOut();
+  CURRENT_USER_ID = null;
+  updateSignOutBtn(null);
+  authShowLogin();
+}
+function updateSignOutBtn(user) {
+  const btn = document.getElementById("signOutBtn");
+  const initEl = document.getElementById("userInitials");
+  const label = document.getElementById("signOutLabel");
+  if (user) {
+    btn.classList.add("visible");
+    const name = user.displayName || user.email || "?";
+    initEl.textContent = name.charAt(0).toUpperCase();
+    label.textContent = "Sign out";
+  } else {
+    btn.classList.remove("visible");
+  }
+}
+
+async function startWithAuth() {
+  const authAvailable = initFirebaseAuth();
+  if (!authAvailable) {
+    // No Firebase SDK — fall back to shared collection (original behavior)
+    CURRENT_USER_ID = "pokemon_collection";
+    boot();
+    return;
+  }
+
+  // Listen for auth state changes
+  _fbAuth.onAuthStateChanged(async (user) => {
+    if (user) {
+      CURRENT_USER_ID = user.uid;
+      updateSignOutBtn(user);
+      authHideLogin();
+      // Only call boot() once on first sign-in
+      if (!window._appBooted) {
+        window._appBooted = true;
+        await boot();
+      } else {
+        // Re-sync from cloud when user changes
+        loadFromFirebase().then(cloudData => {
+          if (cloudData) {
+            collection = { ...collection, ...cloudData };
+            saveLocal("pokedex_v2:collection", collection);
+            render();
+            renderHeaderStats();
+          }
+        });
+      }
+    } else {
+      authShowLogin();
+    }
+  });
+}
+
+// Boot the device — now gated behind auth
+startWithAuth();
 </script>
 </body>
 </html>
