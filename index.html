@@ -4016,36 +4016,22 @@ function mergeValueHistory(a, b) {
 
 
 // ============================================================================
-// FIREBASE AUTH — Google + Email/Password
+// FIREBASE AUTH — Google (redirect) + Email/Password
 // ============================================================================
-const FIREBASE_API_KEY = ""; // Leave blank — populated from firebaseConfig below
-const FIREBASE_AUTH_DOMAIN = "";
-
-// Initialize Firebase app for auth only
-// We reuse the existing FIREBASE_URL for the database.
-// Firebase config — same project as the REST database
-const _fbConfig = {
-  apiKey: (function() {
-    // Extract apiKey from the existing Firebase REST URL domain isn't needed
-    // We read it from a meta tag or inline constant if you add one.
-    // For now, users must set FIREBASE_API_KEY below.
-    return window.__FIREBASE_API_KEY__ || "";
-  })(),
-  authDomain: window.__FIREBASE_AUTH_DOMAIN__ || "",
-  databaseURL: FIREBASE_URL,
-  projectId: window.__FIREBASE_PROJECT_ID__ || "",
-};
 
 let _fbApp = null;
 let _fbAuth = null;
 
 function initFirebaseAuth() {
+  if (typeof firebase === "undefined") {
+    console.warn("Firebase SDK not loaded");
+    return false;
+  }
+  if (!FIREBASE_AUTH_API_KEY || FIREBASE_AUTH_API_KEY === "YOUR_API_KEY_HERE") {
+    console.warn("Firebase config not filled in");
+    return false;
+  }
   try {
-    if (typeof firebase === "undefined") {
-      console.warn("Firebase SDK not loaded — auth unavailable");
-      return false;
-    }
-    // Get config from the inline constants at top of file
     const cfg = {
       apiKey: FIREBASE_AUTH_API_KEY,
       authDomain: FIREBASE_AUTH_DOMAIN_VAL,
@@ -4072,7 +4058,7 @@ function authToggleEmailForm() {
   form.classList.toggle("visible");
   if (form.classList.contains("visible")) {
     document.getElementById("emailToggleBtn").textContent = "✕ Cancel";
-    document.getElementById("authEmail").focus();
+    setTimeout(() => document.getElementById("authEmail").focus(), 50);
   } else {
     document.getElementById("emailToggleBtn").textContent = "✉ Continue with Email";
   }
@@ -4080,20 +4066,24 @@ function authToggleEmailForm() {
 function authSetError(msg) {
   document.getElementById("authError").textContent = msg;
 }
+
+// Google: use redirect (works on GitHub Pages, mobile, no popup blockers)
 async function authSignInGoogle() {
-  if (!_fbAuth) { authSetError("Auth not configured — see setup guide."); return; }
+  if (!_fbAuth) { authSetError("Auth not configured."); return; }
   authSetError("");
   try {
     const provider = new firebase.auth.GoogleAuthProvider();
-    await _fbAuth.signInWithPopup(provider);
+    await _fbAuth.signInWithRedirect(provider);
+    // Page will reload — onAuthStateChanged handles the result after redirect
   } catch(e) {
     authSetError(e.message);
   }
 }
+
 async function authSignInEmail() {
   if (!_fbAuth) { authSetError("Auth not configured."); return; }
   const email = document.getElementById("authEmail").value.trim();
-  const pass = document.getElementById("authPassword").value;
+  const pass  = document.getElementById("authPassword").value;
   if (!email || !pass) { authSetError("Enter email and password."); return; }
   authSetError("");
   try {
@@ -4102,10 +4092,11 @@ async function authSignInEmail() {
     authSetError(e.message);
   }
 }
+
 async function authCreateAccount() {
   if (!_fbAuth) { authSetError("Auth not configured."); return; }
   const email = document.getElementById("authEmail").value.trim();
-  const pass = document.getElementById("authPassword").value;
+  const pass  = document.getElementById("authPassword").value;
   if (!email || !pass) { authSetError("Enter email and password."); return; }
   authSetError("");
   try {
@@ -4114,6 +4105,7 @@ async function authCreateAccount() {
     authSetError(e.message);
   }
 }
+
 async function authSignOut() {
   if (!_fbAuth) return;
   if (!confirm("Sign out? Your collection is safely stored in the cloud.")) return;
@@ -4122,15 +4114,14 @@ async function authSignOut() {
   updateSignOutBtn(null);
   authShowLogin();
 }
+
 function updateSignOutBtn(user) {
-  const btn = document.getElementById("signOutBtn");
+  const btn    = document.getElementById("signOutBtn");
   const initEl = document.getElementById("userInitials");
-  const label = document.getElementById("signOutLabel");
   if (user) {
     btn.classList.add("visible");
     const name = user.displayName || user.email || "?";
     initEl.textContent = name.charAt(0).toUpperCase();
-    label.textContent = "Sign out";
   } else {
     btn.classList.remove("visible");
   }
@@ -4139,31 +4130,39 @@ function updateSignOutBtn(user) {
 async function startWithAuth() {
   const authAvailable = initFirebaseAuth();
   if (!authAvailable) {
-    // No Firebase SDK — fall back to shared collection (original behavior)
+    // Config not set — fall back to shared collection (original behavior)
     CURRENT_USER_ID = "pokemon_collection";
     boot();
     return;
   }
 
-  // Listen for auth state changes
+  // Handle the redirect result first (fires after Google redirect returns)
+  try {
+    await _fbAuth.getRedirectResult();
+  } catch(e) {
+    console.warn("Redirect result error:", e.message);
+  }
+
+  // Then listen for auth state — fires immediately if already signed in
   _fbAuth.onAuthStateChanged(async (user) => {
     if (user) {
       CURRENT_USER_ID = user.uid;
       updateSignOutBtn(user);
       authHideLogin();
-      // Only call boot() once on first sign-in
       if (!window._appBooted) {
         window._appBooted = true;
         await boot();
       } else {
-        // Re-sync from cloud when user changes
+        // User switched — re-sync from their cloud data
+        collection = {};
+        saveLocal("pokedex_v2:collection", {});
         loadFromFirebase().then(cloudData => {
           if (cloudData) {
-            collection = { ...collection, ...cloudData };
+            collection = cloudData;
             saveLocal("pokedex_v2:collection", collection);
-            render();
-            renderHeaderStats();
           }
+          render();
+          renderHeaderStats();
         });
       }
     } else {
