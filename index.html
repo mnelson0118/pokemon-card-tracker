@@ -995,6 +995,46 @@
     transition: all 0.2s;
   }
   .lcd-input::placeholder { color: var(--text-faint); }
+  .search-wrap {
+  flex: 1;
+  min-width: 180px;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.search-wrap .lcd-input {
+  flex: 1;
+  min-width: 0;
+  padding-right: 36px;
+}
+.search-clear {
+  position: absolute;
+  right: 10px;
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 4px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.6;
+  transition: opacity 0.15s;
+}
+.search-clear:hover { opacity: 1; color: var(--text-bright); }
+.search-clear.visible { display: flex; }
+@keyframes filterFadeIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes filterFadeOut {
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(-6px); }
+}
+.filter-panel { animation: filterFadeIn 0.18s ease; }
+.filter-panel.closing { animation: filterFadeOut 0.15s ease forwards; }
   .lcd-input:focus {
     border-color: var(--accent-blue);
     box-shadow: 0 0 0 3px rgba(77, 163, 255, 0.15);
@@ -3064,7 +3104,10 @@ function renderDex(el) {
 
   el.innerHTML = `
     <div class="dex-controls">
-      <input type="text" class="lcd-input" id="searchInput" placeholder="Search by name or number..." value="${searchQuery.replace(/"/g, '&quot;')}">
+      <div class="search-wrap">
+        <input type="text" class="lcd-input" id="searchInput" placeholder="Search by name or number..." value="${searchQuery.replace(/"/g, '&quot;')}">
+        <button class="search-clear ${searchQuery ? 'visible' : ''}" id="searchClear" onclick="clearSearch()" aria-label="Clear search">&#x2715;</button>
+      </div>
       <button class="filter-toggle ${filtersOpen ? 'open' : ''} ${activeFilterCount() > 0 ? 'has-active' : ''}" onclick="toggleFilters()" aria-label="Toggle filters">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
           <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
@@ -3264,11 +3307,27 @@ function formatStamp(ts) {
 // INTERACTIONS
 // ============================================================================
 function setView(v) { currentView = v; render(); }
+function clearSearch() {
+  searchQuery = "";
+  render();
+  setTimeout(() => document.getElementById("searchInput")?.focus(), 50); }
 function setGenFilter(g) { genFilter = g; render(); }
 function setCollectedFilter(f) { collectedFilter = f; render(); }
 function setLangFilter(l) { langFilter = l; render(); }
 function setSetFilter(s) { setFilter = s; render(); }
-function toggleFilters() { filtersOpen = !filtersOpen; render(); }
+function toggleFilters() {
+  if (filtersOpen) {
+    const panel = document.querySelector(".filter-panel");
+    if (panel) {
+      panel.classList.add("closing");
+      setTimeout(() => { filtersOpen = false; render(); }, 150);
+    } else {
+      filtersOpen = false; render();
+    }
+  } else {
+    filtersOpen = true; render();
+  }
+}
 
 function activeFilterCount() {
   let n = 0;
