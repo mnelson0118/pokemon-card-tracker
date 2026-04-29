@@ -3316,7 +3316,24 @@ function setGenFilter(g) { genFilter = g; render(); }
 function setCollectedFilter(f) { collectedFilter = f; render(); }
 function setLangFilter(l) { langFilter = l; render(); }
 function setSetFilter(s) { setFilter = s; render(); }
-function toggleFilters() { filtersOpen = !filtersOpen; render(); }
+function toggleFilters() {
+  if (filtersOpen) {
+    // Closing: animate first, then sync state via render()
+    const panel = document.querySelector('.filter-panel');
+    const btn   = document.querySelector('.filter-toggle');
+    if (panel) panel.classList.remove('open');
+    if (btn)   btn.classList.remove('open');
+
+    setTimeout(() => {
+      filtersOpen = false;
+      render();
+    }, 240); // slightly longer than your longest transition (max-height: 0.22s)
+  } else {
+    // Opening: update state and re-render immediately (transition works fine on open)
+    filtersOpen = true;
+    render();
+  }
+}
 
 function activeFilterCount() {
   let n = 0;
