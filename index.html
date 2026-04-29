@@ -1025,16 +1025,7 @@
 }
 .search-clear:hover { opacity: 1; color: var(--text-bright); }
 .search-clear.visible { display: flex; }
-@keyframes filterFadeIn {
-  from { opacity: 0; transform: translateY(-6px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-@keyframes filterFadeOut {
-  from { opacity: 1; transform: translateY(0); }
-  to   { opacity: 0; transform: translateY(-6px); }
-}
-.filter-panel { animation: filterFadeIn 0.18s ease; }
-.filter-panel.closing { animation: filterFadeOut 0.15s ease forwards; }
+
   .lcd-input:focus {
     border-color: var(--accent-blue);
     box-shadow: 0 0 0 3px rgba(77, 163, 255, 0.15);
@@ -1089,8 +1080,20 @@
     background: var(--screen-bg-card);
     border: 1px solid var(--screen-border);
     border-radius: 10px;
+    padding: 0 16px;
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    margin-bottom: 0;
+    pointer-events: none;
+    transition: max-height 0.22s ease, opacity 0.18s ease, padding 0.18s ease, margin-bottom 0.18s ease;
+  }
+  .filter-panel.open {
+    max-height: 600px;
+    opacity: 1;
     padding: 14px 16px 16px;
     margin-bottom: 16px;
+    pointer-events: auto;
   }
   .filter-group {
     display: flex;
@@ -3124,8 +3127,7 @@ function renderDex(el) {
       </div>
     ` : ''}
 
-    ${filtersOpen ? `
-      <div class="filter-panel">
+    <div class="filter-panel ${filtersOpen ? 'open' : ''}">
         <div class="filter-group">
           <div class="filter-group-label">Collection</div>
           <div class="filter-chips">
@@ -3185,7 +3187,6 @@ function renderDex(el) {
           <button class="clear-all-btn" onclick="clearAllFilters()" style="${activeFilterCount() === 0 ? 'opacity:0.35; cursor:default;' : ''}">Clear all filters</button>
         </div>
       </div>
-    ` : ''}
 
     ${filtered.length === 0 ? `
       <div class="lcd-empty">
@@ -3315,19 +3316,7 @@ function setGenFilter(g) { genFilter = g; render(); }
 function setCollectedFilter(f) { collectedFilter = f; render(); }
 function setLangFilter(l) { langFilter = l; render(); }
 function setSetFilter(s) { setFilter = s; render(); }
-function toggleFilters() {
-  if (filtersOpen) {
-    const panel = document.querySelector(".filter-panel");
-    if (panel) {
-      panel.classList.add("closing");
-      setTimeout(() => { filtersOpen = false; render(); }, 150);
-    } else {
-      filtersOpen = false; render();
-    }
-  } else {
-    filtersOpen = true; render();
-  }
-}
+function toggleFilters() { filtersOpen = !filtersOpen; render(); }
 
 function activeFilterCount() {
   let n = 0;
