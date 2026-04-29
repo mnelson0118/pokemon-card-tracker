@@ -2541,9 +2541,9 @@ let filtersOpen = false;
 
 const FIREBASE_URL = "https://pokemon-card-tracker-2b5f8-default-rtdb.firebaseio.com";
 // ⚠️  FILL THESE IN FROM YOUR FIREBASE PROJECT SETTINGS (Project settings → Your apps → Web app)
-const FIREBASE_AUTH_API_KEY    = "AIzaSyDyWGdRbTpQUnX4cQ387AkWe9x_yjhYn4g";
-const FIREBASE_AUTH_DOMAIN_VAL = "pokemon-card-tracker-2b5f8.firebaseapp.com";
-const FIREBASE_PROJECT_ID      = "pokemon-card-tracker-2b5f8";
+const FIREBASE_AUTH_API_KEY    = "YOUR_API_KEY_HERE";
+const FIREBASE_AUTH_DOMAIN_VAL = "YOUR_PROJECT.firebaseapp.com";
+const FIREBASE_PROJECT_ID      = "YOUR_PROJECT_ID";
 // USER_ID is set dynamically after Google/Email sign-in (see auth section below)
 let CURRENT_USER_ID = null;
 function getFirebaseUrl() {
@@ -2566,8 +2566,16 @@ function loadFromFirebase() {
     .then(res => res.ok ? res.json() : null)
     .then(data => {
       if (data && typeof data === "object" && Object.keys(data).length > 0) {
-        console.log("✅ Firebase: loaded " + Object.keys(data).length + " entries");
-        return data;
+        // Strip internal sentinel keys — only card IDs (numeric strings) are real data
+        const { _initialized, _createdAt, ...cardData } = data;
+        const hasCards = Object.keys(cardData).length > 0;
+        if (hasCards) {
+          console.log("✅ Firebase: loaded " + Object.keys(cardData).length + " entries");
+          return cardData;
+        }
+        // Initialized but no cards yet — treat as empty (not null, so we don't re-init)
+        if (_initialized) return {};
+        return null;
       }
       return null;
     })
@@ -2591,6 +2599,8 @@ function saveToFirebase(col) {
     }
     if (Object.keys(e).length > 0) payload[id] = e;
   }
+  // Always preserve the initialization sentinel so the account stays marked
+  payload._initialized = true;
   const fbUrl = getFirebaseUrl(); if (!fbUrl) return Promise.resolve();
   return fetch(fbUrl, {
     method: "PUT",
@@ -2721,18 +2731,82 @@ async function boot() {
   renderHeaderStats();
 
   // Then fetch Firebase and merge on top — updates UI when cloud data arrives
-  loadFromFirebase().then(cloudData => {
+  loadFromFirebase().then(async cloudData => {
     if (cloudData) {
+      // Existing user — merge cloud data on top of local cache
       collection = { ...collection, ...cloudData };
       saveLocal("pokedex_v2:collection", collection);
       recordValueSnapshot();
       renderHeaderStats();
       render();
-      console.log("✅ Cloud data merged");
+      console.log("✅ Cloud data merged for", CURRENT_USER_ID);
     } else {
+      // New user — initialize their database so it exists in Firebase
+      // We write a minimal sentinel so future loads know the account is set up.
+      // The actual card roster is always fetched from PokeAPI, so we just
+      // persist whatever the user collects going forward.
+      if (CURRENT_USER_ID && CURRENT_USER_ID !== "pokemon_collection") {
+        console.log("🆕 New trainer detected — initializing database for", CURRENT_USER_ID);
+        // Write an empty initialized marker so the path exists in Firebase
+        await initNewUserDatabase();
+        // Show a welcome message on the screen
+        showNewTrainerWelcome();
+      }
       recordValueSnapshot();
     }
   });
+}
+
+// Seed a new user's Firebase path so it exists (empty collection, just the sentinel)
+async function initNewUserDatabase() {
+  const fbUrl = getFirebaseUrl();
+  if (!fbUrl) return;
+  // Write a minimal placeholder — the real collection grows as they add cards
+  try {
+    await fetch(fbUrl, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ _initialized: true, _createdAt: Date.now() }),
+    });
+    console.log("✅ New trainer database initialized");
+  } catch(e) {
+    console.warn("Could not initialize database:", e.message);
+  }
+}
+
+function showNewTrainerWelcome() {
+  const screenContent = document.getElementById("screenContent");
+  if (!screenContent) return;
+  // Flash a brief welcome overlay on top of the current screen content
+  const welcome = document.createElement("div");
+  welcome.style.cssText = `
+    position: absolute; inset: 0; z-index: 500;
+    background: var(--screen-bg-card, #0d1f0d);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 12px; padding: 24px; text-align: center;
+    animation: fadeIn 0.3s ease;
+  `;
+  welcome.innerHTML = `
+    <div style="font-family:'Press Start 2P',monospace;font-size:11px;color:var(--shell-red,#B82435);letter-spacing:1px;">NEW TRAINER</div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#5a9a5a;line-height:1.8;">
+      ▸ DATABASE CREATED<br>
+      ▸ CLOUD SYNC ACTIVE<br>
+      ▸ READY TO COLLECT
+    </div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#2a5a2a;margin-top:8px;">
+      Your collection syncs across all devices.
+    </div>
+  `;
+  // Position relative to screenContent
+  const screen = document.getElementById("screen");
+  screen.style.position = "relative";
+  screen.appendChild(welcome);
+  setTimeout(() => {
+    welcome.style.transition = "opacity 0.5s";
+    welcome.style.opacity = "0";
+    setTimeout(() => welcome.remove(), 500);
+  }, 2500);
 }
 
 
