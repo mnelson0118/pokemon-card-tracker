@@ -3320,33 +3320,15 @@ function clearSearch() {
   render();
   setTimeout(() => document.getElementById("searchInput")?.focus(), 50); }
 let _filterTimer = null;
-const FILTER_TIMEOUT_MS = 9000;
-
-function resetFilterTimer() {
+function scheduleFilterClose() {
   clearTimeout(_filterTimer);
-  _filterTimer = setTimeout(() => {
-    if (filtersOpen) { filtersOpen = false; render(); }
-  }, FILTER_TIMEOUT_MS);
+  _filterTimer = setTimeout(() => { filtersOpen = false; render(); }, 3000);
 }
-
-// Reset timer on any interaction inside the filter panel
-document.addEventListener("pointermove", e => {
-  if (_filterTimer && e.target.closest?.(".filter-panel")) resetFilterTimer();
-});
-document.addEventListener("pointerdown", e => {
-  if (_filterTimer && e.target.closest?.(".filter-panel")) resetFilterTimer();
-});
-
-function setGenFilter(g) { genFilter = g; render(); resetFilterTimer(); }
-function setCollectedFilter(f) { collectedFilter = f; render(); resetFilterTimer(); }
-function setLangFilter(l) { langFilter = l; render(); resetFilterTimer(); }
-function setSetFilter(s) { setFilter = s; render(); resetFilterTimer(); }
-function toggleFilters() {
-  filtersOpen = !filtersOpen;
-  render();
-  if (filtersOpen) resetFilterTimer();
-  else clearTimeout(_filterTimer);
-}
+function setGenFilter(g) { genFilter = g; render(); scheduleFilterClose(); }
+function setCollectedFilter(f) { collectedFilter = f; render(); scheduleFilterClose(); }
+function setLangFilter(l) { langFilter = l; render(); scheduleFilterClose(); }
+function setSetFilter(s) { setFilter = s; render(); scheduleFilterClose(); }
+function toggleFilters() { clearTimeout(_filterTimer); filtersOpen = !filtersOpen; render(); }
 
 function activeFilterCount() {
   let n = 0;
