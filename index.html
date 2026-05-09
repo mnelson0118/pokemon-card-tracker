@@ -3320,7 +3320,7 @@ function clearSearch() {
   render();
   setTimeout(() => document.getElementById("searchInput")?.focus(), 50); }
 let _filterTimer = null;
-const FILTER_TIMEOUT_MS = 4000;
+const FILTER_TIMEOUT_MS = 5000;
 
 function resetFilterTimer() {
   clearTimeout(_filterTimer);
@@ -3328,6 +3328,14 @@ function resetFilterTimer() {
     if (filtersOpen) { filtersOpen = false; render(); }
   }, FILTER_TIMEOUT_MS);
 }
+
+// Reset timer on any interaction inside the filter panel
+document.addEventListener("pointermove", e => {
+  if (_filterTimer && e.target.closest?.(".filter-panel")) resetFilterTimer();
+});
+document.addEventListener("pointerdown", e => {
+  if (_filterTimer && e.target.closest?.(".filter-panel")) resetFilterTimer();
+});
 
 function setGenFilter(g) { genFilter = g; render(); resetFilterTimer(); }
 function setCollectedFilter(f) { collectedFilter = f; render(); resetFilterTimer(); }
