@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <meta name="theme-color" content="#8B0000">
 <title>Pokédex // Trainer Terminal</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -79,6 +79,22 @@
     font-family: 'Bricolage Grotesque', system-ui, sans-serif;
     font-feature-settings: 'ss01' 1;
     overflow-x: hidden;
+    /* Prevent double-tap zoom on iOS */
+    touch-action: pan-y;
+  }
+
+  /* iOS Safari: inputs/buttons under 16px trigger auto-zoom — prevent it */
+  input, button, select, textarea {
+    touch-action: manipulation;
+  }
+  /* Force 16px on interactive elements on mobile to prevent iOS zoom */
+  @media (max-width: 599px) {
+    input[type="text"],
+    input[type="email"],
+    input[type="password"],
+    input[type="search"] {
+      font-size: 16px !important;
+    }
   }
 
   /* Subtle felt texture across the page */
@@ -97,6 +113,7 @@
      ============================================================ */
   .device {
     position: relative;
+    touch-action: pan-y;
     max-width: 1280px;
     margin: 24px auto;
     padding: 28px 32px 26px;
