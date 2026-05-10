@@ -2472,7 +2472,7 @@
 // ============================================================================
 
 const TOTAL_POKEMON = 1025;
-const ROSTER_KEY = "pokedex_v2:roster:v2";
+const ROSTER_KEY = "pokedex_v2:roster:v3";
 const COLLECTION_KEY = "pokedex_v2:collection";
 const VALUE_HISTORY_KEY = "pokedex_v2:valueHistory";
 
@@ -2704,7 +2704,9 @@ async function fetchRoster() {
   if (!res.ok) throw new Error("PokeAPI " + res.status);
   const data = await res.json();
   const SPECIAL_NAMES = {
+    // Type with colon
     "type-null": "Type: Null",
+    // Hyphenated keeps hyphen
     "jangmo-o": "Jangmo-o",
     "hakamo-o": "Hakamo-o",
     "kommo-o": "Kommo-o",
@@ -2712,6 +2714,49 @@ async function fetchRoster() {
     "chien-pao": "Chien-Pao",
     "ting-lu": "Ting-Lu",
     "chi-yu": "Chi-Yu",
+    // Tapu guardians
+    "tapu-koko": "Tapu Koko",
+    "tapu-lele": "Tapu Lele",
+    "tapu-bulu": "Tapu Bulu",
+    "tapu-fini": "Tapu Fini",
+    // Paradox Pokémon (Gen 9)
+    "great-tusk": "Great Tusk",
+    "scream-tail": "Scream Tail",
+    "brute-bonnet": "Brute Bonnet",
+    "flutter-mane": "Flutter Mane",
+    "slither-wing": "Slither Wing",
+    "sandy-shocks": "Sandy Shocks",
+    "iron-treads": "Iron Treads",
+    "iron-bundle": "Iron Bundle",
+    "iron-hands": "Iron Hands",
+    "iron-jugulis": "Iron Jugulis",
+    "iron-moth": "Iron Moth",
+    "iron-thorns": "Iron Thorns",
+    "roaring-moon": "Roaring Moon",
+    "iron-valiant": "Iron Valiant",
+    "walking-wake": "Walking Wake",
+    "iron-leaves": "Iron Leaves",
+    "gouging-fire": "Gouging Fire",
+    "raging-bolt": "Raging Bolt",
+    "iron-boulder": "Iron Boulder",
+    "iron-crown": "Iron Crown",
+    // Mr. and Mrs.
+    "mr-mime": "Mr. Mime",
+    "mime-jr": "Mime Jr.",
+    "mr-rime": "Mr. Rime",
+    // Farfetch'd / Sirfetch'd
+    "farfetchd": "Farfetch’d",
+    "sirfetchd": "Sirfetch’d",
+    // Nidoran
+    "nidoran-f": "Nidoran♀",
+    "nidoran-m": "Nidoran♂",
+    // Ho-Oh
+    "ho-oh": "Ho-Oh",
+    // Porygon
+    "porygon2": "Porygon2",
+    "porygon-z": "Porygon-Z",
+    // Flabebe
+    "flabebe": "Flabébé",
   };
   return data.results.map((p, i) => ({
     id: i + 1,
