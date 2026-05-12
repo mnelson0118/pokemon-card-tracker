@@ -2618,6 +2618,7 @@ function saveLocal(key, val) {
 // Map your set names (from SET_NAME_LOOKUP) → pokemontcg.io set IDs
 // pokemontcg.io set IDs: https://api.pokemontcg.io/v2/sets
 const PTCG_SET_ID_MAP = {
+  // Base era
   "Base Set":              "base1",
   "Base Set Shadowless":   "base1",
   "Base Set 2":            "base2",
@@ -2634,46 +2635,111 @@ const PTCG_SET_ID_MAP = {
   "Expedition Base Set":   "ecard1",
   "Aquapolis":             "ecard2",
   "Skyridge":              "ecard3",
+  // EX era — SET_NAME_LOOKUP uses short names without "EX" prefix
   "Ruby & Sapphire":       "ex1",
+  "Sandstorm":             "ex2",
   "EX Sandstorm":          "ex2",
+  "Dragon":                "ex3",
   "EX Dragon":             "ex3",
+  "FireRed & LeafGreen":   "ex5",
   "EX FireRed & LeafGreen":"ex5",
+  "Team Rocket Returns":   "ex7",
   "EX Team Rocket Returns":"ex7",
+  "Deoxys":                "ex8",
   "EX Deoxys":             "ex8",
+  "Emerald":               "ex9",
   "EX Emerald":            "ex9",
+  "Unseen Forces":         "ex10",
   "EX Unseen Forces":      "ex10",
+  "Delta Species":         "ex11",
   "EX Delta Species":      "ex11",
+  "Legend Maker":          "ex12",
   "EX Legend Maker":       "ex12",
+  "Holon Phantoms":        "ex13",
   "EX Holon Phantoms":     "ex13",
+  "Crystal Guardians":     "ex14",
   "EX Crystal Guardians":  "ex14",
+  "Dragon Frontiers":      "ex15",
   "EX Dragon Frontiers":   "ex15",
+  "Power Keepers":         "ex16",
   "EX Power Keepers":      "ex16",
+  // Diamond & Pearl era
   "Diamond & Pearl":       "dp1",
   "Mysterious Treasures":  "dp2",
   "Secret Wonders":        "dp3",
   "Majestic Dawn":         "dp4",
   "Stormfront":            "dp5",
   "Platinum":              "pl1",
+  "Rising Rivals":         "pl2",
+  "Supreme Victors":       "pl3",
   "Arceus":                "pl4",
   "HeartGold SoulSilver":  "hgss1",
+  "HS Unleashed":          "hgss2",
+  "HS Undaunted":          "hgss3",
+  "HS Triumphant":         "hgss4",
   "Call of Legends":       "col1",
+  // Black & White era
   "Black & White":         "bw1",
+  "Emerging Powers":       "bw2",
+  "Noble Victories":       "bw3",
+  "Next Destinies":        "bw4",
   "Dark Explorers":        "bw5",
+  "Dragons Exalted":       "bw6",
+  "Boundaries Crossed":    "bw7",
   "Plasma Storm":          "bw8",
-  "Plasma Blast":          "bw9",
+  "Plasma Freeze":         "bw9",  // note: bw9 in ptcgio
+  "Plasma Blast":          "bw10",
   "Legendary Treasures":   "bw11",
+  // XY era
   "XY Base Set":           "xy1",
   "XY Flashfire":          "xy2",
-  "XY Evolutions":         "evolutions",
+  "Furious Fists":         "xy3",
+  "Phantom Forces":        "xy4",
+  "Primal Clash":          "xy5",
+  "Roaring Skies":         "xy6",
+  "Ancient Origins":       "xy7",
+  "BREAKthrough":          "xy8",
+  "BREAKpoint":            "xy9",
+  "Generations":           "g1",
+  "Fates Collide":         "xy10",
+  "Steam Siege":           "xy11",
+  "XY Evolutions":         "xy12",
+  "Evolutions":            "xy12",
+  // Sun & Moon era
   "SM Base Set":           "sm1",
+  "Guardians Rising":      "sm2",
+  "Burning Shadows":       "sm3",
   "SM Burning Shadows":    "sm3",
+  "Shining Legends":       "sm35",
+  "Crimson Invasion":      "sm4",
+  "Ultra Prism":           "sm5",
+  "Forbidden Light":       "sm6",
+  "Celestial Storm":       "sm7",
+  "Dragon Majesty":        "sm75",
+  "Lost Thunder":          "sm8",
+  "Team Up":               "sm9",
+  "Unbroken Bonds":        "sm10",
+  "Unified Minds":         "sm11",
   "SM Hidden Fates":       "sm115",
+  "Hidden Fates":          "sm115",
+  "Cosmic Eclipse":        "sm12",
+  // Sword & Shield era
   "Sword & Shield Base":   "swsh1",
+  "Rebel Clash":           "swsh2",
+  "Darkness Ablaze":       "swsh3",
+  "Vivid Voltage":         "swsh4",
+  "Battle Styles":         "swsh5",
+  "Chilling Reign":        "swsh6",
   "Evolving Skies":        "swsh7",
+  "Fusion Strike":         "swsh8",
   "Brilliant Stars":       "swsh9",
+  "Astral Radiance":       "swsh10",
+  "Lost Origin":           "swsh11",
+  "Silver Tempest":        "swsh12",
   "Crown Zenith":          "swsh12pt5",
   "Shining Fates":         "swsh45",
   "Celebrations":          "cel25",
+  // Scarlet & Violet era
   "Scarlet & Violet Base": "sv1",
   "Paldea Evolved":        "sv2",
   "Obsidian Flames":       "sv3",
@@ -2703,12 +2769,17 @@ function parseCardNumber(url) {
     const parts = u.pathname.split("/").filter(Boolean);
     const productIdx = parts.findIndex(p => p === "product");
     if (productIdx === -1 || productIdx + 2 >= parts.length) return null;
-    const slug = parts[productIdx + 2];
-    // Card number appears as the last numeric segment before the total (e.g. 202-197 or 045-100)
-    const matches = slug.match(/[^-](\d+)-\d+(?:-\d+)?$/);
-    if (matches) return matches[1];
-    // Fallback: last standalone number in the slug
-    const nums = slug.match(/(\d+)/g);
+    const slug = parts[productIdx + 2].split("?")[0];
+    // Pattern: slug ends with {cardNum}-{setTotal} e.g. "cleffa-202-197" or "bulbasaur-045-100"
+    // Capture the full card number (may be 1-3 digits)
+    const matches = slug.match(/-([A-Za-z0-9]+)-\d+(?:-\d+)?$/);
+    if (matches) {
+      const candidate = matches[1];
+      // Must look like a card number: digits, or digits+letters (e.g. "45", "202", "GG70")
+      if (/^[A-Za-z0-9]+$/.test(candidate)) return candidate;
+    }
+    // Fallback: find all number groups, second-to-last is usually card number
+    const nums = slug.match(/\d+/g);
     return nums && nums.length >= 2 ? nums[nums.length - 2] : null;
   } catch { return null; }
 }
@@ -2764,10 +2835,10 @@ async function fetchPtcgPrice(name, setName, cardNumber) {
 // Runs in the background — updates collection + Firebase when done
 // Uses a local cache (12hr TTL) to avoid hammering the API on every load
 async function syncMarketPrices() {
-  // Sync ALL cards that have a cardLink — collected and uncollected
+  // Sync ALL cards that have a proper TCGPlayer cardLink
   const allCards = roster.filter(r => {
     const c = collection[r.id];
-    return c?.cardLink && r.name;
+    return c?.cardLink && r.name && c.cardLink.includes("tcgplayer.com/product/");
   });
   if (allCards.length === 0) return;
 
