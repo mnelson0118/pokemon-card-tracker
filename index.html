@@ -2693,25 +2693,60 @@ const PRICE_CACHE_TTL = 12 * 60 * 60 * 1000; // 12 hours
 
 // Fetch market price for a single card from pokemontcg.io
 // Returns market price in USD or null if not found
-async function fetchPtcgPrice(name, setName) {
+// Extract card number from a TCGPlayer URL slug
+// e.g. "pokemon-sv03-obsidian-flames-cleffa-202-197" → "202"
+function parseCardNumber(url) {
+  if (!url) return null;
+  try {
+    const u = new URL(url);
+    const parts = u.pathname.split("/").filter(Boolean);
+    const productIdx = parts.findIndex(p => p === "product");
+    if (productIdx === -1 || productIdx + 2 >= parts.length) return null;
+    const slug = parts[productIdx + 2];
+    // Card number appears as the last numeric segment before the total (e.g. 202-197 or 045-100)
+    const matches = slug.match(/[^-](\d+)-\d+(?:-\d+)?$/);
+    if (matches) return matches[1];
+    // Fallback: last standalone number in the slug
+    const nums = slug.match(/(\d+)/g);
+    return nums && nums.length >= 2 ? nums[nums.length - 2] : null;
+  } catch { return null; }
+}
+
+async function fetchPtcgPrice(name, setName, cardNumber) {
   const setId = PTCG_SET_ID_MAP[setName];
-  // Build query — if we have a set ID use it, otherwise search by name only
-  const query = setId
-    ? `name:"${name}" set.id:${setId}`
-    : `name:"${name}"`;
-  const url = `${PTCG_API}?q=${encodeURIComponent(query)}&select=name,set,tcgplayer&pageSize=4`;
+
+  // Build the most specific query possible
+  let query;
+  if (setId && cardNumber) {
+    // Most specific: set + card number (guaranteed unique)
+    query = `set.id:${setId} number:${cardNumber}`;
+  } else if (setId) {
+    query = `name:"${name}" set.id:${setId}`;
+  } else {
+    query = `name:"${name}"`;
+  }
+
+  const url = `${PTCG_API}?q=${encodeURIComponent(query)}&select=name,number,set,tcgplayer&pageSize=8`;
   try {
     const res = await fetch(url);
     if (!res.ok) return null;
     const data = await res.json();
     if (!data.data || data.data.length === 0) return null;
-    // Pick the card with the closest name match
-    const card = data.data.find(c => c.name.toLowerCase() === name.toLowerCase()) || data.data[0];
+
+    // If we searched by number, just use the first result
+    // Otherwise pick best name match
+    const card = (setId && cardNumber)
+      ? data.data[0]
+      : (data.data.find(c => c.name.toLowerCase() === name.toLowerCase()) || data.data[0]);
+
     const prices = card.tcgplayer?.prices;
     if (!prices) return null;
-    // Prefer holofoil > normal > reverseHolofoil > first edition
+
+    // Pick the best available market price across all variants
     const market =
       prices.holofoil?.market ||
+      prices["illustrationRare"]?.market ||
+      prices["specialIllustrationRare"]?.market ||
       prices.normal?.market ||
       prices.reverseHolofoil?.market ||
       prices["1stEditionHolofoil"]?.market ||
@@ -2746,7 +2781,9 @@ async function syncMarketPrices() {
   for (const r of collectedCards) {
     const c = collection[r.id];
     const setName = c.setName || parseSetName(c.cardLink);
-    const cacheKey = `${r.name}__${setName || ""}`;
+    const cardNumber = parseCardNumber(c.cardLink);
+    // Include card number in cache key so different printings cache separately
+    const cacheKey = `${r.name}__${setName || ""}__${cardNumber || ""}`;
 
     let market = null;
 
@@ -2756,7 +2793,7 @@ async function syncMarketPrices() {
     } else {
       // Fetch fresh price — rate limit: 1 request per 100ms (well under free tier)
       await new Promise(r => setTimeout(r, 100));
-      market = await fetchPtcgPrice(r.name, setName);
+      market = await fetchPtcgPrice(r.name, setName, cardNumber);
       // Store in cache even if null (to avoid re-fetching missing cards)
       priceCache[cacheKey] = { price: market, ts: now };
     }
