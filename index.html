@@ -3855,22 +3855,16 @@ function openCardDetail(id) {
         <img class="zoom-img" src="${c.imageUrl}" alt="${c.name}"
           onclick="this.classList.toggle('fullsize')"
           title="Tap to zoom">
-        ${c.nmPrices ? `
-          <div class="zoom-pricing">
-            <div class="zoom-pricing-header">Near Mint · ${c.name}</div>
-            ${c.nmPrices.firstEd ? `<div class="zoom-pricing-row"><span>1st Edition</span><span class="val">$${c.nmPrices.firstEd}</span></div>` : ''}
-            ${c.nmPrices.unlimited ? `<div class="zoom-pricing-row"><span>Unlimited</span><span class="val">$${c.nmPrices.unlimited}</span></div>` : ''}
-            ${c.nmPrices.market ? `<div class="zoom-pricing-row"><span>Market Price</span><span class="val">$${c.nmPrices.market}</span></div>` : ''}
-            ${c.nmPrices.lastSale ? `<div class="zoom-pricing-row"><span>Last Sale</span><span class="val">$${c.nmPrices.lastSale}</span></div>` : ''}
-          </div>
-        ` : ''}
         <div class="zoom-pricing">
           <div class="zoom-pricing-header">Entry #${String(c.id).padStart(4, '0')}</div>
           <div class="zoom-pricing-row"><span>Pokémon</span><span class="val">${c.name}</span></div>
           <div class="zoom-pricing-row"><span>Generation</span><span class="val">${c.generation}</span></div>
           ${c.setName ? `<div class="zoom-pricing-row"><span>Set</span><span class="val">${c.setName}</span></div>` : ''}
-          ${c.collected ? `<div class="zoom-pricing-row"><span>Status</span><span class="val" style="color:var(--accent-green);">● Caught</span></div>` : ''}
+          ${c.collected ? `<div class="zoom-pricing-row"><span>Status</span><span class="val" style="color:var(--accent-green);">● Caught</span></div>` : `<div class="zoom-pricing-row"><span>Status</span><span class="val" style="color:var(--text-dim);">○ Not Caught</span></div>`}
           ${c.price ? `<div class="zoom-pricing-row"><span>Spent</span><span class="val">$${c.price.toFixed(2)}</span></div>` : ''}
+          ${c.nmPrices?.market ? `<div class="zoom-pricing-row"><span>Market Value</span><span class="val" style="color:var(--accent-amber);font-weight:700;">$${c.nmPrices.market}</span></div>` : '<div class="zoom-pricing-row"><span>Market Value</span><span class="val" style="color:var(--text-dim);">—</span></div>'}
+          ${c.nmPrices?.firstEd ? `<div class="zoom-pricing-row"><span>1st Edition</span><span class="val">$${c.nmPrices.firstEd}</span></div>` : ''}
+          ${c.nmPrices?.lastSale ? `<div class="zoom-pricing-row"><span>Last Sale</span><span class="val">$${c.nmPrices.lastSale}</span></div>` : ''}
           <div style="display:flex; gap:6px; margin-top:12px; flex-wrap:wrap;">
             ${c.collected ? `
               <button class="dialog-btn danger" onclick="event.stopPropagation(); uncatch(${c.id})">Release</button>
@@ -3894,7 +3888,8 @@ function openCardDetail(id) {
           <span class="dialog-name-id">#${String(c.id).padStart(4,'0')}</span>
           <span class="dialog-name">${c.name}</span>
         </div>
-        <div class="dialog-meta">Generation ${c.generation}</div>
+        <div class="dialog-meta">Generation ${c.generation}${c.setName ? ` · ${c.setName}` : ''}</div>
+        ${c.nmPrices?.market ? `<div style="text-align:center; padding:10px 0 4px; font-family:'JetBrains Mono',monospace; font-size:13px; color:var(--accent-amber); font-weight:700;">Market Value: $${c.nmPrices.market}</div>` : ''}
         <div class="dialog-body">
           <p>No card image saved yet. Find this card on TCGPlayer, copy the URL, then paste it below.</p>
         </div>
