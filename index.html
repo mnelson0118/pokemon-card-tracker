@@ -3051,55 +3051,6 @@ async function fetchRoster() {
 // ============================================================================
 // Fetch the pokemondata CSV and seed cardLinks into collection for all cards
 // This ensures uncollected cards have a cardLink so prices can be fetched
-const CSV_CARDLINK_KEY = "pokedex_v2:csvCardLinks:v1";
-async function seedCardLinksFromCSV() {
-  // Use cached version if available
-  let csvLinks = loadLocal(CSV_CARDLINK_KEY);
-  if (!csvLinks) {
-    try {
-      const res = await fetch("pokemondata.csv");
-      if (!res.ok) return;
-      const text = await res.text();
-      const lines = text.trim().split("\n");
-      const headers = lines[0].split(",");
-      const idIdx = headers.indexOf("id");
-      const linkIdx = headers.indexOf("cardLink");
-      const setIdx = -1; // setName not in CSV, we parse from URL
-      csvLinks = {};
-      for (let i = 1; i < lines.length; i++) {
-        // Handle commas inside quoted fields
-        const cols = lines[i].match(/(".*?"|[^,]+|(?<=,)(?=,)|^(?=,)|(?<=,)$)/g) || lines[i].split(",");
-        const id = parseInt(cols[idIdx]);
-        const link = cols[linkIdx]?.replace(/^"|"$/g, "").trim();
-        if (id && link && link.startsWith("http")) {
-          csvLinks[id] = link;
-        }
-      }
-      saveLocal(CSV_CARDLINK_KEY, csvLinks);
-      console.log(`✅ CSV: seeded ${Object.keys(csvLinks).length} card links`);
-    } catch(e) {
-      console.warn("Could not load CSV for card links:", e.message);
-      return;
-    }
-  }
-  // Seed into collection — only add cardLink/setName, never overwrite collected/price
-  let seeded = 0;
-  for (const [idStr, link] of Object.entries(csvLinks)) {
-    const id = parseInt(idStr);
-    if (!collection[id]) collection[id] = {};
-    if (!collection[id].cardLink) {
-      collection[id].cardLink = link;
-      const setName = parseSetName(link);
-      if (setName) collection[id].setName = setName;
-      seeded++;
-    }
-  }
-  if (seeded > 0) {
-    saveLocal("pokedex_v2:collection", collection);
-    console.log(`✅ Seeded card links for ${seeded} uncollected cards`);
-  }
-}
-
 async function boot() {
   const screenContent = document.getElementById("screenContent");
   screenContent.innerHTML = `
@@ -3167,8 +3118,7 @@ async function boot() {
       renderHeaderStats();
       render();
       console.log("✅ Cloud data merged for", CURRENT_USER_ID);
-      // Seed cardLinks from CSV for all cards, then sync prices
-      await seedCardLinksFromCSV();
+      // Sync market prices from pokemontcg.io
       syncMarketPrices();
     } else {
       // New user — initialize their database so it exists in Firebase
