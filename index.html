@@ -2764,45 +2764,41 @@ async function fetchPtcgPrice(name, setName, cardNumber) {
 // Runs in the background — updates collection + Firebase when done
 // Uses a local cache (12hr TTL) to avoid hammering the API on every load
 async function syncMarketPrices() {
-  const collectedCards = roster.filter(r => {
+  // Sync ALL cards that have a cardLink — collected and uncollected
+  const allCards = roster.filter(r => {
     const c = collection[r.id];
-    return c?.collected && c?.cardLink && r.name;
+    return c?.cardLink && r.name;
   });
-  if (collectedCards.length === 0) return;
+  if (allCards.length === 0) return;
 
-  // Load price cache
   let priceCache = loadLocal(PRICE_CACHE_KEY) || {};
   const now = Date.now();
   const stale = (entry) => !entry || (now - entry.ts) > PRICE_CACHE_TTL;
 
-  console.log(`💰 Syncing prices for ${collectedCards.length} collected cards...`);
+  console.log(`💰 Syncing prices for ${allCards.length} cards...`);
   let updated = 0;
   let dirty = false;
 
-  for (const r of collectedCards) {
+  for (const r of allCards) {
     const c = collection[r.id];
     const setName = c.setName || parseSetName(c.cardLink);
     const cardNumber = parseCardNumber(c.cardLink);
-    // Include card number in cache key so different printings cache separately
     const cacheKey = `${r.name}__${setName || ""}__${cardNumber || ""}`;
 
     let market = null;
 
-    // Use cache if fresh
     if (!stale(priceCache[cacheKey])) {
       market = priceCache[cacheKey].price;
     } else {
-      // Fetch fresh price — rate limit: 1 request per 100ms (well under free tier)
-      await new Promise(r => setTimeout(r, 100));
+      await new Promise(r => setTimeout(r, 120));
       market = await fetchPtcgPrice(r.name, setName, cardNumber);
-      // Store in cache even if null (to avoid re-fetching missing cards)
       priceCache[cacheKey] = { price: market, ts: now };
     }
 
     if (market !== null) {
-      const existing = c.nmPrices?.market;
-      if (existing !== market) {
-        if (!collection[r.id].nmPrices) collection[r.id].nmPrices = {};
+      // Always overwrite — pokemontcg.io is source of truth
+      if (!collection[r.id].nmPrices) collection[r.id].nmPrices = {};
+      if (collection[r.id].nmPrices.market !== market) {
         collection[r.id].nmPrices.market = market;
         dirty = true;
         updated++;
@@ -2810,7 +2806,6 @@ async function syncMarketPrices() {
     }
   }
 
-  // Save cache
   saveLocal(PRICE_CACHE_KEY, priceCache);
 
   if (dirty) {
@@ -2820,7 +2815,7 @@ async function syncMarketPrices() {
     render();
     console.log(`✅ Market prices updated for ${updated} cards`);
   } else {
-    console.log("✅ Market prices already up to date");
+    console.log("✅ Prices already current");
   }
 }
 
@@ -3132,12 +3127,18 @@ function computeStats() {
   const collectedList = Object.entries(collection).filter(([_, c]) => c.collected);
   const collected = collectedList.length;
   const spent = collectedList.reduce((s, [_, c]) => s + (c.price || 0), 0);
-  const market = Object.values(collection).reduce((s, c) => {
+  // Market value of collected cards only
+  const collectedMarket = collectedList.reduce((s, [_, c]) => {
+    if (c.nmPrices?.market) return s + parseFloat(c.nmPrices.market);
+    return s;
+  }, 0);
+  // Total market value of ALL cards (collected + uncollected)
+  const totalMarket = Object.values(collection).reduce((s, c) => {
     if (c.nmPrices?.market) return s + parseFloat(c.nmPrices.market);
     return s;
   }, 0);
   const completion = total > 0 ? ((collected / total) * 100) : 0;
-  return { total, collected, collectedList, spent, market, completion };
+  return { total, collected, collectedList, spent, market: collectedMarket, totalMarket, completion };
 }
 
 // Always-visible stats strip in the chassis header
@@ -3145,6 +3146,9 @@ function renderHeaderStats() {
   const el = document.getElementById("headerStats");
   if (!el) return;
   const s = computeStats();
+  const fmt = (n) => n >= 1000
+    ? "$" + Math.round(n).toLocaleString()
+    : "$" + n.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
   el.innerHTML = `
     <div class="header-stat">
       <div class="hs-value red">${s.collected}</div>
@@ -3157,13 +3161,18 @@ function renderHeaderStats() {
     </div>
     <div class="hs-divider"></div>
     <div class="header-stat">
-      <div class="hs-value amber">$${s.spent.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+      <div class="hs-value amber">${fmt(s.spent)}</div>
       <div class="hs-label">Spent</div>
     </div>
     <div class="hs-divider"></div>
     <div class="header-stat">
-      <div class="hs-value amber">$${Math.round(s.market).toLocaleString()}</div>
-      <div class="hs-label">Mkt Value</div>
+      <div class="hs-value amber">${fmt(s.market)}</div>
+      <div class="hs-label">Coll. Value</div>
+    </div>
+    <div class="hs-divider"></div>
+    <div class="header-stat">
+      <div class="hs-value amber">${fmt(s.totalMarket)}</div>
+      <div class="hs-label">Total Mkt</div>
     </div>
     <div class="hs-divider"></div>
     <div class="header-progress">
