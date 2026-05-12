@@ -2814,7 +2814,7 @@ async function syncMarketPrices() {
 
   if (dirty) {
     saveLocal("pokedex_v2:collection", collection);
-    debouncedSync(collection);
+    persistCollection(collection);
     renderHeaderStats();
     render();
     console.log(`✅ Market prices updated for ${updated} cards`);
