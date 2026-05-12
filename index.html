@@ -2756,7 +2756,7 @@ const PTCG_SET_ID_MAP = {
 const PTCG_API = "https://api.pokemontcg.io/v2/cards";
 const PTCG_API_KEY = "c7e0c2a2-a5f7-4733-b852-fafb7ff9f7ba";
 const PRICE_CACHE_KEY = "pokedex_v2:priceCache";
-const PRICE_CACHE_TTL = 12 * 60 * 60 * 1000; // 12 hours
+const PRICE_CACHE_TTL = 30 * 24 * 60 * 60 * 1000; // 30 days
 
 // Fetch market price for a single card from pokemontcg.io
 // Returns market price in USD or null if not found
