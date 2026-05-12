@@ -2834,8 +2834,15 @@ async function fetchPtcgPrice(name, setName, cardNumber) {
 // Sync market prices for all collected cards that have a cardLink
 // Runs in the background — updates collection + Firebase when done
 // Uses a local cache (12hr TTL) to avoid hammering the API on every load
+async function fetchPtcgPriceWithTimeout(name, setName, cardNumber, timeoutMs = 8000) {
+  return Promise.race([
+    fetchPtcgPrice(name, setName, cardNumber),
+    new Promise(resolve => setTimeout(() => resolve(null), timeoutMs))
+  ]);
+}
+
 async function syncMarketPrices() {
-  // Sync ALL cards that have a proper TCGPlayer cardLink
+  // Only sync cards that have a proper TCGPlayer cardLink
   const allCards = roster.filter(r => {
     const c = collection[r.id];
     return c?.cardLink && r.name && c.cardLink.includes("tcgplayer.com/product/");
@@ -2849,8 +2856,10 @@ async function syncMarketPrices() {
   console.log(`💰 Syncing prices for ${allCards.length} cards...`);
   let updated = 0;
   let dirty = false;
+  let i = 0;
 
   for (const r of allCards) {
+    i++;
     const c = collection[r.id];
     const setName = c.setName || parseSetName(c.cardLink);
     const cardNumber = parseCardNumber(c.cardLink);
@@ -2861,18 +2870,27 @@ async function syncMarketPrices() {
     if (!stale(priceCache[cacheKey])) {
       market = priceCache[cacheKey].price;
     } else {
-      await new Promise(r => setTimeout(r, 120));
-      market = await fetchPtcgPrice(r.name, setName, cardNumber);
+      await new Promise(res => setTimeout(res, 120));
+      console.log(`  [${i}/${allCards.length}] ${r.name} (${setName || "?"} #${cardNumber || "?"})`);
+      market = await fetchPtcgPriceWithTimeout(r.name, setName, cardNumber);
       priceCache[cacheKey] = { price: market, ts: now };
     }
 
     if (market !== null) {
-      // Always overwrite — pokemontcg.io is source of truth
       if (!collection[r.id].nmPrices) collection[r.id].nmPrices = {};
       if (collection[r.id].nmPrices.market !== market) {
         collection[r.id].nmPrices.market = market;
         dirty = true;
         updated++;
+      }
+    }
+
+    // Save progress every 10 cards so partial results aren't lost
+    if (i % 10 === 0) {
+      saveLocal(PRICE_CACHE_KEY, priceCache);
+      if (dirty) {
+        saveLocal("pokedex_v2:collection", collection);
+        renderHeaderStats();
       }
     }
   }
