@@ -2729,7 +2729,7 @@ async function fetchPtcgPrice(name, setName, cardNumber) {
 
   const url = `${PTCG_API}?q=${encodeURIComponent(query)}&select=name,number,set,tcgplayer&pageSize=8`;
   try {
-    const res = await fetch(url);
+    const res = await fetch(url, { headers: { "X-Api-Key": PTCG_API_KEY } });
     if (!res.ok) return null;
     const data = await res.json();
     if (!data.data || data.data.length === 0) return null;
