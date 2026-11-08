@@ -265,7 +265,7 @@ function entry(r) {
     <button class="entry ${c.collected ? "have" : ""}" data-id="${r.id}" aria-label="${esc(r.name)}, ${c.collected ? "collected" : "not collected"}">
       <span class="num">#${String(r.id).padStart(4, "0")}</span>
       ${isJP(c) ? `<span class="jp">JP</span>` : ""}
-      <div class="thumb"><img class="${real && c.collected ? "" : "sprite"}" src="${real && c.collected ? esc(c.imageUrl) : sprite(r.id)}" alt="" loading="lazy" onerror="this.src='${sprite(r.id)}'; this.className='sprite';"></div>
+      <div class="thumb"><img class="${real ? "" : "sprite"}" src="${real ? esc(c.imageUrl) : sprite(r.id)}" alt="" loading="lazy" onerror="this.src='${sprite(r.id)}'; this.className='sprite';"></div>
       <div class="meta">
         <div class="name">${esc(r.name)}</div>
         <div class="row"><span>Gen ${r.generation}</span>${right}</div>
@@ -281,7 +281,7 @@ function openCard(id) {
   const r = roster.find(x => x.id === id); if (!r) return;
   const c = collection[id] || {};
   const p = c.nmPrices || {};
-  const showImg = c.collected && c.imageUrl;
+  const showImg = !!c.imageUrl;
   const rows = [];
   if (p.firstEd) rows.push(["1st Edition", "$" + p.firstEd]);
   if (p.unlimited) rows.push(["Unlimited", "$" + p.unlimited]);
@@ -294,14 +294,14 @@ function openCard(id) {
     <button class="x" aria-label="Close">✕</button>
     <div class="zoom">
       ${showImg ? `<img src="${esc(c.imageUrl)}" alt="${esc(r.name)} card">` : `<img src="${sprite(r.id)}" alt="${esc(r.name)}" style="image-rendering:pixelated;opacity:.5;background:var(--card);padding:30px;">`}
-      ${rows.length && c.collected ? `<div class="panel"><h3>Near Mint · ${esc(r.name)}</h3>${rows.map(([l, v]) => `<div class="r"><span>${l}</span><span class="v">${esc(v)}</span></div>`).join("")}</div>` : ""}
+      ${rows.length ? `<div class="panel"><h3>Near Mint · ${esc(r.name)}</h3>${rows.map(([l, v]) => `<div class="r"><span>${l}</span><span class="v">${esc(v)}</span></div>`).join("")}</div>` : ""}
       <div class="panel">
         <h3>#${String(r.id).padStart(4, "0")} · ${esc(r.name)}</h3>
         <div class="r"><span>Generation</span><span class="v">${r.generation}</span></div>
         <div class="r"><span>Status</span><span class="v ${c.collected ? "g" : ""}">${c.collected ? "● Collected" : "Still hunting"}</span></div>
-        ${c.setName && c.collected ? `<div class="r"><span>Set</span><span class="v">${esc(c.setName)}</span></div>` : ""}
+        ${c.setName ? `<div class="r"><span>Set</span><span class="v">${esc(c.setName)}</span></div>` : ""}
         ${SHOW_PRICE_PAID && c.collected && c.price ? `<div class="r"><span>Paid</span><span class="v">${money(c.price)}</span></div>` : ""}
-        ${c.collected && c.cardLink ? `<a href="${esc(c.cardLink)}" target="_blank" rel="noopener noreferrer">View on TCGPlayer</a>` : ""}
+        ${c.cardLink ? `<a href="${esc(c.cardLink)}" target="_blank" rel="noopener noreferrer">View on TCGPlayer</a>` : ""}
       </div>
     </div>`;
   const close = () => { o.remove(); document.removeEventListener("keydown", onKey); };
