@@ -3398,6 +3398,21 @@ function renderStats(el) {
 
     <div class="chart-block">
       <div class="chart-header">
+        <span class="chart-label">Share Your Collection</span>
+      </div>
+      <div style="font-family:'Bricolage Grotesque', sans-serif; font-size:13px; color:var(--text-dim); line-height:1.55; margin-bottom:6px;">
+        Send friends and other collectors a page where they can browse your cards.
+      </div>
+      <div style="font-family:'JetBrains Mono', monospace; font-size:11px; color:var(--accent-blue); word-break:break-all; margin-bottom:14px;">${visitorUrl()}</div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <button class="dialog-btn primary" onclick="shareVisitorLink()">Share link</button>
+        <button class="dialog-btn" onclick="copyVisitorLink()">Copy link</button>
+        <a class="dialog-btn" href="${visitorUrl()}" target="_blank" rel="noopener noreferrer" style="text-decoration:none; text-align:center;">Open page</a>
+      </div>
+    </div>
+
+    <div class="chart-block">
+      <div class="chart-header">
         <span class="chart-label">Backup &amp; Import</span>
       </div>
       <div style="font-family:'Bricolage Grotesque', sans-serif; font-size:13px; color:var(--text-dim); line-height:1.55; margin-bottom:14px;">
@@ -4180,6 +4195,38 @@ function toast(msg) {
 // ============================================================================
 // IMPORT / EXPORT — migrate from old versions, back up, restore
 // ============================================================================
+
+// ----- Visitor page link (carries your account ID so the page reads your data) -----
+function visitorUrl() {
+  try {
+    const u = new URL("visitor.html", window.location.href);
+    if (CURRENT_USER_ID) u.searchParams.set("u", CURRENT_USER_ID);
+    return u.href;
+  } catch { return "visitor.html"; }
+}
+function copyVisitorLink() {
+  const url = visitorUrl();
+  const fallback = () => {
+    const ta = document.createElement("textarea");
+    ta.value = url;
+    ta.style.cssText = "position:fixed; opacity:0; top:0; left:0;";
+    document.body.appendChild(ta);
+    ta.focus(); ta.select();
+    try { document.execCommand("copy"); toast("Link copied"); }
+    catch { toast("Couldn't copy — long-press the link instead"); }
+    document.body.removeChild(ta);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(url).then(() => toast("Link copied"), fallback);
+  } else fallback();
+}
+function shareVisitorLink() {
+  const url = visitorUrl();
+  if (navigator.share) {
+    navigator.share({ title: "My Pokédex collection", text: "Check out my Pokémon card collection", url })
+      .catch(err => { if (err && err.name !== "AbortError") copyVisitorLink(); });
+  } else copyVisitorLink();
+}
 
 // Export current collection as a downloadable JSON file
 function exportCollection() {
