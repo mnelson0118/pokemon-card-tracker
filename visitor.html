@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#7A1623">
+<title>Pokédex // Trainer Terminal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&family=JetBrains+Mono:wght@400;500;600;700&family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --shell-red: #B82435; --shell-red-dark: #7A1623; --shell-red-darker: #4A0D16;
+    --dome-blue-glow: #7CC4FF;
+    --bg: #0C0E12; --card: #1A1D24; --card-light: #1E222B;
+    --border: #2A2F3A; --border-bright: #3A4150;
+    --text: #ECEEF2; --text-bright: #FFFFFF; --text-dim: #8E96A8; --text-faint: #5C6478;
+    --red: #E63946; --blue: #4DA3FF; --amber: #F4B740; --green: #4ADE80;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { background: var(--bg); color: var(--text); font-family: 'Bricolage Grotesque', system-ui, sans-serif; min-height: 100%; }
+  button { font-family: inherit; touch-action: manipulation; }
+
+  /* ---------- Header ---------- */
+  .top {
+    background: linear-gradient(180deg, var(--shell-red) 0%, var(--shell-red-dark) 100%);
+    padding: calc(14px + env(safe-area-inset-top, 0px)) 18px 16px;
+    box-shadow: inset 0 2px 0 rgba(255,255,255,0.25), 0 6px 24px rgba(0,0,0,0.5);
+  }
+  .top-inner { max-width: 1100px; margin: 0 auto; }
+  .top-row { display: flex; align-items: center; gap: 14px; }
+  .dome {
+    width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
+    background:
+      radial-gradient(ellipse 40% 30% at 35% 25%, rgba(255,255,255,0.55), transparent),
+      radial-gradient(ellipse 90% 90% at 45% 35%, #7CC4FF 0%, #3A8FDD 30%, #1B5BA8 60%, #0A2E65 85%, #050F2A 100%);
+    box-shadow: 0 0 0 3px var(--shell-red-darker), 0 0 0 5px var(--shell-red-dark), 0 0 12px 3px rgba(91,163,240,0.5);
+  }
+  .top h1 { font-family: 'Press Start 2P', monospace; font-weight: 400; font-size: 13px; letter-spacing: 1px; line-height: 1.5; color: var(--text-bright); text-shadow: 0 1px 0 rgba(0,0,0,0.4); }
+  .top .sub { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: rgba(255,210,210,0.7); margin-top: 3px; }
+  .stats {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 14px;
+    background: rgba(0,0,0,0.38); border: 1px solid var(--shell-red-darker); border-radius: 10px; padding: 10px 6px;
+    box-shadow: inset 0 2px 6px rgba(0,0,0,0.4);
+  }
+  .stat { text-align: center; min-width: 0; }
+  .stat b { display: block; font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 700; color: var(--text-bright); font-variant-numeric: tabular-nums; }
+  .stat b.amber { color: var(--amber); }
+  .stat span { font-size: 11px; color: rgba(255,210,210,0.65); font-weight: 600; }
+  .bar { height: 6px; background: rgba(0,0,0,0.45); border-radius: 3px; margin-top: 12px; overflow: hidden; }
+  .bar > i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #5BA3F0, var(--dome-blue-glow)); border-radius: 3px; transition: width .6s ease; }
+
+  /* ---------- Controls ---------- */
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 16px 14px 40px; }
+  .controls { position: sticky; top: 0; z-index: 20; background: var(--bg); padding: 10px 0 10px; margin-top: -4px; }
+  .search {
+    width: 100%; padding: 12px 16px; background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+    color: var(--text-bright); font: 500 16px 'Bricolage Grotesque', sans-serif; outline: none;
+  }
+  .search::placeholder { color: var(--text-faint); }
+  .search:focus-visible { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(77,163,255,0.18); }
+  .chips { display: flex; gap: 6px; overflow-x: auto; padding: 10px 0 2px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .chips::-webkit-scrollbar { display: none; }
+  .chip {
+    flex-shrink: 0; padding: 8px 16px; background: transparent; border: 1.5px solid var(--border-bright); border-radius: 999px;
+    color: var(--text-dim); font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; min-height: 38px;
+  }
+  .chip:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+  .chip.active { background: var(--blue); border-color: var(--blue); color: #fff; font-weight: 700; }
+  .chip.sep { margin-left: 8px; }
+  .count { font-size: 12px; color: var(--text-faint); font-family: 'JetBrains Mono', monospace; padding: 8px 2px 2px; }
+
+  /* ---------- Grid ---------- */
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px; }
+  @media (min-width: 560px) { .grid { grid-template-columns: repeat(4, 1fr); gap: 12px; } }
+  @media (min-width: 860px) { .grid { grid-template-columns: repeat(6, 1fr); gap: 14px; } }
+  .entry {
+    position: relative; background: var(--card); border: 1px solid var(--border); border-radius: 10px; overflow: hidden;
+    cursor: pointer; text-align: left; color: inherit; display: flex; flex-direction: column; padding: 0;
+    transition: border-color .15s, transform .15s;
+  }
+  .entry:hover { border-color: var(--blue); transform: translateY(-2px); }
+  .entry:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+  .entry.have { border-color: rgba(74,222,128,0.4); background: linear-gradient(180deg, rgba(74,222,128,0.05), var(--card)); }
+  .entry .num {
+    position: absolute; top: 6px; left: 6px; z-index: 2; font: 600 9px 'JetBrains Mono', monospace; color: var(--text-dim);
+    background: rgba(12,14,18,0.75); padding: 2px 5px; border-radius: 3px;
+  }
+  .entry .jp { position: absolute; top: 6px; right: 6px; z-index: 2; font: 700 9px 'JetBrains Mono', monospace; background: var(--red); color: #fff; padding: 2px 5px; border-radius: 3px; }
+  .thumb { aspect-ratio: 63 / 88; display: flex; align-items: center; justify-content: center; background: radial-gradient(ellipse at center, var(--card-light), var(--bg)); padding: 8px; }
+  .thumb img { width: 100%; height: 100%; object-fit: contain; }
+  .thumb img.sprite { image-rendering: pixelated; opacity: 0.28; filter: grayscale(1); padding: 12%; }
+  .meta { padding: 8px 10px 10px; border-top: 1px solid var(--border); }
+  .name { font-weight: 700; font-size: 13px; color: var(--text-bright); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .row { display: flex; justify-content: space-between; align-items: center; margin-top: 3px; font: 500 10px 'JetBrains Mono', monospace; color: var(--text-dim); }
+  .row .p { color: var(--amber); font-weight: 700; }
+  .row .tag { color: var(--green); font-weight: 700; }
+  .row .need { color: var(--text-faint); }
+
+  .empty { text-align: center; padding: 60px 20px; color: var(--text-dim); }
+  .empty b { display: block; color: var(--text); font-size: 17px; margin-bottom: 6px; }
+  .load { text-align: center; padding: 80px 20px; color: var(--text-dim); font: 500 13px 'JetBrains Mono', monospace; }
+  .foot { text-align: center; color: var(--text-faint); font: 500 11px 'JetBrains Mono', monospace; padding: 24px 0 0; }
+
+  /* ---------- Zoom modal ---------- */
+  .overlay { position: fixed; inset: 0; z-index: 100; background: rgba(0,0,0,0.88); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; padding: 16px; }
+  .zoom { width: 100%; max-width: 360px; max-height: 94vh; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; scrollbar-width: none; }
+  .zoom::-webkit-scrollbar { display: none; }
+  .zoom > img { width: 100%; max-height: 58vh; object-fit: contain; border-radius: 10px; box-shadow: 0 12px 40px rgba(0,0,0,0.6); }
+  .panel { background: var(--card); border: 1px solid var(--border-bright); border-radius: 10px; padding: 14px 16px; font-size: 13px; }
+  .panel h3 { font: 700 11px 'JetBrains Mono', monospace; color: var(--text-dim); margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+  .panel .r { display: flex; justify-content: space-between; padding: 4px 0; }
+  .panel .v { font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--amber); }
+  .panel .v.g { color: var(--green); }
+  .panel a { display: block; text-align: center; margin-top: 12px; padding: 11px; border: 1px solid rgba(77,163,255,0.4); background: rgba(77,163,255,0.08); color: var(--blue); border-radius: 8px; text-decoration: none; font-weight: 700; }
+  .x { position: fixed; top: calc(14px + env(safe-area-inset-top, 0px)); right: 14px; width: 38px; height: 38px; border-radius: 50%; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: #fff; font-size: 16px; cursor: pointer; z-index: 110; }
+
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="top-inner">
+    <div class="top-row">
+      <div class="dome" aria-hidden="true"></div>
+      <div>
+        <h1>Matt’s Pokédex Collection</h1>
+        <div class="sub">Visitor view</div>
+      </div>
+    </div>
+    <div class="stats" id="stats"></div>
+    <div class="bar" aria-hidden="true"><i id="barFill"></i></div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="controls">
+    <input class="search" id="search" type="search" placeholder="Search by name or number" autocomplete="off" aria-label="Search Pokémon">
+    <div class="chips" id="chips"></div>
+    <div class="count" id="count"></div>
+  </div>
+  <div id="content"><div class="load">Loading collection…</div></div>
+  <div class="foot">Prices are Near Mint market estimates and change often.</div>
+</main>
+
+<script>
+// ---------------------------------------------------------------------------
+// VISITOR VIEW — this page only ever GETs from Firebase.
+// ---------------------------------------------------------------------------
+const TOTAL = 1025;
+const ROSTER_KEY = "pokedex_v2:roster:v2";
+const FIREBASE_URL = "https://pokemon-card-tracker-2b5f8-default-rtdb.firebaseio.com";
+const COLLECTION_URL = FIREBASE_URL + "/users/pokemon_collection/collection.json";
+
+// Flip to true if you want visitors to see what you paid. Default: hidden.
+const SHOW_PRICE_PAID = false;
+
+const GEN_RANGES = [[1,1,151],[2,152,251],[3,252,386],[4,387,493],[5,494,649],[6,650,721],[7,722,809],[8,810,905],[9,906,1025]];
+const getGen = id => (GEN_RANGES.find(r => id >= r[1] && id <= r[2]) || [1])[0];
+const sprite = id => `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`;
+const SPECIAL = { "type-null":"Type: Null","jangmo-o":"Jangmo-o","hakamo-o":"Hakamo-o","kommo-o":"Kommo-o","wo-chien":"Wo-Chien","chien-pao":"Chien-Pao","ting-lu":"Ting-Lu","chi-yu":"Chi-Yu" };
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const money = n => "$" + Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const isJP = c => c.language === "japanese" || /pokemon-japan/i.test(c.cardLink || "");
+
+let roster = [], collection = {};
+let view = "collected", gen = "all", q = "";
+
+async function loadRoster() {
+  try {
+    const cached = JSON.parse(localStorage.getItem(ROSTER_KEY) || "null");
+    if (cached && cached.length === TOTAL && cached[771]?.name === "Type: Null") return cached;
+  } catch {}
+  const res = await fetch(`https://pokeapi.co/api/v2/pokemon?limit=${TOTAL}&offset=0`);
+  if (!res.ok) throw new Error("PokeAPI " + res.status);
+  const data = await res.json();
+  const list = data.results.map((p, i) => ({ id: i + 1, name: SPECIAL[p.name] || p.name.split("-")[0].replace(/^./, c => c.toUpperCase()), generation: getGen(i + 1) }));
+  try { localStorage.setItem(ROSTER_KEY, JSON.stringify(list)); } catch {}
+  return list;
+}
+
+async function loadCollection() {
+  const res = await fetch(COLLECTION_URL, { cache: "no-store" });
+  if (!res.ok) throw new Error("Firebase " + res.status);
+  return (await res.json()) || {};
+}
+
+async function init() {
+  try {
+    [roster, collection] = await Promise.all([loadRoster(), loadCollection()]);
+  } catch (err) {
+    document.getElementById("content").innerHTML =
+      `<div class="empty"><b>Couldn’t load the collection</b>Check your connection and refresh the page.</div>`;
+    console.warn(err);
+    return;
+  }
+  renderStats();
+  renderChips();
+  render();
+}
+
+function owned() { return roster.filter(r => collection[r.id]?.collected); }
+
+function renderStats() {
+  const have = owned();
+  const market = have.reduce((s, r) => s + (parseFloat(collection[r.id]?.nmPrices?.market) || 0), 0);
+  const pct = (have.length / TOTAL) * 100;
+  document.getElementById("stats").innerHTML = `
+    <div class="stat"><b>${have.length}</b><span>Collected</span></div>
+    <div class="stat"><b>${pct.toFixed(1)}%</b><span>of ${TOTAL.toLocaleString()}</span></div>
+    <div class="stat"><b class="amber">$${Math.round(market).toLocaleString()}</b><span>Market value</span></div>`;
+  document.getElementById("barFill").style.width = pct + "%";
+}
+
+function renderChips() {
+  const views = [["collected","Collected"],["missing","Still hunting"],["all","All"]];
+  const gens = [["all","All gens"], ...[1,2,3,4,5,6,7,8,9].map(g => [g, "Gen " + g])];
+  const mk = (list, cur, kind, sep) => list.map(([v, l], i) =>
+    `<button class="chip ${cur === v ? "active" : ""} ${sep && i === 0 ? "sep" : ""}" data-kind="${kind}" data-v="${v}">${l}</button>`).join("");
+  const el = document.getElementById("chips");
+  el.innerHTML = mk(views, view, "view") + mk(gens, gen, "gen", true);
+}
+
+document.getElementById("chips").addEventListener("click", e => {
+  const b = e.target.closest(".chip"); if (!b) return;
+  if (b.dataset.kind === "view") view = b.dataset.v;
+  else gen = b.dataset.v === "all" ? "all" : parseInt(b.dataset.v, 10);
+  renderChips(); render();
+});
+document.getElementById("search").addEventListener("input", e => { q = e.target.value.trim().toLowerCase(); render(); });
+
+function render() {
+  const list = roster.filter(r => {
+    const c = collection[r.id] || {};
+    if (view === "collected" && !c.collected) return false;
+    if (view === "missing" && c.collected) return false;
+    if (gen !== "all" && r.generation !== gen) return false;
+    if (q && !r.name.toLowerCase().includes(q) && !String(r.id).includes(q)) return false;
+    return true;
+  });
+  document.getElementById("count").textContent = `${list.length} Pokémon`;
+  const el = document.getElementById("content");
+  if (!list.length) {
+    el.innerHTML = `<div class="empty"><b>${view === "collected" && !q && gen === "all" ? "No cards collected yet" : "Nothing matches"}</b>Try a different filter or search.</div>`;
+    return;
+  }
+  el.innerHTML = `<div class="grid">${list.map(entry).join("")}</div>`;
+}
+
+function entry(r) {
+  const c = collection[r.id] || {};
+  const real = !!c.imageUrl;
+  const mkt = c.nmPrices?.market;
+  const right = c.collected
+    ? (mkt ? `<span class="p">$${esc(mkt)}</span>` : `<span class="tag">Owned</span>`)
+    : `<span class="need">Need</span>`;
+  return `
+    <button class="entry ${c.collected ? "have" : ""}" data-id="${r.id}" aria-label="${esc(r.name)}, ${c.collected ? "collected" : "not collected"}">
+      <span class="num">#${String(r.id).padStart(4, "0")}</span>
+      ${isJP(c) ? `<span class="jp">JP</span>` : ""}
+      <div class="thumb"><img class="${real && c.collected ? "" : "sprite"}" src="${real && c.collected ? esc(c.imageUrl) : sprite(r.id)}" alt="" loading="lazy" onerror="this.src='${sprite(r.id)}'; this.className='sprite';"></div>
+      <div class="meta">
+        <div class="name">${esc(r.name)}</div>
+        <div class="row"><span>Gen ${r.generation}</span>${right}</div>
+      </div>
+    </button>`;
+}
+
+document.getElementById("content").addEventListener("click", e => {
+  const b = e.target.closest(".entry"); if (b) openCard(parseInt(b.dataset.id, 10));
+});
+
+function openCard(id) {
+  const r = roster.find(x => x.id === id); if (!r) return;
+  const c = collection[id] || {};
+  const p = c.nmPrices || {};
+  const showImg = c.collected && c.imageUrl;
+  const rows = [];
+  if (p.firstEd) rows.push(["1st Edition", "$" + p.firstEd]);
+  if (p.unlimited) rows.push(["Unlimited", "$" + p.unlimited]);
+  if (p.market) rows.push(["Market price", "$" + p.market]);
+  if (p.lastSale) rows.push(["Last sale", "$" + p.lastSale]);
+  const o = document.createElement("div");
+  o.className = "overlay";
+  o.setAttribute("role", "dialog"); o.setAttribute("aria-modal", "true"); o.setAttribute("aria-label", r.name);
+  o.innerHTML = `
+    <button class="x" aria-label="Close">✕</button>
+    <div class="zoom">
+      ${showImg ? `<img src="${esc(c.imageUrl)}" alt="${esc(r.name)} card">` : `<img src="${sprite(r.id)}" alt="${esc(r.name)}" style="image-rendering:pixelated;opacity:.5;background:var(--card);padding:30px;">`}
+      ${rows.length && c.collected ? `<div class="panel"><h3>Near Mint · ${esc(r.name)}</h3>${rows.map(([l, v]) => `<div class="r"><span>${l}</span><span class="v">${esc(v)}</span></div>`).join("")}</div>` : ""}
+      <div class="panel">
+        <h3>#${String(r.id).padStart(4, "0")} · ${esc(r.name)}</h3>
+        <div class="r"><span>Generation</span><span class="v">${r.generation}</span></div>
+        <div class="r"><span>Status</span><span class="v ${c.collected ? "g" : ""}">${c.collected ? "● Collected" : "Still hunting"}</span></div>
+        ${c.setName && c.collected ? `<div class="r"><span>Set</span><span class="v">${esc(c.setName)}</span></div>` : ""}
+        ${SHOW_PRICE_PAID && c.collected && c.price ? `<div class="r"><span>Paid</span><span class="v">${money(c.price)}</span></div>` : ""}
+        ${c.collected && c.cardLink ? `<a href="${esc(c.cardLink)}" target="_blank" rel="noopener noreferrer">View on TCGPlayer</a>` : ""}
+      </div>
+    </div>`;
+  const close = () => { o.remove(); document.removeEventListener("keydown", onKey); };
+  const onKey = e => { if (e.key === "Escape") close(); };
+  o.addEventListener("click", e => { if (e.target === o || e.target.closest(".x")) close(); });
+  document.addEventListener("keydown", onKey);
+  document.body.appendChild(o);
+  o.querySelector(".x").focus();
+}
+
+init();
+</script>
+</body>
+</html>
