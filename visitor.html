@@ -152,7 +152,8 @@
 const TOTAL = 1025;
 const ROSTER_KEY = "pokedex_v2:roster:v2";
 const FIREBASE_URL = "https://pokemon-card-tracker-2b5f8-default-rtdb.firebaseio.com";
-const COLLECTION_URL = FIREBASE_URL + "/users/pokemon_collection/collection.json";
+const UID = new URLSearchParams(location.search).get("u");
+const COLLECTION_URL = UID ? FIREBASE_URL + "/users/" + encodeURIComponent(UID) + "/collection.json" : null;
 
 // Flip to true if you want visitors to see what you paid. Default: hidden.
 const SHOW_PRICE_PAID = false;
@@ -182,17 +183,21 @@ async function loadRoster() {
 }
 
 async function loadCollection() {
+  if (!COLLECTION_URL) throw new Error("missing-link");
   const res = await fetch(COLLECTION_URL, { cache: "no-store" });
   if (!res.ok) throw new Error("Firebase " + res.status);
-  return (await res.json()) || {};
+  const data = (await res.json()) || {};
+  delete data._initialized; delete data._createdAt;
+  return data;
 }
 
 async function init() {
   try {
     [roster, collection] = await Promise.all([loadRoster(), loadCollection()]);
   } catch (err) {
-    document.getElementById("content").innerHTML =
-      `<div class="empty"><b>Couldn’t load the collection</b>Check your connection and refresh the page.</div>`;
+    document.getElementById("content").innerHTML = err.message === "missing-link"
+      ? `<div class="empty"><b>This link is incomplete</b>Ask for the share link again.</div>`
+      : `<div class="empty"><b>Couldn’t load the collection</b>Check your connection and refresh the page.</div>`;
     console.warn(err);
     return;
   }
