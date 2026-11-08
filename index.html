@@ -2,12 +2,15 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <meta name="theme-color" content="#8B0000">
 <title>Pokédex // Trainer Terminal</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&family=JetBrains+Mono:wght@400;500;600;700&family=Press+Start+2P&display=swap" rel="stylesheet">
+<!-- Firebase Auth SDK (compat) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <style>
   /* ============================================================
      POKÉDEX // TRAINER TERMINAL
@@ -76,6 +79,22 @@
     font-family: 'Bricolage Grotesque', system-ui, sans-serif;
     font-feature-settings: 'ss01' 1;
     overflow-x: hidden;
+    /* Prevent double-tap zoom on iOS */
+    touch-action: pan-y;
+  }
+
+  /* iOS Safari: inputs/buttons under 16px trigger auto-zoom — prevent it */
+  input, button, select, textarea {
+    touch-action: manipulation;
+  }
+  /* Force 16px on interactive elements on mobile to prevent iOS zoom */
+  @media (max-width: 599px) {
+    input[type="text"],
+    input[type="email"],
+    input[type="password"],
+    input[type="search"] {
+      font-size: 16px !important;
+    }
   }
 
   /* Subtle felt texture across the page */
@@ -94,6 +113,7 @@
      ============================================================ */
   .device {
     position: relative;
+    touch-action: pan-y;
     max-width: 1280px;
     margin: 24px auto;
     padding: 28px 32px 26px;
@@ -505,8 +525,10 @@
     border-radius: 8px;
     background:
       radial-gradient(ellipse at top, var(--screen-bg-light) 0%, var(--screen-bg) 50%, var(--screen-bg-deep) 100%);
-    overflow: hidden;
+    overflow-y: auto;
+    overflow-x: hidden;
     min-height: 600px;
+    -webkit-overflow-scrolling: touch;
   }
 
   /* Subtle grid texture (replaces heavy scanlines) */
@@ -992,6 +1014,37 @@
     transition: all 0.2s;
   }
   .lcd-input::placeholder { color: var(--text-faint); }
+  .search-wrap {
+  flex: 1;
+  min-width: 180px;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.search-wrap .lcd-input {
+  flex: 1;
+  min-width: 0;
+  padding-right: 36px;
+}
+.search-clear {
+  position: absolute;
+  right: 10px;
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 4px;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.6;
+  transition: opacity 0.15s;
+}
+.search-clear:hover { opacity: 1; color: var(--text-bright); }
+.search-clear.visible { display: flex; }
+
   .lcd-input:focus {
     border-color: var(--accent-blue);
     box-shadow: 0 0 0 3px rgba(77, 163, 255, 0.15);
@@ -1046,8 +1099,20 @@
     background: var(--screen-bg-card);
     border: 1px solid var(--screen-border);
     border-radius: 10px;
+    padding: 0 16px;
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    margin-bottom: 0;
+    pointer-events: none;
+    transition: max-height 0.22s ease, opacity 0.18s ease, padding 0.18s ease, margin-bottom 0.18s ease;
+  }
+  .filter-panel.open {
+    max-height: 600px;
+    opacity: 1;
     padding: 14px 16px 16px;
     margin-bottom: 16px;
+    pointer-events: auto;
   }
   .filter-group {
     display: flex;
@@ -1126,21 +1191,9 @@
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
     gap: 14px;
-    max-height: 600px;
-    overflow-y: auto;
     padding: 6px;
     margin: -6px;
-    /* Custom scrollbar */
-    scrollbar-width: thin;
-    scrollbar-color: var(--screen-border-bright) transparent;
   }
-  .dex-grid::-webkit-scrollbar { width: 8px; }
-  .dex-grid::-webkit-scrollbar-track { background: transparent; }
-  .dex-grid::-webkit-scrollbar-thumb {
-    background: var(--screen-border-bright);
-    border-radius: 4px;
-  }
-  .dex-grid::-webkit-scrollbar-thumb:hover { background: var(--text-faint); }
 
   .dex-entry {
     position: relative;
@@ -2199,9 +2252,155 @@
     .recent-row:hover,
     .header-add-btn:hover { transform: none !important; }
   }
+
+  /* ======================================================
+     AUTH / LOGIN SCREEN
+     ====================================================== */
+  .auth-overlay {
+    display: flex;
+    position: fixed;
+    inset: 0;
+    background: #1a0a0a;
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    padding: 24px;
+    gap: 20px;
+  }
+  .auth-overlay.hidden { display: none; }
+  .auth-card {
+    background: var(--screen-bg-card, #0d1f0d);
+    border: 2px solid var(--shell-red, #B82435);
+    border-radius: 16px;
+    padding: 32px 28px;
+    width: 100%;
+    max-width: 380px;
+    text-align: center;
+    box-shadow: 0 0 40px rgba(184,36,53,0.3);
+  }
+  .auth-logo {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 13px;
+    color: var(--shell-red, #B82435);
+    letter-spacing: 2px;
+    margin-bottom: 6px;
+  }
+  .auth-subtitle {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: #5a9a5a;
+    margin-bottom: 28px;
+    letter-spacing: 1px;
+  }
+  .auth-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    padding: 14px 20px;
+    border-radius: 10px;
+    border: none;
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s;
+    margin-bottom: 12px;
+  }
+  .auth-btn:hover { opacity: 0.88; }
+  .auth-btn-google { background: #fff; color: #1a1a1a; }
+  .auth-btn-email { background: var(--shell-red, #B82435); color: #fff; }
+  .auth-divider {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: #2a5a2a;
+    margin: 4px 0 12px;
+    letter-spacing: 1px;
+  }
+  .auth-email-form { display: none; margin-top: 4px; }
+  .auth-email-form.visible { display: block; }
+  .auth-input {
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--shell-red, #B82435);
+    background: var(--screen-bg-deep, #050f05);
+    color: #a0e0a0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    margin-bottom: 10px;
+    box-sizing: border-box;
+    outline: none;
+  }
+  .auth-input:focus { border-color: #e05070; }
+  .auth-error {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: #FF6B47;
+    min-height: 16px;
+    margin-bottom: 6px;
+    letter-spacing: 0.5px;
+  }
+  .auth-signout-btn {
+    display: none;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 20px;
+    padding: 5px 10px 5px 6px;
+    cursor: pointer;
+    color: rgba(255,255,255,0.8);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    transition: background 0.15s;
+  }
+  .auth-signout-btn:hover { background: rgba(255,255,255,0.1); }
+  .auth-signout-btn.visible { display: flex; }
+  .auth-avatar {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid rgba(255,255,255,0.3);
+  }
+  .auth-avatar-initials {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    background: var(--shell-red, #B82435);
+    color: #fff;
+    font-size: 9px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Bricolage Grotesque', sans-serif;
+  }
 </style>
 </head>
 <body>
+
+<!-- ====== AUTH OVERLAY ====== -->
+<div class="auth-overlay visible" id="authOverlay">
+  <div class="auth-card">
+    <div class="auth-logo">POKÉDEX</div>
+    <div class="auth-subtitle">▸ TRAINER TERMINAL ◂</div>
+    <button class="auth-btn auth-btn-google" onclick="authSignInGoogle()">
+      <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.08 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.35-8.16 2.35-6.26 0-11.57-3.59-13.46-8.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+      Continue with Google
+    </button>
+    <div class="auth-divider">— or —</div>
+    <button class="auth-btn auth-btn-email" onclick="authToggleEmailForm()" id="emailToggleBtn">✉ Continue with Email</button>
+    <div class="auth-email-form" id="authEmailForm">
+      <input class="auth-input" id="authEmail" type="email" placeholder="trainer@email.com" autocomplete="email">
+      <input class="auth-input" id="authPassword" type="password" placeholder="Password" autocomplete="current-password">
+      <div class="auth-error" id="authError"></div>
+      <button class="auth-btn auth-btn-email" onclick="authSignInEmail()" style="margin-bottom:8px;">▸ Sign In</button>
+      <button class="auth-btn" style="background:rgba(255,255,255,0.08);color:#a0e0a0;font-size:13px;margin-bottom:0;" onclick="authCreateAccount()">Create Account</button>
+    </div>
+  </div>
+</div>
 
 <div class="device" id="device">
   <span class="screw tl"></span><span class="screw tr"></span>
@@ -2224,6 +2423,10 @@
     <button class="header-add-btn" onclick="openAddDialog()">
       <span class="add-plus">+</span>
       <span>Add Cards</span>
+    </button>
+    <button class="auth-signout-btn" id="signOutBtn" onclick="authSignOut()" title="Sign out">
+      <div class="auth-avatar-initials" id="userInitials">?</div>
+      <span id="signOutLabel">Sign out</span>
     </button>
   </div>
 
@@ -2269,7 +2472,7 @@
 // ============================================================================
 
 const TOTAL_POKEMON = 1025;
-const ROSTER_KEY = "pokedex_v2:roster:v2";
+const ROSTER_KEY = "pokedex_v2:roster:v3";
 const COLLECTION_KEY = "pokedex_v2:collection";
 const VALUE_HISTORY_KEY = "pokedex_v2:valueHistory";
 
@@ -2387,8 +2590,16 @@ let filtersOpen = false;
 // ============================================================================
 
 const FIREBASE_URL = "https://pokemon-card-tracker-2b5f8-default-rtdb.firebaseio.com";
-const USER_ID = "pokemon_collection";
-const FIREBASE_COLLECTION_URL = `${FIREBASE_URL}/users/${USER_ID}/collection.json`;
+// ⚠️  FILL THESE IN FROM YOUR FIREBASE PROJECT SETTINGS (Project settings → Your apps → Web app)
+const FIREBASE_AUTH_API_KEY    = "AIzaSyDyWGdRbTpQUnX4cQ387AkWe9x_yjhYn4g";
+const FIREBASE_AUTH_DOMAIN_VAL = "pokemon-card-tracker-2b5f8.firebaseapp.com";
+const FIREBASE_PROJECT_ID      = "pokemon-card-tracker-2b5f8";
+// USER_ID is set dynamically after Google/Email sign-in (see auth section below)
+let CURRENT_USER_ID = null;
+function getFirebaseUrl() {
+  if (!CURRENT_USER_ID) return null;
+  return `${FIREBASE_URL}/users/${CURRENT_USER_ID}/collection.json`;
+}
 
 // localStorage helpers — fast synchronous cache
 function loadLocal(key) {
@@ -2398,14 +2609,322 @@ function saveLocal(key, val) {
   try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) { console.error(e); }
 }
 
+// ============================================================================
+// POKEMONTCG.IO MARKET PRICE SYNC
+// Fetches real-time market prices for collected cards using the free API.
+// Runs automatically after Firebase sync — no API key required.
+// ============================================================================
+
+// Map your set names (from SET_NAME_LOOKUP) → pokemontcg.io set IDs
+// pokemontcg.io set IDs: https://api.pokemontcg.io/v2/sets
+const PTCG_SET_ID_MAP = {
+  // Base era
+  "Base Set":              "base1",
+  "Base Set Shadowless":   "base1",
+  "Base Set 2":            "base2",
+  "Jungle":                "base3",
+  "Fossil":                "base4",
+  "Team Rocket":           "base5",
+  "Gym Heroes":            "gym1",
+  "Gym Challenge":         "gym2",
+  "Neo Genesis":           "neo1",
+  "Neo Discovery":         "neo2",
+  "Neo Revelation":        "neo3",
+  "Neo Destiny":           "neo4",
+  "Legendary Collection":  "base6",
+  "Expedition Base Set":   "ecard1",
+  "Aquapolis":             "ecard2",
+  "Skyridge":              "ecard3",
+  // EX era — SET_NAME_LOOKUP uses short names without "EX" prefix
+  "Ruby & Sapphire":       "ex1",
+  "Sandstorm":             "ex2",
+  "EX Sandstorm":          "ex2",
+  "Dragon":                "ex3",
+  "EX Dragon":             "ex3",
+  "FireRed & LeafGreen":   "ex5",
+  "EX FireRed & LeafGreen":"ex5",
+  "Team Rocket Returns":   "ex7",
+  "EX Team Rocket Returns":"ex7",
+  "Deoxys":                "ex8",
+  "EX Deoxys":             "ex8",
+  "Emerald":               "ex9",
+  "EX Emerald":            "ex9",
+  "Unseen Forces":         "ex10",
+  "EX Unseen Forces":      "ex10",
+  "Delta Species":         "ex11",
+  "EX Delta Species":      "ex11",
+  "Legend Maker":          "ex12",
+  "EX Legend Maker":       "ex12",
+  "Holon Phantoms":        "ex13",
+  "EX Holon Phantoms":     "ex13",
+  "Crystal Guardians":     "ex14",
+  "EX Crystal Guardians":  "ex14",
+  "Dragon Frontiers":      "ex15",
+  "EX Dragon Frontiers":   "ex15",
+  "Power Keepers":         "ex16",
+  "EX Power Keepers":      "ex16",
+  // Diamond & Pearl era
+  "Diamond & Pearl":       "dp1",
+  "Mysterious Treasures":  "dp2",
+  "Secret Wonders":        "dp3",
+  "Majestic Dawn":         "dp4",
+  "Stormfront":            "dp5",
+  "Platinum":              "pl1",
+  "Rising Rivals":         "pl2",
+  "Supreme Victors":       "pl3",
+  "Arceus":                "pl4",
+  "HeartGold SoulSilver":  "hgss1",
+  "HS Unleashed":          "hgss2",
+  "HS Undaunted":          "hgss3",
+  "HS Triumphant":         "hgss4",
+  "Call of Legends":       "col1",
+  // Black & White era
+  "Black & White":         "bw1",
+  "Emerging Powers":       "bw2",
+  "Noble Victories":       "bw3",
+  "Next Destinies":        "bw4",
+  "Dark Explorers":        "bw5",
+  "Dragons Exalted":       "bw6",
+  "Boundaries Crossed":    "bw7",
+  "Plasma Storm":          "bw8",
+  "Plasma Freeze":         "bw9",  // note: bw9 in ptcgio
+  "Plasma Blast":          "bw10",
+  "Legendary Treasures":   "bw11",
+  // XY era
+  "XY Base Set":           "xy1",
+  "XY Flashfire":          "xy2",
+  "Furious Fists":         "xy3",
+  "Phantom Forces":        "xy4",
+  "Primal Clash":          "xy5",
+  "Roaring Skies":         "xy6",
+  "Ancient Origins":       "xy7",
+  "BREAKthrough":          "xy8",
+  "BREAKpoint":            "xy9",
+  "Generations":           "g1",
+  "Fates Collide":         "xy10",
+  "Steam Siege":           "xy11",
+  "XY Evolutions":         "xy12",
+  "Evolutions":            "xy12",
+  // Sun & Moon era
+  "SM Base Set":           "sm1",
+  "Guardians Rising":      "sm2",
+  "Burning Shadows":       "sm3",
+  "SM Burning Shadows":    "sm3",
+  "Shining Legends":       "sm35",
+  "Crimson Invasion":      "sm4",
+  "Ultra Prism":           "sm5",
+  "Forbidden Light":       "sm6",
+  "Celestial Storm":       "sm7",
+  "Dragon Majesty":        "sm75",
+  "Lost Thunder":          "sm8",
+  "Team Up":               "sm9",
+  "Unbroken Bonds":        "sm10",
+  "Unified Minds":         "sm11",
+  "SM Hidden Fates":       "sm115",
+  "Hidden Fates":          "sm115",
+  "Cosmic Eclipse":        "sm12",
+  // Sword & Shield era
+  "Sword & Shield Base":   "swsh1",
+  "Rebel Clash":           "swsh2",
+  "Darkness Ablaze":       "swsh3",
+  "Vivid Voltage":         "swsh4",
+  "Battle Styles":         "swsh5",
+  "Chilling Reign":        "swsh6",
+  "Evolving Skies":        "swsh7",
+  "Fusion Strike":         "swsh8",
+  "Brilliant Stars":       "swsh9",
+  "Astral Radiance":       "swsh10",
+  "Lost Origin":           "swsh11",
+  "Silver Tempest":        "swsh12",
+  "Crown Zenith":          "swsh12pt5",
+  "Shining Fates":         "swsh45",
+  "Celebrations":          "cel25",
+  // Scarlet & Violet era
+  "Scarlet & Violet Base": "sv1",
+  "Paldea Evolved":        "sv2",
+  "Obsidian Flames":       "sv3",
+  "Scarlet & Violet 151":  "sv3pt5",
+  "Paradox Rift":          "sv4",
+  "Paldean Fates":         "sv4pt5",
+  "Temporal Forces":       "sv5",
+  "Twilight Masquerade":   "sv6",
+  "Stellar Crown":         "sv7",
+  "Surging Sparks":        "sv8",
+  "Prismatic Evolutions":  "sv8pt5",
+};
+
+const PTCG_API = "https://api.pokemontcg.io/v2/cards";
+const PTCG_API_KEY = "c7e0c2a2-a5f7-4733-b852-fafb7ff9f7ba";
+const PRICE_CACHE_KEY = "pokedex_v2:priceCache";
+const PRICE_CACHE_TTL = 30 * 24 * 60 * 60 * 1000; // 30 days
+
+// Fetch market price for a single card from pokemontcg.io
+// Returns market price in USD or null if not found
+// Extract card number from a TCGPlayer URL slug
+// e.g. "pokemon-sv03-obsidian-flames-cleffa-202-197" → "202"
+function parseCardNumber(url) {
+  if (!url) return null;
+  try {
+    const u = new URL(url);
+    const parts = u.pathname.split("/").filter(Boolean);
+    const productIdx = parts.findIndex(p => p === "product");
+    if (productIdx === -1 || productIdx + 2 >= parts.length) return null;
+    const slug = parts[productIdx + 2].split("?")[0];
+    // Pattern: slug ends with {cardNum}-{setTotal} e.g. "cleffa-202-197" or "bulbasaur-045-100"
+    // Capture the full card number (may be 1-3 digits)
+    const matches = slug.match(/-([A-Za-z0-9]+)-\d+(?:-\d+)?$/);
+    if (matches) {
+      const candidate = matches[1];
+      // Must look like a card number: digits, or digits+letters (e.g. "45", "202", "GG70")
+      if (/^[A-Za-z0-9]+$/.test(candidate)) return candidate;
+    }
+    // Fallback: find all number groups, second-to-last is usually card number
+    const nums = slug.match(/\d+/g);
+    return nums && nums.length >= 2 ? nums[nums.length - 2] : null;
+  } catch { return null; }
+}
+
+async function fetchPtcgPrice(name, setName, cardNumber) {
+  const setId = PTCG_SET_ID_MAP[setName];
+
+  // Build the most specific query possible
+  let query;
+  if (setId && cardNumber) {
+    // Most specific: set + card number (guaranteed unique)
+    query = `set.id:${setId} number:${cardNumber}`;
+  } else if (setId) {
+    query = `name:"${name}" set.id:${setId}`;
+  } else {
+    query = `name:"${name}"`;
+  }
+
+  const url = `${PTCG_API}?q=${encodeURIComponent(query)}&select=name,number,set,tcgplayer&pageSize=8`;
+  try {
+    const res = await fetch(url, { headers: { "X-Api-Key": PTCG_API_KEY } });
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (!data.data || data.data.length === 0) return null;
+
+    // If we searched by number, just use the first result
+    // Otherwise pick best name match
+    const card = (setId && cardNumber)
+      ? data.data[0]
+      : (data.data.find(c => c.name.toLowerCase() === name.toLowerCase()) || data.data[0]);
+
+    const prices = card.tcgplayer?.prices;
+    if (!prices) return null;
+
+    // Pick the best available market price across all variants
+    const market =
+      prices.holofoil?.market ||
+      prices["illustrationRare"]?.market ||
+      prices["specialIllustrationRare"]?.market ||
+      prices.normal?.market ||
+      prices.reverseHolofoil?.market ||
+      prices["1stEditionHolofoil"]?.market ||
+      prices["1stEdition"]?.market ||
+      null;
+    return market ? market.toFixed(2) : null;
+  } catch(e) {
+    console.warn("pokemontcg.io fetch failed:", e.message);
+    return null;
+  }
+}
+
+// Sync market prices for all collected cards that have a cardLink
+// Runs in the background — updates collection + Firebase when done
+// Uses a local cache (12hr TTL) to avoid hammering the API on every load
+async function fetchPtcgPriceWithTimeout(name, setName, cardNumber, timeoutMs = 8000) {
+  return Promise.race([
+    fetchPtcgPrice(name, setName, cardNumber),
+    new Promise(resolve => setTimeout(() => resolve(null), timeoutMs))
+  ]);
+}
+
+async function syncMarketPrices() {
+  // Only sync cards that have a proper TCGPlayer cardLink
+  const allCards = roster.filter(r => {
+    const c = collection[r.id];
+    return c?.cardLink && r.name && c.cardLink.includes("tcgplayer.com/product/");
+  });
+  if (allCards.length === 0) return;
+
+  let priceCache = loadLocal(PRICE_CACHE_KEY) || {};
+  const now = Date.now();
+  const stale = (entry) => !entry || (now - entry.ts) > PRICE_CACHE_TTL;
+
+  console.log(`💰 Syncing prices for ${allCards.length} cards...`);
+  let updated = 0;
+  let dirty = false;
+  let i = 0;
+
+  for (const r of allCards) {
+    i++;
+    const c = collection[r.id];
+    const setName = c.setName || parseSetName(c.cardLink);
+    const cardNumber = parseCardNumber(c.cardLink);
+    const cacheKey = `${r.name}__${setName || ""}__${cardNumber || ""}`;
+
+    let market = null;
+
+    if (!stale(priceCache[cacheKey])) {
+      market = priceCache[cacheKey].price;
+    } else {
+      await new Promise(res => setTimeout(res, 120));
+      console.log(`  [${i}/${allCards.length}] ${r.name} (${setName || "?"} #${cardNumber || "?"})`);
+      market = await fetchPtcgPriceWithTimeout(r.name, setName, cardNumber);
+      priceCache[cacheKey] = { price: market, ts: now };
+    }
+
+    if (market !== null) {
+      if (!collection[r.id].nmPrices) collection[r.id].nmPrices = {};
+      if (collection[r.id].nmPrices.market !== market) {
+        collection[r.id].nmPrices.market = market;
+        dirty = true;
+        updated++;
+      }
+    }
+
+    // Save progress every 10 cards so partial results aren't lost
+    if (i % 10 === 0) {
+      saveLocal(PRICE_CACHE_KEY, priceCache);
+      if (dirty) {
+        saveLocal("pokedex_v2:collection", collection);
+        renderHeaderStats();
+      }
+    }
+  }
+
+  saveLocal(PRICE_CACHE_KEY, priceCache);
+
+  if (dirty) {
+    saveLocal("pokedex_v2:collection", collection);
+    persistCollection(collection);
+    renderHeaderStats();
+    render();
+    console.log(`✅ Market prices updated for ${updated} cards`);
+  } else {
+    console.log("✅ Prices already current");
+  }
+}
+
 // Load collection from Firebase
 function loadFromFirebase() {
-  return fetch(FIREBASE_COLLECTION_URL)
+  const fbUrl = getFirebaseUrl(); if (!fbUrl) return Promise.resolve(null);
+  return fetch(fbUrl)
     .then(res => res.ok ? res.json() : null)
     .then(data => {
       if (data && typeof data === "object" && Object.keys(data).length > 0) {
-        console.log("✅ Firebase: loaded " + Object.keys(data).length + " entries");
-        return data;
+        // Strip internal sentinel keys — only card IDs (numeric strings) are real data
+        const { _initialized, _createdAt, ...cardData } = data;
+        const hasCards = Object.keys(cardData).length > 0;
+        if (hasCards) {
+          console.log("✅ Firebase: loaded " + Object.keys(cardData).length + " entries");
+          return cardData;
+        }
+        // Initialized but no cards yet — treat as empty (not null, so we don't re-init)
+        if (_initialized) return {};
+        return null;
       }
       return null;
     })
@@ -2429,7 +2948,10 @@ function saveToFirebase(col) {
     }
     if (Object.keys(e).length > 0) payload[id] = e;
   }
-  return fetch(FIREBASE_COLLECTION_URL, {
+  // Always preserve the initialization sentinel so the account stays marked
+  payload._initialized = true;
+  const fbUrl = getFirebaseUrl(); if (!fbUrl) return Promise.resolve();
+  return fetch(fbUrl, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
@@ -2481,7 +3003,9 @@ async function fetchRoster() {
   if (!res.ok) throw new Error("PokeAPI " + res.status);
   const data = await res.json();
   const SPECIAL_NAMES = {
+    // Type with colon
     "type-null": "Type: Null",
+    // Hyphenated keeps hyphen
     "jangmo-o": "Jangmo-o",
     "hakamo-o": "Hakamo-o",
     "kommo-o": "Kommo-o",
@@ -2489,6 +3013,49 @@ async function fetchRoster() {
     "chien-pao": "Chien-Pao",
     "ting-lu": "Ting-Lu",
     "chi-yu": "Chi-Yu",
+    // Tapu guardians
+    "tapu-koko": "Tapu Koko",
+    "tapu-lele": "Tapu Lele",
+    "tapu-bulu": "Tapu Bulu",
+    "tapu-fini": "Tapu Fini",
+    // Paradox Pokémon (Gen 9)
+    "great-tusk": "Great Tusk",
+    "scream-tail": "Scream Tail",
+    "brute-bonnet": "Brute Bonnet",
+    "flutter-mane": "Flutter Mane",
+    "slither-wing": "Slither Wing",
+    "sandy-shocks": "Sandy Shocks",
+    "iron-treads": "Iron Treads",
+    "iron-bundle": "Iron Bundle",
+    "iron-hands": "Iron Hands",
+    "iron-jugulis": "Iron Jugulis",
+    "iron-moth": "Iron Moth",
+    "iron-thorns": "Iron Thorns",
+    "roaring-moon": "Roaring Moon",
+    "iron-valiant": "Iron Valiant",
+    "walking-wake": "Walking Wake",
+    "iron-leaves": "Iron Leaves",
+    "gouging-fire": "Gouging Fire",
+    "raging-bolt": "Raging Bolt",
+    "iron-boulder": "Iron Boulder",
+    "iron-crown": "Iron Crown",
+    // Mr. and Mrs.
+    "mr-mime": "Mr. Mime",
+    "mime-jr": "Mime Jr.",
+    "mr-rime": "Mr. Rime",
+    // Farfetch'd / Sirfetch'd
+    "farfetchd": "Farfetch’d",
+    "sirfetchd": "Sirfetch’d",
+    // Nidoran
+    "nidoran-f": "Nidoran♀",
+    "nidoran-m": "Nidoran♂",
+    // Ho-Oh
+    "ho-oh": "Ho-Oh",
+    // Porygon
+    "porygon2": "Porygon2",
+    "porygon-z": "Porygon-Z",
+    // Flabebe
+    "flabebe": "Flabébé",
   };
   return data.results.map((p, i) => ({
     id: i + 1,
@@ -2500,6 +3067,8 @@ async function fetchRoster() {
 // ============================================================================
 // BOOT SEQUENCE
 // ============================================================================
+// Fetch the pokemondata CSV and seed cardLinks into collection for all cards
+// This ensures uncollected cards have a cardLink so prices can be fetched
 async function boot() {
   const screenContent = document.getElementById("screenContent");
   screenContent.innerHTML = `
@@ -2558,18 +3127,84 @@ async function boot() {
   renderHeaderStats();
 
   // Then fetch Firebase and merge on top — updates UI when cloud data arrives
-  loadFromFirebase().then(cloudData => {
+  loadFromFirebase().then(async cloudData => {
     if (cloudData) {
+      // Existing user — merge cloud data on top of local cache
       collection = { ...collection, ...cloudData };
       saveLocal("pokedex_v2:collection", collection);
       recordValueSnapshot();
       renderHeaderStats();
       render();
-      console.log("✅ Cloud data merged");
+      console.log("✅ Cloud data merged for", CURRENT_USER_ID);
+      // Sync market prices from pokemontcg.io
+      syncMarketPrices();
     } else {
+      // New user — initialize their database so it exists in Firebase
+      // We write a minimal sentinel so future loads know the account is set up.
+      // The actual card roster is always fetched from PokeAPI, so we just
+      // persist whatever the user collects going forward.
+      if (CURRENT_USER_ID && CURRENT_USER_ID !== "pokemon_collection") {
+        console.log("🆕 New trainer detected — initializing database for", CURRENT_USER_ID);
+        // Write an empty initialized marker so the path exists in Firebase
+        await initNewUserDatabase();
+        // Show a welcome message on the screen
+        showNewTrainerWelcome();
+      }
       recordValueSnapshot();
     }
   });
+}
+
+// Seed a new user's Firebase path so it exists (empty collection, just the sentinel)
+async function initNewUserDatabase() {
+  const fbUrl = getFirebaseUrl();
+  if (!fbUrl) return;
+  // Write a minimal placeholder — the real collection grows as they add cards
+  try {
+    await fetch(fbUrl, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ _initialized: true, _createdAt: Date.now() }),
+    });
+    console.log("✅ New trainer database initialized");
+  } catch(e) {
+    console.warn("Could not initialize database:", e.message);
+  }
+}
+
+function showNewTrainerWelcome() {
+  const screenContent = document.getElementById("screenContent");
+  if (!screenContent) return;
+  // Flash a brief welcome overlay on top of the current screen content
+  const welcome = document.createElement("div");
+  welcome.style.cssText = `
+    position: absolute; inset: 0; z-index: 500;
+    background: var(--screen-bg-card, #0d1f0d);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 12px; padding: 24px; text-align: center;
+    animation: fadeIn 0.3s ease;
+  `;
+  welcome.innerHTML = `
+    <div style="font-family:'Press Start 2P',monospace;font-size:11px;color:var(--shell-red,#B82435);letter-spacing:1px;">NEW TRAINER</div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#5a9a5a;line-height:1.8;">
+      ▸ DATABASE CREATED<br>
+      ▸ CLOUD SYNC ACTIVE<br>
+      ▸ READY TO COLLECT
+    </div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#2a5a2a;margin-top:8px;">
+      Your collection syncs across all devices.
+    </div>
+  `;
+  // Position relative to screenContent
+  const screen = document.getElementById("screen");
+  screen.style.position = "relative";
+  screen.appendChild(welcome);
+  setTimeout(() => {
+    welcome.style.transition = "opacity 0.5s";
+    welcome.style.opacity = "0";
+    setTimeout(() => welcome.remove(), 500);
+  }, 2500);
 }
 
 
@@ -2583,12 +3218,18 @@ function computeStats() {
   const collectedList = Object.entries(collection).filter(([_, c]) => c.collected);
   const collected = collectedList.length;
   const spent = collectedList.reduce((s, [_, c]) => s + (c.price || 0), 0);
-  const market = Object.values(collection).reduce((s, c) => {
+  // Market value of collected cards only
+  const collectedMarket = collectedList.reduce((s, [_, c]) => {
+    if (c.nmPrices?.market) return s + parseFloat(c.nmPrices.market);
+    return s;
+  }, 0);
+  // Total market value of ALL cards (collected + uncollected)
+  const totalMarket = Object.values(collection).reduce((s, c) => {
     if (c.nmPrices?.market) return s + parseFloat(c.nmPrices.market);
     return s;
   }, 0);
   const completion = total > 0 ? ((collected / total) * 100) : 0;
-  return { total, collected, collectedList, spent, market, completion };
+  return { total, collected, collectedList, spent, market: collectedMarket, totalMarket, completion };
 }
 
 // Always-visible stats strip in the chassis header
@@ -2596,6 +3237,9 @@ function renderHeaderStats() {
   const el = document.getElementById("headerStats");
   if (!el) return;
   const s = computeStats();
+  const fmt = (n) => n >= 1000
+    ? "$" + Math.round(n).toLocaleString()
+    : "$" + n.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
   el.innerHTML = `
     <div class="header-stat">
       <div class="hs-value red">${s.collected}</div>
@@ -2608,13 +3252,18 @@ function renderHeaderStats() {
     </div>
     <div class="hs-divider"></div>
     <div class="header-stat">
-      <div class="hs-value amber">$${s.spent.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+      <div class="hs-value amber">${fmt(s.spent)}</div>
       <div class="hs-label">Spent</div>
     </div>
     <div class="hs-divider"></div>
     <div class="header-stat">
-      <div class="hs-value amber">$${Math.round(s.market).toLocaleString()}</div>
-      <div class="hs-label">Mkt Value</div>
+      <div class="hs-value amber">${fmt(s.market)}</div>
+      <div class="hs-label">Coll. Value</div>
+    </div>
+    <div class="hs-divider"></div>
+    <div class="header-stat">
+      <div class="hs-value amber">${fmt(s.totalMarket)}</div>
+      <div class="hs-label">Total Mkt</div>
     </div>
     <div class="hs-divider"></div>
     <div class="header-progress">
@@ -2749,21 +3398,6 @@ function renderStats(el) {
 
     <div class="chart-block">
       <div class="chart-header">
-        <span class="chart-label">Share Your Collection</span>
-      </div>
-      <div style="font-family:'Bricolage Grotesque', sans-serif; font-size:13px; color:var(--text-dim); line-height:1.55; margin-bottom:6px;">
-        Send friends and other collectors a page where they can browse your cards.
-      </div>
-      <div style="font-family:'JetBrains Mono', monospace; font-size:11px; color:var(--accent-blue); word-break:break-all; margin-bottom:14px;">${visitorUrl()}</div>
-      <div style="display:flex; gap:8px; flex-wrap:wrap;">
-        <button class="dialog-btn primary" onclick="shareVisitorLink()">Share link</button>
-        <button class="dialog-btn" onclick="copyVisitorLink()">Copy link</button>
-        <a class="dialog-btn" href="${visitorUrl()}" target="_blank" rel="noopener noreferrer" style="text-decoration:none; text-align:center;">Open page</a>
-      </div>
-    </div>
-
-    <div class="chart-block">
-      <div class="chart-header">
         <span class="chart-label">Backup &amp; Import</span>
       </div>
       <div style="font-family:'Bricolage Grotesque', sans-serif; font-size:13px; color:var(--text-dim); line-height:1.55; margin-bottom:14px;">
@@ -2842,7 +3476,10 @@ function renderDex(el) {
 
   el.innerHTML = `
     <div class="dex-controls">
-      <input type="text" class="lcd-input" id="searchInput" placeholder="Search by name or number..." value="${searchQuery.replace(/"/g, '&quot;')}">
+      <div class="search-wrap">
+        <input type="text" class="lcd-input" id="searchInput" placeholder="Search by name or number..." value="${searchQuery.replace(/"/g, '&quot;')}">
+        <button class="search-clear ${searchQuery ? 'visible' : ''}" id="searchClear" onclick="clearSearch()" aria-label="Clear search">&#x2715;</button>
+      </div>
       <button class="filter-toggle ${filtersOpen ? 'open' : ''} ${activeFilterCount() > 0 ? 'has-active' : ''}" onclick="toggleFilters()" aria-label="Toggle filters">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
           <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
@@ -2859,8 +3496,7 @@ function renderDex(el) {
       </div>
     ` : ''}
 
-    ${filtersOpen ? `
-      <div class="filter-panel">
+    <div class="filter-panel ${filtersOpen ? 'open' : ''}">
         <div class="filter-group">
           <div class="filter-group-label">Collection</div>
           <div class="filter-chips">
@@ -2920,7 +3556,6 @@ function renderDex(el) {
           <button class="clear-all-btn" onclick="clearAllFilters()" style="${activeFilterCount() === 0 ? 'opacity:0.35; cursor:default;' : ''}">Clear all filters</button>
         </div>
       </div>
-    ` : ''}
 
     ${filtered.length === 0 ? `
       <div class="lcd-empty">
@@ -3042,11 +3677,20 @@ function formatStamp(ts) {
 // INTERACTIONS
 // ============================================================================
 function setView(v) { currentView = v; render(); }
-function setGenFilter(g) { genFilter = g; render(); }
-function setCollectedFilter(f) { collectedFilter = f; render(); }
-function setLangFilter(l) { langFilter = l; render(); }
-function setSetFilter(s) { setFilter = s; render(); }
-function toggleFilters() { filtersOpen = !filtersOpen; render(); }
+function clearSearch() {
+  searchQuery = "";
+  render();
+  setTimeout(() => document.getElementById("searchInput")?.focus(), 50); }
+let _filterTimer = null;
+function scheduleFilterClose() {
+  clearTimeout(_filterTimer);
+  _filterTimer = setTimeout(() => { filtersOpen = false; render(); }, 3000);
+}
+function setGenFilter(g) { genFilter = g; render(); scheduleFilterClose(); }
+function setCollectedFilter(f) { collectedFilter = f; render(); scheduleFilterClose(); }
+function setLangFilter(l) { langFilter = l; render(); scheduleFilterClose(); }
+function setSetFilter(s) { setFilter = s; render(); scheduleFilterClose(); }
+function toggleFilters() { clearTimeout(_filterTimer); filtersOpen = !filtersOpen; render(); }
 
 function activeFilterCount() {
   let n = 0;
@@ -3211,22 +3855,16 @@ function openCardDetail(id) {
         <img class="zoom-img" src="${c.imageUrl}" alt="${c.name}"
           onclick="this.classList.toggle('fullsize')"
           title="Tap to zoom">
-        ${c.nmPrices ? `
-          <div class="zoom-pricing">
-            <div class="zoom-pricing-header">Near Mint · ${c.name}</div>
-            ${c.nmPrices.firstEd ? `<div class="zoom-pricing-row"><span>1st Edition</span><span class="val">$${c.nmPrices.firstEd}</span></div>` : ''}
-            ${c.nmPrices.unlimited ? `<div class="zoom-pricing-row"><span>Unlimited</span><span class="val">$${c.nmPrices.unlimited}</span></div>` : ''}
-            ${c.nmPrices.market ? `<div class="zoom-pricing-row"><span>Market Price</span><span class="val">$${c.nmPrices.market}</span></div>` : ''}
-            ${c.nmPrices.lastSale ? `<div class="zoom-pricing-row"><span>Last Sale</span><span class="val">$${c.nmPrices.lastSale}</span></div>` : ''}
-          </div>
-        ` : ''}
         <div class="zoom-pricing">
           <div class="zoom-pricing-header">Entry #${String(c.id).padStart(4, '0')}</div>
           <div class="zoom-pricing-row"><span>Pokémon</span><span class="val">${c.name}</span></div>
           <div class="zoom-pricing-row"><span>Generation</span><span class="val">${c.generation}</span></div>
           ${c.setName ? `<div class="zoom-pricing-row"><span>Set</span><span class="val">${c.setName}</span></div>` : ''}
-          ${c.collected ? `<div class="zoom-pricing-row"><span>Status</span><span class="val" style="color:var(--accent-green);">● Caught</span></div>` : ''}
+          ${c.collected ? `<div class="zoom-pricing-row"><span>Status</span><span class="val" style="color:var(--accent-green);">● Caught</span></div>` : `<div class="zoom-pricing-row"><span>Status</span><span class="val" style="color:var(--text-dim);">○ Not Caught</span></div>`}
           ${c.price ? `<div class="zoom-pricing-row"><span>Spent</span><span class="val">$${c.price.toFixed(2)}</span></div>` : ''}
+          ${c.nmPrices?.market ? `<div class="zoom-pricing-row"><span>Market Value</span><span class="val" style="color:var(--accent-amber);font-weight:700;">$${c.nmPrices.market}</span></div>` : '<div class="zoom-pricing-row"><span>Market Value</span><span class="val" style="color:var(--text-dim);">—</span></div>'}
+          ${c.nmPrices?.firstEd ? `<div class="zoom-pricing-row"><span>1st Edition</span><span class="val">$${c.nmPrices.firstEd}</span></div>` : ''}
+          ${c.nmPrices?.lastSale ? `<div class="zoom-pricing-row"><span>Last Sale</span><span class="val">$${c.nmPrices.lastSale}</span></div>` : ''}
           <div style="display:flex; gap:6px; margin-top:12px; flex-wrap:wrap;">
             ${c.collected ? `
               <button class="dialog-btn danger" onclick="event.stopPropagation(); uncatch(${c.id})">Release</button>
@@ -3250,7 +3888,8 @@ function openCardDetail(id) {
           <span class="dialog-name-id">#${String(c.id).padStart(4,'0')}</span>
           <span class="dialog-name">${c.name}</span>
         </div>
-        <div class="dialog-meta">Generation ${c.generation}</div>
+        <div class="dialog-meta">Generation ${c.generation}${c.setName ? ` · ${c.setName}` : ''}</div>
+        ${c.nmPrices?.market ? `<div style="text-align:center; padding:10px 0 4px; font-family:'JetBrains Mono',monospace; font-size:13px; color:var(--accent-amber); font-weight:700;">Market Value: $${c.nmPrices.market}</div>` : ''}
         <div class="dialog-body">
           <p>No card image saved yet. Find this card on TCGPlayer, copy the URL, then paste it below.</p>
         </div>
@@ -3542,35 +4181,6 @@ function toast(msg) {
 // IMPORT / EXPORT — migrate from old versions, back up, restore
 // ============================================================================
 
-// ----- Visitor page link -----
-function visitorUrl() {
-  try { return new URL("visitor.html", window.location.href).href; }
-  catch { return "visitor.html"; }
-}
-function copyVisitorLink() {
-  const url = visitorUrl();
-  const fallback = () => {
-    const ta = document.createElement("textarea");
-    ta.value = url;
-    ta.style.cssText = "position:fixed; opacity:0; top:0; left:0;";
-    document.body.appendChild(ta);
-    ta.focus(); ta.select();
-    try { document.execCommand("copy"); toast("Link copied"); }
-    catch { toast("Couldn't copy — long-press the link instead"); }
-    document.body.removeChild(ta);
-  };
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(url).then(() => toast("Link copied"), fallback);
-  } else fallback();
-}
-function shareVisitorLink() {
-  const url = visitorUrl();
-  if (navigator.share) {
-    navigator.share({ title: "My Pokédex collection", text: "Check out my Pokémon card collection", url })
-      .catch(err => { if (err && err.name !== "AbortError") copyVisitorLink(); });
-  } else copyVisitorLink();
-}
-
 // Export current collection as a downloadable JSON file
 function exportCollection() {
   const payload = {
@@ -3821,8 +4431,186 @@ function mergeValueHistory(a, b) {
   });
 })();
 
-// Boot the device
-boot();
+
+// ============================================================================
+// FIREBASE AUTH — Google (redirect) + Email/Password
+// ============================================================================
+
+let _fbApp = null;
+let _fbAuth = null;
+
+function initFirebaseAuth() {
+  if (typeof firebase === "undefined") {
+    console.warn("Firebase SDK not loaded");
+    return false;
+  }
+  if (!FIREBASE_AUTH_API_KEY || FIREBASE_AUTH_API_KEY === "YOUR_API_KEY_HERE") {
+    console.warn("Firebase config not filled in");
+    return false;
+  }
+  try {
+    const cfg = {
+      apiKey: FIREBASE_AUTH_API_KEY,
+      authDomain: FIREBASE_AUTH_DOMAIN_VAL,
+      databaseURL: FIREBASE_URL,
+      projectId: FIREBASE_PROJECT_ID,
+    };
+    _fbApp = firebase.apps.length ? firebase.apps[0] : firebase.initializeApp(cfg);
+    _fbAuth = firebase.auth(_fbApp);
+    return true;
+  } catch(e) {
+    console.warn("Firebase auth init failed:", e.message);
+    return false;
+  }
+}
+
+function authShowLogin() {
+  document.getElementById("authOverlay").classList.remove("hidden");
+}
+function authHideLogin() {
+  document.getElementById("authOverlay").classList.add("hidden");
+}
+function authToggleEmailForm() {
+  const form = document.getElementById("authEmailForm");
+  form.classList.toggle("visible");
+  if (form.classList.contains("visible")) {
+    document.getElementById("emailToggleBtn").textContent = "✕ Cancel";
+    setTimeout(() => document.getElementById("authEmail").focus(), 50);
+  } else {
+    document.getElementById("emailToggleBtn").textContent = "✉ Continue with Email";
+  }
+}
+function authSetError(msg) {
+  document.getElementById("authError").textContent = msg;
+}
+
+// Google: use redirect (works on GitHub Pages, mobile, no popup blockers)
+async function authSignInGoogle() {
+  if (!_fbAuth) {
+    authSetError("⚠ Auth not initialized. Check console for errors.");
+    console.error("_fbAuth is null — Firebase config may be wrong. API key:", FIREBASE_AUTH_API_KEY, "Domain:", FIREBASE_AUTH_DOMAIN_VAL);
+    return;
+  }
+  authSetError("");
+  const btn = document.querySelector(".auth-btn-google");
+  if (btn) btn.textContent = "▸ Connecting...";
+  try {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    // Try popup first (instant); fall back to redirect if blocked
+    try {
+      await _fbAuth.signInWithPopup(provider);
+    } catch(popupErr) {
+      if (popupErr.code === "auth/popup-blocked" || popupErr.code === "auth/popup-closed-by-user") {
+        if (btn) btn.textContent = "▸ Redirecting...";
+        await _fbAuth.signInWithRedirect(provider);
+      } else {
+        throw popupErr;
+      }
+    }
+  } catch(e) {
+    if (btn) btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.08 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.35-8.16 2.35-6.26 0-11.57-3.59-13.46-8.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg> Continue with Google';
+    authSetError(e.code + ": " + e.message);
+    console.error("Google sign-in failed:", e);
+  }
+}
+
+async function authSignInEmail() {
+  if (!_fbAuth) { authSetError("Auth not configured."); return; }
+  const email = document.getElementById("authEmail").value.trim();
+  const pass  = document.getElementById("authPassword").value;
+  if (!email || !pass) { authSetError("Enter email and password."); return; }
+  authSetError("");
+  try {
+    await _fbAuth.signInWithEmailAndPassword(email, pass);
+  } catch(e) {
+    authSetError(e.message);
+  }
+}
+
+async function authCreateAccount() {
+  if (!_fbAuth) { authSetError("Auth not configured."); return; }
+  const email = document.getElementById("authEmail").value.trim();
+  const pass  = document.getElementById("authPassword").value;
+  if (!email || !pass) { authSetError("Enter email and password."); return; }
+  authSetError("");
+  try {
+    await _fbAuth.createUserWithEmailAndPassword(email, pass);
+  } catch(e) {
+    authSetError(e.message);
+  }
+}
+
+async function authSignOut() {
+  if (!_fbAuth) return;
+  if (!confirm("Sign out? Your collection is safely stored in the cloud.")) return;
+  await _fbAuth.signOut();
+  CURRENT_USER_ID = null;
+  updateSignOutBtn(null);
+  authShowLogin();
+}
+
+function updateSignOutBtn(user) {
+  const btn    = document.getElementById("signOutBtn");
+  const initEl = document.getElementById("userInitials");
+  if (user) {
+    btn.classList.add("visible");
+    const name = user.displayName || user.email || "?";
+    initEl.textContent = name.charAt(0).toUpperCase();
+  } else {
+    btn.classList.remove("visible");
+  }
+}
+
+async function startWithAuth() {
+  const authAvailable = initFirebaseAuth();
+  if (!authAvailable) {
+    // Config missing — show error on login screen instead of silently booting
+    authSetError("⚠ Firebase config not set. Fill in FIREBASE_AUTH_API_KEY in the source.");
+    console.error("Firebase auth unavailable — check FIREBASE_AUTH_API_KEY, FIREBASE_AUTH_DOMAIN_VAL, FIREBASE_PROJECT_ID constants.");
+    return; // Stay on login screen
+  }
+
+  // Handle the redirect result first (fires after Google redirect returns)
+  try {
+    const result = await _fbAuth.getRedirectResult();
+    if (result && result.user) {
+      console.log("✅ Redirect sign-in succeeded:", result.user.email);
+    }
+  } catch(e) {
+    console.warn("Redirect result error:", e.code, e.message);
+    authSetError(e.code + ": " + e.message);
+  }
+
+  // Then listen for auth state — fires immediately if already signed in
+  _fbAuth.onAuthStateChanged(async (user) => {
+    if (user) {
+      CURRENT_USER_ID = user.uid;
+      updateSignOutBtn(user);
+      authHideLogin();
+      if (!window._appBooted) {
+        window._appBooted = true;
+        await boot();
+      } else {
+        // User switched — re-sync from their cloud data
+        collection = {};
+        saveLocal("pokedex_v2:collection", {});
+        loadFromFirebase().then(cloudData => {
+          if (cloudData) {
+            collection = cloudData;
+            saveLocal("pokedex_v2:collection", collection);
+          }
+          render();
+          renderHeaderStats();
+        });
+      }
+    } else {
+      authShowLogin();
+    }
+  });
+}
+
+// Boot the device — now gated behind auth
+startWithAuth();
 </script>
 </body>
 </html>
