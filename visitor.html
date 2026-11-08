@@ -2309,9 +2309,6 @@ const FIREBASE_URL = "https://pokemon-card-tracker-2b5f8-default-rtdb.firebaseio
 const UID = new URLSearchParams(location.search).get("u");
 const COLLECTION_URL = UID ? FIREBASE_URL + "/users/" + encodeURIComponent(UID) + "/collection.json" : null;
 
-// Flip to true if you want visitors to see what you paid. Default: hidden.
-const SHOW_PRICE_PAID = false;
-
 const GEN_RANGES = [[1,1,151],[2,152,251],[3,252,386],[4,387,493],[5,494,649],[6,650,721],[7,722,809],[8,810,905],[9,906,1025]];
 const getGen = id => (GEN_RANGES.find(r => id >= r[1] && id <= r[2]) || [1])[0];
 const spriteUrl = id => `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`;
@@ -2430,8 +2427,6 @@ function renderDex(el) {
     if (genFilter !== "all" && c.generation !== genFilter) return false;
     if (collectedFilter === "collected" && !c.collected) return false;
     if (collectedFilter === "uncollected" && c.collected) return false;
-    if (collectedFilter === "no-price" && (!c.imageUrl || c.nmPrices?.market)) return false;
-    if (collectedFilter === "no-image" && c.imageUrl) return false;
     if (langFilter !== "all") {
       const cardLang = c.language || parseLanguageFromUrl(c.cardLink) || "english";
       if (cardLang !== langFilter) return false;
@@ -2479,8 +2474,6 @@ function renderDex(el) {
           <button class="chip ${collectedFilter === "all" ? "active" : ""}" onclick="setCollectedFilter('all')">All</button>
           <button class="chip ${collectedFilter === "collected" ? "active" : ""}" onclick="setCollectedFilter('collected')">Collected</button>
           <button class="chip ${collectedFilter === "uncollected" ? "active" : ""}" onclick="setCollectedFilter('uncollected')">Not collected</button>
-          <button class="chip warn ${collectedFilter === "no-price" ? "active" : ""}" onclick="setCollectedFilter('no-price')">No Price</button>
-          <button class="chip warn ${collectedFilter === "no-image" ? "active" : ""}" onclick="setCollectedFilter('no-image')">No Image</button>
         </div>
       </div>
 
@@ -2543,8 +2536,6 @@ function renderDex(el) {
 function entryHTML(c) {
   const hasImage = !!c.imageUrl;
   const img = hasImage ? c.imageUrl : spriteUrl(c.id);
-  const right = (SHOW_PRICE_PAID && c.collected && c.price) ? `<span class="dex-entry-price">$${Math.round(c.price)}</span>`
-    : (c.nmPrices?.market ? `<span class="dex-entry-price">$${esc(c.nmPrices.market)}</span>` : '<span class="lcd-faint">—</span>');
   return `
     <div class="dex-entry ${c.collected ? "collected" : ""}" data-id="${c.id}">
       <span class="dex-id">#${String(c.id).padStart(4, "0")}</span>
@@ -2555,7 +2546,7 @@ function entryHTML(c) {
       </div>
       <div class="dex-entry-meta">
         <div class="dex-entry-name">${esc(c.name)}</div>
-        <div class="dex-entry-sub"><span>Gen ${c.generation}</span>${right}</div>
+        <div class="dex-entry-sub"><span>Gen ${c.generation}</span></div>
       </div>
     </div>`;
 }
@@ -2589,9 +2580,8 @@ function renderActiveFilterPills() {
   const pills = [];
   const pill = (cls, click, label) => `<button class="active-pill ${cls}" onclick="${click}" title="Remove filter"><span class="ap-label">${label}</span><span class="ap-x">✕</span></button>`;
   if (collectedFilter !== "all") {
-    const labels = { collected: "Collected", uncollected: "Not collected", "no-price": "No Price", "no-image": "No Image" };
-    const warn = collectedFilter === "no-price" || collectedFilter === "no-image";
-    pills.push(pill(warn ? "warn" : "", "setCollectedFilter('all')", labels[collectedFilter]));
+    const labels = { collected: "Collected", uncollected: "Not collected" };
+    pills.push(pill("", "setCollectedFilter('all')", labels[collectedFilter]));
   }
   if (genFilter !== "all") pills.push(pill("", "setGenFilter('all')", "Gen " + genFilter));
   if (langFilter !== "all") pills.push(pill("", "setLangFilter('all')", langFilter === "english" ? "English" : "Japanese"));
@@ -2650,7 +2640,6 @@ function closeModal() { document.querySelectorAll(".modal-overlay").forEach(o =>
 function openCard(id) {
   const r = roster.find(x => x.id === id); if (!r) return;
   const c = { ...r, ...(collection[id] || {}) };
-  const p = c.nmPrices || {};
   const tcg = c.cardLink || `https://www.tcgplayer.com/search/pokemon/product?q=${encodeURIComponent(c.name)}&view=grid&ProductTypeName=Cards`;
   const link = `<a href="${esc(tcg)}" target="_blank" rel="noopener noreferrer" class="dialog-btn" style="text-decoration:none; text-align:center;">TCGPlayer ↗</a>`;
   const status = c.collected
@@ -2667,11 +2656,6 @@ function openCard(id) {
           <div class="zoom-pricing-row"><span>Generation</span><span class="val">${c.generation}</span></div>
           ${c.setName ? `<div class="zoom-pricing-row"><span>Set</span><span class="val">${esc(c.setName)}</span></div>` : ""}
           ${status}
-          ${SHOW_PRICE_PAID && c.price ? `<div class="zoom-pricing-row"><span>Spent</span><span class="val">$${Number(c.price).toFixed(2)}</span></div>` : ""}
-          <div class="zoom-pricing-row"><span>Market Value</span><span class="val" style="${p.market ? "color:var(--accent-amber);font-weight:700;" : "color:var(--text-dim);"}">${p.market ? "$" + esc(p.market) : "—"}</span></div>
-          ${p.firstEd ? `<div class="zoom-pricing-row"><span>1st Edition</span><span class="val">$${esc(p.firstEd)}</span></div>` : ""}
-          ${p.unlimited ? `<div class="zoom-pricing-row"><span>Unlimited</span><span class="val">$${esc(p.unlimited)}</span></div>` : ""}
-          ${p.lastSale ? `<div class="zoom-pricing-row"><span>Last Sale</span><span class="val">$${esc(p.lastSale)}</span></div>` : ""}
           <div style="display:flex; gap:6px; margin-top:12px; flex-wrap:wrap;">${link}</div>
         </div>
       </div>`, { zoom: true });
