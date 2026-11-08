@@ -2252,10 +2252,6 @@
   }
 
   /* ---- Visitor page additions ---- */
-  .gen-row { display: flex; gap: 6px; overflow-x: auto; padding: 0 0 12px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
-  .gen-row::-webkit-scrollbar { display: none; }
-  .gen-row .chip { flex-shrink: 0; min-height: 36px; }
-  .vcount { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-faint); letter-spacing: 0.5px; margin-bottom: 10px; font-weight: 600; }
   .bezel-label-r { user-select: none; }
 </style>
 </head>
@@ -2284,26 +2280,21 @@
     <div class="screen booting" id="screen">
       <div class="screen-grid"></div>
       <div id="screenContent" class="screen-content"></div>
-      <div class="tab-bar" id="tabBar" style="display:none;">
-        <button class="tab active" data-view="collected"><span class="tab-key">A</span>COLLECTED</button>
-        <button class="tab" data-view="missing"><span class="tab-key">B</span>HUNTING</button>
-        <button class="tab" data-view="all"><span class="tab-key">C</span>ALL</button>
-      </div>
     </div>
   </div>
 
   <div class="control-deck">
     <div class="dpad">
-      <button class="dpad-btn dpad-up" data-key="up" aria-label="Previous tab">▲</button>
-      <button class="dpad-btn dpad-down" data-key="down" aria-label="Next tab">▼</button>
-      <button class="dpad-btn dpad-left" data-key="left" aria-label="Previous tab">◀</button>
-      <button class="dpad-btn dpad-right" data-key="right" aria-label="Next tab">▶</button>
+      <button class="dpad-btn dpad-up" data-key="up" aria-label="Scroll up">▲</button>
+      <button class="dpad-btn dpad-down" data-key="down" aria-label="Scroll down">▼</button>
+      <button class="dpad-btn dpad-left" data-key="left" aria-label="Previous generation">◀</button>
+      <button class="dpad-btn dpad-right" data-key="right" aria-label="Next generation">▶</button>
       <div class="dpad-center"></div>
     </div>
     <div class="deck-label">↺ START · SELECT ↻</div>
     <div class="ab-buttons">
-      <button class="ab-btn b" data-key="b" title="Still hunting" aria-label="Still hunting">B</button>
-      <button class="ab-btn a" data-key="a" title="Collected" aria-label="Collected">A</button>
+      <button class="ab-btn b" data-key="b" title="Clear filters" aria-label="Clear filters">B</button>
+      <button class="ab-btn a" data-key="a" title="Filters" aria-label="Filters">A</button>
     </div>
   </div>
 </div>
@@ -2328,10 +2319,9 @@ const SPECIAL_NAMES = { "type-null":"Type: Null","jangmo-o":"Jangmo-o","hakamo-o
 const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const $ = id => document.getElementById(id);
 const isJP = c => c.language === "japanese" || /pokemon-japan/i.test(c.cardLink || "");
-const VIEWS = ["collected", "missing", "all"];
 
 let roster = [], collection = {};
-let currentView = "collected", genFilter = "all", searchQuery = "";
+let searchQuery = "", genFilter = "all", collectedFilter = "all", langFilter = "all", setFilter = "all", filtersOpen = false;
 
 // ----- Data -----
 async function loadRoster() {
@@ -2389,10 +2379,9 @@ async function boot() {
   $("screen").classList.remove("booting");
   sc.classList.add("boot-fade-in");
   setTimeout(() => sc.classList.remove("boot-fade-in"), 500);
-  $("tabBar").style.display = "flex";
-  buildShell();
+  setupInteractions();
   renderHeaderStats();
-  renderList();
+  render();
 }
 
 // ----- Stats -----
@@ -2425,57 +2414,133 @@ function renderHeaderStats() {
     </div>`;
 }
 
-// ----- Screen shell (built once so typing in search keeps focus) -----
-function buildShell() {
-  $("screenContent").innerHTML = `
+// ----- Dex view + filters (same behaviour as the main page) -----
+function parseLanguageFromUrl(url) {
+  if (!url) return "english";
+  return /\/pokemon-japan(\/|-|$)|pokemon-japan-/i.test(url) ? "japanese" : "english";
+}
+function render() { renderDex($("screenContent")); }
+
+function renderDex(el) {
+  const filtered = roster.map(r => ({ ...r, ...(collection[r.id] || {}) })).filter(c => {
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      if (!c.name.toLowerCase().includes(q) && !String(c.id).includes(q)) return false;
+    }
+    if (genFilter !== "all" && c.generation !== genFilter) return false;
+    if (collectedFilter === "collected" && !c.collected) return false;
+    if (collectedFilter === "uncollected" && c.collected) return false;
+    if (collectedFilter === "no-price" && (!c.imageUrl || c.nmPrices?.market)) return false;
+    if (collectedFilter === "no-image" && c.imageUrl) return false;
+    if (langFilter !== "all") {
+      const cardLang = c.language || parseLanguageFromUrl(c.cardLink) || "english";
+      if (cardLang !== langFilter) return false;
+    }
+    if (setFilter !== "all" && (c.setName || "") !== setFilter) return false;
+    return true;
+  });
+
+  // Set dropdown options, sorted by how many cards are in each set
+  const counts = {};
+  Object.values(collection).forEach(c => { if (c.setName) counts[c.setName] = (counts[c.setName] || 0) + 1; });
+  const setNames = Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
+  const setOpts = setNames.map(n => `<option value="${esc(n)}" ${setFilter === n ? "selected" : ""}>${esc(n)} (${counts[n]})</option>`).join("");
+
+  el.innerHTML = `
     <div class="sys-bar">
       <div class="sys-bar-left"><span class="sys-cursor"></span><span>Matt’s Pokédex</span></div>
       <div class="sys-bar-right"><span class="lcd-dim">Visitor view</span></div>
     </div>
-    <div class="dex-controls">
-      <input type="text" class="lcd-input" id="searchInput" placeholder="Search by name or number..." autocomplete="off" aria-label="Search Pokémon">
-    </div>
-    <div class="gen-row" id="genRow"></div>
-    <div class="vcount" id="vcount"></div>
-    <div id="dexWrap"></div>`;
-  renderGenRow();
-  $("searchInput").addEventListener("input", e => { searchQuery = e.target.value.trim().toLowerCase(); renderList(); });
-  $("genRow").addEventListener("click", e => {
-    const b = e.target.closest(".chip"); if (!b) return;
-    genFilter = b.dataset.g === "all" ? "all" : parseInt(b.dataset.g, 10);
-    renderGenRow(); renderList();
-  });
-  $("dexWrap").addEventListener("click", e => {
-    const b = e.target.closest(".dex-entry"); if (b) openCard(parseInt(b.dataset.id, 10));
-  });
-}
-function renderGenRow() {
-  const gens = ["all", 1, 2, 3, 4, 5, 6, 7, 8, 9];
-  $("genRow").innerHTML = gens.map(g =>
-    `<button class="chip ${genFilter === g ? "active" : ""}" data-g="${g}">${g === "all" ? "All gens" : "Gen " + g}</button>`).join("");
-}
 
-// ----- List -----
-function renderList() {
-  const list = roster.filter(r => {
-    const c = collection[r.id] || {};
-    if (currentView === "collected" && !c.collected) return false;
-    if (currentView === "missing" && c.collected) return false;
-    if (genFilter !== "all" && r.generation !== genFilter) return false;
-    if (searchQuery && !r.name.toLowerCase().includes(searchQuery) && !String(r.id).includes(searchQuery)) return false;
-    return true;
-  });
-  $("vcount").textContent = `${list.length} POKÉMON`;
-  $("dexWrap").innerHTML = list.length === 0 ? `
+    <div class="dex-controls">
+      <div class="search-wrap">
+        <input type="text" class="lcd-input" id="searchInput" placeholder="Search by name or number..." value="${esc(searchQuery)}" autocomplete="off" aria-label="Search Pokémon">
+        <button class="search-clear ${searchQuery ? "visible" : ""}" id="searchClear" onclick="clearSearch()" aria-label="Clear search">&#x2715;</button>
+      </div>
+      <button class="filter-toggle ${filtersOpen ? "open" : ""} ${activeFilterCount() > 0 ? "has-active" : ""}" onclick="toggleFilters()" aria-label="Toggle filters">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+        </svg>
+        <span>Filters</span>
+        ${activeFilterCount() > 0 ? `<span class="filter-count">${activeFilterCount()}</span>` : ""}
+      </button>
+    </div>
+
+    ${activeFilterCount() > 0 && !filtersOpen ? `
+      <div class="active-filter-bar">
+        ${renderActiveFilterPills()}
+        <button class="clear-all-btn" onclick="clearAllFilters()">Clear all</button>
+      </div>` : ""}
+
+    <div class="filter-panel ${filtersOpen ? "open" : ""}">
+      <div class="filter-group">
+        <div class="filter-group-label">Collection</div>
+        <div class="filter-chips">
+          <button class="chip ${collectedFilter === "all" ? "active" : ""}" onclick="setCollectedFilter('all')">All</button>
+          <button class="chip ${collectedFilter === "collected" ? "active" : ""}" onclick="setCollectedFilter('collected')">Collected</button>
+          <button class="chip ${collectedFilter === "uncollected" ? "active" : ""}" onclick="setCollectedFilter('uncollected')">Not collected</button>
+          <button class="chip warn ${collectedFilter === "no-price" ? "active" : ""}" onclick="setCollectedFilter('no-price')">No Price</button>
+          <button class="chip warn ${collectedFilter === "no-image" ? "active" : ""}" onclick="setCollectedFilter('no-image')">No Image</button>
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <div class="filter-group-label">Generation</div>
+        <div class="filter-chips">
+          <button class="chip ${genFilter === "all" ? "active" : ""}" onclick="setGenFilter('all')">All</button>
+          ${[1,2,3,4,5,6,7,8,9].map(g => `<button class="chip ${genFilter === g ? "active" : ""}" onclick="setGenFilter(${g})">Gen ${g}</button>`).join("")}
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <div class="filter-group-label">Language</div>
+        <div class="filter-chips">
+          <button class="chip ${langFilter === "all" ? "active" : ""}" onclick="setLangFilter('all')">All</button>
+          <button class="chip ${langFilter === "english" ? "active" : ""}" onclick="setLangFilter('english')">English</button>
+          <button class="chip ${langFilter === "japanese" ? "active" : ""}" onclick="setLangFilter('japanese')">Japanese</button>
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <div class="filter-group-label">Set</div>
+        <div class="filter-chips">
+          <select aria-label="Filter by set"
+            style="flex:1; padding:8px 14px; background:var(--screen-bg-deep); border:1px solid ${setFilter !== "all" ? "var(--accent-blue)" : "var(--screen-border-bright)"}; border-radius:8px; color:${setFilter !== "all" ? "var(--accent-blue)" : "var(--text-dim)"}; font-family:'Bricolage Grotesque',sans-serif; font-size:13px; font-weight:600; cursor:pointer; outline:none;"
+            onchange="setSetFilter(this.value)">
+            <option value="all" ${setFilter === "all" ? "selected" : ""}>All sets</option>
+            ${setOpts}
+          </select>
+        </div>
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; padding-top:10px; border-top:1px solid var(--screen-border); margin-top:6px;">
+        <button class="clear-all-btn" onclick="clearAllFilters()" style="${activeFilterCount() === 0 ? "opacity:0.35; cursor:default;" : ""}">Clear all filters</button>
+      </div>
+    </div>
+
+    ${filtered.length === 0 ? `
       <div class="lcd-empty">
         <div class="lcd-empty-icon">— No Entries —</div>
-        <div class="lcd-empty-line">${currentView === "collected" && !searchQuery && genFilter === "all" ? "No cards collected yet." : "No Pokémon match your search."}</div>
-        <div class="lcd-empty-sub">Try a different tab or filter.</div>
-      </div>`
-    : `<div class="dex-grid">${list.map(entryHTML).join("")}</div>`;
+        <div class="lcd-empty-line">No Pokémon match your search.</div>
+        <div class="lcd-empty-sub">Try a different filter or clear search.</div>
+      </div>` : `
+      <div class="dex-grid">${filtered.map(entryHTML).join("")}</div>`}
+  `;
+
+  // Search: keep focus + cursor while the list re-renders
+  const search = $("searchInput");
+  if (search) {
+    search.addEventListener("input", e => {
+      const pos = e.target.selectionStart;
+      searchQuery = e.target.value;
+      renderDex(el);
+      const s = $("searchInput");
+      if (s) { s.focus(); s.setSelectionRange(pos, pos); }
+    });
+  }
 }
-function entryHTML(r) {
-  const c = { ...r, ...(collection[r.id] || {}) };
+
+function entryHTML(c) {
   const hasImage = !!c.imageUrl;
   const img = hasImage ? c.imageUrl : spriteUrl(c.id);
   const right = (SHOW_PRICE_PAID && c.collected && c.price) ? `<span class="dex-entry-price">$${Math.round(c.price)}</span>`
@@ -2495,34 +2560,80 @@ function entryHTML(r) {
     </div>`;
 }
 
-// ----- Tabs / controls -----
-function setView(v) {
-  currentView = v;
-  document.querySelectorAll(".tab").forEach(t => t.classList.toggle("active", t.dataset.view === v));
-  if ($("dexWrap")) renderList();
+// Filter drawer closes 3s after a selection, same as the main page
+function clearSearch() {
+  searchQuery = "";
+  render();
+  setTimeout(() => $("searchInput")?.focus(), 50);
 }
-document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => setView(t.dataset.view)));
-document.querySelectorAll("[data-key]").forEach(btn => {
-  btn.addEventListener("click", () => {
-    const k = btn.dataset.key;
-    if (k === "a") setView("collected");
-    else if (k === "b") setView("missing");
-    else {
-      const i = VIEWS.indexOf(currentView);
-      const step = (k === "left" || k === "up") ? -1 : 1;
-      setView(VIEWS[(i + step + VIEWS.length) % VIEWS.length]);
-    }
+let _filterTimer = null;
+function scheduleFilterClose() {
+  clearTimeout(_filterTimer);
+  _filterTimer = setTimeout(() => { filtersOpen = false; render(); }, 3000);
+}
+function setGenFilter(g) { genFilter = g; render(); scheduleFilterClose(); }
+function setCollectedFilter(f) { collectedFilter = f; render(); scheduleFilterClose(); }
+function setLangFilter(l) { langFilter = l; render(); scheduleFilterClose(); }
+function setSetFilter(s) { setFilter = s; render(); scheduleFilterClose(); }
+function toggleFilters() { clearTimeout(_filterTimer); filtersOpen = !filtersOpen; render(); }
+
+function activeFilterCount() {
+  let n = 0;
+  if (collectedFilter !== "all") n++;
+  if (genFilter !== "all") n++;
+  if (langFilter !== "all") n++;
+  if (setFilter !== "all") n++;
+  return n;
+}
+function renderActiveFilterPills() {
+  const pills = [];
+  const pill = (cls, click, label) => `<button class="active-pill ${cls}" onclick="${click}" title="Remove filter"><span class="ap-label">${label}</span><span class="ap-x">✕</span></button>`;
+  if (collectedFilter !== "all") {
+    const labels = { collected: "Collected", uncollected: "Not collected", "no-price": "No Price", "no-image": "No Image" };
+    const warn = collectedFilter === "no-price" || collectedFilter === "no-image";
+    pills.push(pill(warn ? "warn" : "", "setCollectedFilter('all')", labels[collectedFilter]));
+  }
+  if (genFilter !== "all") pills.push(pill("", "setGenFilter('all')", "Gen " + genFilter));
+  if (langFilter !== "all") pills.push(pill("", "setLangFilter('all')", langFilter === "english" ? "English" : "Japanese"));
+  if (setFilter !== "all") {
+    const short = setFilter.length > 20 ? setFilter.slice(0, 18) + "…" : setFilter;
+    pills.push(pill("", "setSetFilter('all')", esc(short)));
+  }
+  return pills.join("");
+}
+function clearAllFilters() {
+  collectedFilter = "all"; genFilter = "all"; langFilter = "all"; setFilter = "all";
+  render();
+}
+
+// ----- Controls: card taps, D-pad, A/B buttons, keyboard -----
+function setupInteractions() {
+  $("screenContent").addEventListener("click", e => {
+    const b = e.target.closest(".dex-entry");
+    if (b) openCard(parseInt(b.dataset.id, 10));
   });
-});
-document.addEventListener("keydown", e => {
-  if (document.querySelector(".modal-overlay")) return;
-  if (e.target.tagName === "INPUT") return;
-  const k = e.key.toLowerCase();
-  if (k === "1" || k === "a") setView("collected");
-  else if (k === "2" || k === "b") setView("missing");
-  else if (k === "3" || k === "c") setView("all");
-  else if (k === "/") { e.preventDefault(); $("searchInput")?.focus(); }
-});
+  document.querySelectorAll("[data-key]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const k = btn.dataset.key;
+      if (k === "a") toggleFilters();
+      else if (k === "b") clearAllFilters();
+      else if (k === "up" || k === "down") {
+        document.querySelector(".dex-grid")?.scrollBy({ top: k === "up" ? -300 : 300, behavior: "smooth" });
+      } else {
+        const gens = ["all", 1, 2, 3, 4, 5, 6, 7, 8, 9];
+        const i = gens.indexOf(genFilter);
+        const step = k === "left" ? -1 : 1;
+        setGenFilter(gens[(i + step + gens.length) % gens.length]);
+      }
+    });
+  });
+  document.addEventListener("keydown", e => {
+    if (document.querySelector(".modal-overlay")) return;
+    if (e.target.tagName === "INPUT" || e.target.tagName === "SELECT") return;
+    if (e.key === "/") { e.preventDefault(); $("searchInput")?.focus(); }
+    else if (e.key.toLowerCase() === "f") toggleFilters();
+  });
+}
 
 // ----- Modal + card detail -----
 function showModal(html, opts = {}) {
